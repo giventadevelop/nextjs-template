@@ -44,20 +44,15 @@ The script can be configured through environment variables in a `.env` file at t
    - Tasks can have `subtasks` for more detailed implementation steps.
    - Dependencies are displayed with status indicators (✅ for completed, ⏱️ for pending) to easily track progress.
 
-2. **CLI Commands**  
-   You can run the commands via:
+2. **Script Commands**  
+   You can run the script via:
 
    ```bash
-   # If installed globally
-   task-master [command] [options]
-   
-   # If using locally within the project
    node scripts/dev.js [command] [options]
    ```
 
    Available commands:
 
-   - `init`: Initialize a new project
    - `parse-prd`: Generate tasks from a PRD document
    - `list`: Display all tasks with their status
    - `update`: Update tasks based on new information
@@ -67,15 +62,8 @@ The script can be configured through environment variables in a `.env` file at t
    - `clear-subtasks`: Remove subtasks from specified tasks
    - `next`: Determine the next task to work on based on dependencies
    - `show`: Display detailed information about a specific task
-   - `analyze-complexity`: Analyze task complexity and generate recommendations
-   - `complexity-report`: Display the complexity analysis in a readable format
-   - `add-dependency`: Add a dependency between tasks
-   - `remove-dependency`: Remove a dependency from a task
-   - `validate-dependencies`: Check for invalid dependencies
-   - `fix-dependencies`: Fix invalid dependencies automatically
-   - `add-task`: Add a new task using AI
 
-   Run `task-master --help` or `node scripts/dev.js --help` to see detailed usage information.
+   Run `node scripts/dev.js` without arguments to see detailed usage information.
 
 ## Listing Tasks
 
@@ -83,16 +71,16 @@ The `list` command allows you to view all tasks and their status:
 
 ```bash
 # List all tasks
-task-master list
+node scripts/dev.js list
 
 # List tasks with a specific status
-task-master list --status=pending
+node scripts/dev.js list --status=pending
 
 # List tasks and include their subtasks
-task-master list --with-subtasks
+node scripts/dev.js list --with-subtasks
 
 # List tasks with a specific status and include their subtasks
-task-master list --status=pending --with-subtasks
+node scripts/dev.js list --status=pending --with-subtasks
 ```
 
 ## Updating Tasks
@@ -101,13 +89,13 @@ The `update` command allows you to update tasks based on new information or impl
 
 ```bash
 # Update tasks starting from ID 4 with a new prompt
-task-master update --from=4 --prompt="Refactor tasks from ID 4 onward to use Express instead of Fastify"
+node scripts/dev.js update --from=4 --prompt="Refactor tasks from ID 4 onward to use Express instead of Fastify"
 
 # Update all tasks (default from=1)
-task-master update --prompt="Add authentication to all relevant tasks"
+node scripts/dev.js update --prompt="Add authentication to all relevant tasks"
 
 # Specify a different tasks file
-task-master update --file=custom-tasks.json --from=5 --prompt="Change database from MongoDB to PostgreSQL"
+node scripts/dev.js update --file=custom-tasks.json --from=5 --prompt="Change database from MongoDB to PostgreSQL"
 ```
 
 Notes:
@@ -121,16 +109,16 @@ The `set-status` command allows you to change a task's status:
 
 ```bash
 # Mark a task as done
-task-master set-status --id=3 --status=done
+node scripts/dev.js set-status --id=3 --status=done
 
 # Mark a task as pending
-task-master set-status --id=4 --status=pending
+node scripts/dev.js set-status --id=4 --status=pending
 
 # Mark a specific subtask as done
-task-master set-status --id=3.1 --status=done
+node scripts/dev.js set-status --id=3.1 --status=done
 
 # Mark multiple tasks at once
-task-master set-status --id=1,2,3 --status=done
+node scripts/dev.js set-status --id=1,2,3 --status=done
 ```
 
 Notes:
@@ -146,25 +134,25 @@ The `expand` command allows you to break down tasks into subtasks for more detai
 
 ```bash
 # Expand a specific task with 3 subtasks (default)
-task-master expand --id=3
+node scripts/dev.js expand --id=3
 
 # Expand a specific task with 5 subtasks
-task-master expand --id=3 --num=5
+node scripts/dev.js expand --id=3 --num=5
 
 # Expand a task with additional context
-task-master expand --id=3 --prompt="Focus on security aspects"
+node scripts/dev.js expand --id=3 --prompt="Focus on security aspects"
 
 # Expand all pending tasks that don't have subtasks
-task-master expand --all
+node scripts/dev.js expand --all
 
 # Force regeneration of subtasks for all pending tasks
-task-master expand --all --force
+node scripts/dev.js expand --all --force
 
 # Use Perplexity AI for research-backed subtask generation
-task-master expand --id=3 --research
+node scripts/dev.js expand --id=3 --research
 
 # Use Perplexity AI for research-backed generation on all pending tasks
-task-master expand --all --research
+node scripts/dev.js expand --all --research
 ```
 
 ## Clearing Subtasks
@@ -173,13 +161,13 @@ The `clear-subtasks` command allows you to remove subtasks from specified tasks:
 
 ```bash
 # Clear subtasks from a specific task
-task-master clear-subtasks --id=3
+node scripts/dev.js clear-subtasks --id=3
 
 # Clear subtasks from multiple tasks
-task-master clear-subtasks --id=1,2,3
+node scripts/dev.js clear-subtasks --id=1,2,3
 
 # Clear subtasks from all tasks
-task-master clear-subtasks --all
+node scripts/dev.js clear-subtasks --all
 ```
 
 Notes:
@@ -213,111 +201,25 @@ The script supports different logging levels controlled by the `LOG_LEVEL` envir
 
 When `DEBUG=true` is set, debug logs are also written to a `dev-debug.log` file in the project root.
 
-## Managing Task Dependencies
-
-The `add-dependency` and `remove-dependency` commands allow you to manage task dependencies:
-
-```bash
-# Add a dependency to a task
-task-master add-dependency --id=<id> --depends-on=<id>
-
-# Remove a dependency from a task
-task-master remove-dependency --id=<id> --depends-on=<id>
-```
-
-These commands:
-
-1. **Allow precise dependency management**:
-   - Add dependencies between tasks with automatic validation
-   - Remove dependencies when they're no longer needed
-   - Update task files automatically after changes
-
-2. **Include validation checks**:
-   - Prevent circular dependencies (a task depending on itself)
-   - Prevent duplicate dependencies
-   - Verify that both tasks exist before adding/removing dependencies
-   - Check if dependencies exist before attempting to remove them
-
-3. **Provide clear feedback**:
-   - Success messages confirm when dependencies are added/removed
-   - Error messages explain why operations failed (if applicable)
-
-4. **Automatically update task files**:
-   - Regenerates task files to reflect dependency changes
-   - Ensures tasks and their files stay synchronized
-
-## Dependency Validation and Fixing
-
-The script provides two specialized commands to ensure task dependencies remain valid and properly maintained:
-
-### Validating Dependencies
-
-The `validate-dependencies` command allows you to check for invalid dependencies without making changes:
-
-```bash
-# Check for invalid dependencies in tasks.json
-task-master validate-dependencies
-
-# Specify a different tasks file
-task-master validate-dependencies --file=custom-tasks.json
-```
-
-This command:
-- Scans all tasks and subtasks for non-existent dependencies
-- Identifies potential self-dependencies (tasks referencing themselves)
-- Reports all found issues without modifying files
-- Provides a comprehensive summary of dependency state
-- Gives detailed statistics on task dependencies
-
-Use this command to audit your task structure before applying fixes.
-
-### Fixing Dependencies
-
-The `fix-dependencies` command proactively finds and fixes all invalid dependencies:
-
-```bash
-# Find and fix all invalid dependencies
-task-master fix-dependencies
-
-# Specify a different tasks file
-task-master fix-dependencies --file=custom-tasks.json
-```
-
-This command:
-1. **Validates all dependencies** across tasks and subtasks
-2. **Automatically removes**:
-   - References to non-existent tasks and subtasks
-   - Self-dependencies (tasks depending on themselves)
-3. **Fixes issues in both**:
-   - The tasks.json data structure
-   - Individual task files during regeneration
-4. **Provides a detailed report**:
-   - Types of issues fixed (non-existent vs. self-dependencies)
-   - Number of tasks affected (tasks vs. subtasks)
-   - Where fixes were applied (tasks.json vs. task files)
-   - List of all individual fixes made
-
-This is especially useful when tasks have been deleted or IDs have changed, potentially breaking dependency chains.
-
 ## Analyzing Task Complexity
 
 The `analyze-complexity` command allows you to automatically assess task complexity and generate expansion recommendations:
 
 ```bash
 # Analyze all tasks and generate expansion recommendations
-task-master analyze-complexity
+node scripts/dev.js analyze-complexity
 
 # Specify a custom output file
-task-master analyze-complexity --output=custom-report.json
+node scripts/dev.js analyze-complexity --output=custom-report.json
 
 # Override the model used for analysis
-task-master analyze-complexity --model=claude-3-opus-20240229
+node scripts/dev.js analyze-complexity --model=claude-3-opus-20240229
 
 # Set a custom complexity threshold (1-10)
-task-master analyze-complexity --threshold=6
+node scripts/dev.js analyze-complexity --threshold=6
 
 # Use Perplexity AI for research-backed complexity analysis
-task-master analyze-complexity --research
+node scripts/dev.js analyze-complexity --research
 ```
 
 Notes:
@@ -335,13 +237,13 @@ The `expand` command automatically checks for and uses complexity analysis if av
 
 ```bash
 # Expand a task, using complexity report recommendations if available
-task-master expand --id=8
+node scripts/dev.js expand --id=8
 
 # Expand all tasks, prioritizing by complexity score if a report exists
-task-master expand --all
+node scripts/dev.js expand --all
 
 # Override recommendations with explicit values
-task-master expand --id=8 --num=5 --prompt="Custom prompt"
+node scripts/dev.js expand --id=8 --num=5 --prompt="Custom prompt"
 ```
 
 When a complexity report exists:
@@ -368,7 +270,7 @@ The output report structure is:
       "recommendedSubtasks": 6,
       "expansionPrompt": "Create subtasks that handle detecting...",
       "reasoning": "This task requires sophisticated logic...",
-      "expansionCommand": "task-master expand --id=8 --num=6 --prompt=\"Create subtasks...\" --research"
+      "expansionCommand": "node scripts/dev.js expand --id=8 --num=6 --prompt=\"Create subtasks...\" --research"
     },
     // More tasks sorted by complexity score (highest first)
   ]
@@ -381,10 +283,10 @@ The `next` command helps you determine which task to work on next based on depen
 
 ```bash
 # Show the next task to work on
-task-master next
+node scripts/dev.js next
 
 # Specify a different tasks file
-task-master next --file=custom-tasks.json
+node scripts/dev.js next --file=custom-tasks.json
 ```
 
 This command:
@@ -411,16 +313,16 @@ The `show` command allows you to view detailed information about a specific task
 
 ```bash
 # Show details for a specific task
-task-master show 1
+node scripts/dev.js show 1
 
 # Alternative syntax with --id option
-task-master show --id=1
+node scripts/dev.js show --id=1
 
 # Show details for a subtask
-task-master show --id=1.2
+node scripts/dev.js show --id=1.2
 
 # Specify a different tasks file
-task-master show 3 --file=custom-tasks.json
+node scripts/dev.js show 3 --file=custom-tasks.json
 ```
 
 This command:
@@ -439,3 +341,36 @@ This command:
    - For subtasks, provides a link to view the parent task
 
 This command is particularly useful when you need to examine a specific task in detail before implementing it or when you want to check the status and details of a particular task.
+
+## Managing Task Dependencies
+
+The `add-dependency` and `remove-dependency` commands allow you to manage task dependencies:
+
+```bash
+# Add a dependency to a task
+node scripts/dev.js add-dependency --id=<id> --depends-on=<id>
+
+# Remove a dependency from a task
+node scripts/dev.js remove-dependency --id=<id> --depends-on=<id>
+```
+
+These commands:
+
+1. **Allow precise dependency management**:
+   - Add dependencies between tasks with automatic validation
+   - Remove dependencies when they're no longer needed
+   - Update task files automatically after changes
+
+2. **Include validation checks**:
+   - Prevent circular dependencies (a task depending on itself)
+   - Prevent duplicate dependencies
+   - Verify that both tasks exist before adding/removing dependencies
+   - Check if dependencies exist before attempting to remove them
+
+3. **Provide clear feedback**:
+   - Success messages confirm when dependencies are added/removed
+   - Error messages explain why operations failed (if applicable)
+
+4. **Automatically update task files**:
+   - Regenerates task files to reflect dependency changes
+   - Ensures tasks and their files stay synchronized

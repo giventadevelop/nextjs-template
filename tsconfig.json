@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@/zodAutoGenSchemas": [
+        "./prisma/zod/index"
       ]
     },
     "baseUrl": "./"
