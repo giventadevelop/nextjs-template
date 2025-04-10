@@ -1,19 +1,19 @@
 {
   "hasSrc": true,
   "packages": [
-    "shadcn-ui",
-    "drizzle",
     "clerk",
-    "trpc"
+    "shadcn-ui",
+    "prisma",
+    "trpc",
+    "stripe"
   ],
   "preferredPackageManager": "npm",
   "t3": false,
   "alias": "@",
   "analytics": true,
   "rootPath": "src/",
+  "auth": "clerk",
   "componentLib": "shadcn-ui",
-  "driver": "pg",
-  "provider": "supabase",
-  "orm": "drizzle",
-  "auth": "clerk"
+  "orm": "prisma",
+  "driver": "sqlite"
 }

@@ -1,27 +1,36 @@
-import { checkAuth } from "@/lib/auth/utils";
-import { Toaster } from "@/components/ui/sonner";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
-import { ClerkProvider } from "@clerk/nextjs";
-import TrpcProvider from "@/lib/trpc/Provider";
-import { cookies } from "next/headers";
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  await checkAuth();
-  return ( <main>
-<ClerkProvider>
-<TrpcProvider cookies={cookies().toString()}><div className="flex h-screen">
-<Sidebar />
-<main className="flex-1 md:p-8 pt-2 p-8 overflow-y-auto">
-<Navbar />
-{children}
-</main>
-</div></TrpcProvider>
-</ClerkProvider>
+import { auth } from "@clerk/nextjs";
+import { redirect } from "next/navigation";
+import { ReactNode } from "react";
 
-<Toaster richColors />
-</main> )
+export default function AppLayout({ children }: { children: ReactNode }) {
+  const { userId } = auth();
+
+  if (!userId) {
+    redirect("/sign-in");
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex min-h-screen">
+        {/* Sidebar */}
+        <div className="w-64 bg-white border-r border-gray-200 p-4">
+          <div className="text-lg font-bold mb-8">TaskMngr</div>
+          {/* Add sidebar navigation items here */}
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1">
+          {/* Top navbar */}
+          <div className="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between">
+            <h1 className="text-xl font-semibold">Dashboard</h1>
+          </div>
+
+          {/* Page content */}
+          <div className="p-8">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
