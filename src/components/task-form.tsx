@@ -18,30 +18,32 @@ interface TaskFormProps {
 
 export function TaskForm({ task, mode = 'create' }: TaskFormProps) {
   const router = useRouter()
-  const [error, setError] = useState<string>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setIsSubmitting(true)
+
     try {
-      if (mode === 'edit' && task) {
-        await updateTask(task.id, formData)
-      } else {
+      const formData = new FormData(event.currentTarget)
+
+      if (mode === 'create') {
         await createTask(formData)
+      } else {
+        await updateTask(task!.id, formData)
       }
-      router.push('/tasks')
-      router.refresh()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
+
+      router.push('/dashboard')
+    } catch (error) {
+      console.error('Failed to save task:', error)
+      alert('Failed to save task. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="rounded-md bg-red-50 p-4 text-sm text-red-500">
-          {error}
-        </div>
-      )}
-
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700">
           Title
@@ -81,7 +83,7 @@ export function TaskForm({ task, mode = 'create' }: TaskFormProps) {
             className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="pending">Pending</option>
-            <option value="in-progress">In Progress</option>
+            <option value="in_progress">In Progress</option>
             <option value="completed">Completed</option>
           </select>
         </div>
@@ -116,19 +118,20 @@ export function TaskForm({ task, mode = 'create' }: TaskFormProps) {
         />
       </div>
 
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end space-x-3">
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => router.push('/dashboard')}
           className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          disabled={isSubmitting}
+          className="rounded-md bg-[#39E079] px-4 py-2 text-sm font-medium text-[#141414] hover:bg-[#32c96d] focus:outline-none focus:ring-2 focus:ring-[#39E079] focus:ring-offset-2 disabled:opacity-50"
         >
-          {mode === 'create' ? 'Create Task' : 'Update Task'}
+          {isSubmitting ? 'Saving...' : mode === 'create' ? 'Create Task' : 'Update Task'}
         </button>
       </div>
     </form>

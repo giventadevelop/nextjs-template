@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { useTheme } from "next-themes";
 
 export default function Page() {
@@ -11,19 +10,17 @@ export default function Page() {
       <div className="space-y-4 my-4">
         <div>
           <h3 className="text-lg font-medium">Appearance</h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-gray-500">
             Customize the appearance of the app. Automatically switch between
             day and night themes.
           </p>
         </div>
-        <Button
-          asChild
-          variant={"ghost"}
-          className="w-fit h-fit"
+        <button
           onClick={() => setTheme("light")}
+          className="w-fit h-fit p-2 hover:bg-gray-100 rounded-md"
         >
           <div className="flex flex-col">
-            <div className="items-center rounded-md border-2 border-muted p-1 hover:border-accent">
+            <div className="items-center rounded-md border-2 border-gray-200 p-1 hover:border-gray-300">
               <div className="space-y-2 rounded-sm bg-[#ecedef] p-2">
                 <div className="space-y-2 rounded-md bg-white p-2 shadow-sm">
                   <div className="h-2 w-[80px] rounded-lg bg-[#ecedef]" />
@@ -43,15 +40,13 @@ export default function Page() {
               Light
             </span>
           </div>
-        </Button>
-        <Button
-          asChild
-          variant={"ghost"}
+        </button>
+        <button
           onClick={() => setTheme("dark")}
-          className="w-fit h-fit"
+          className="w-fit h-fit p-2 hover:bg-gray-100 rounded-md"
         >
           <div className="flex flex-col">
-            <div className="items-center rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground">
+            <div className="items-center rounded-md border-2 border-gray-200 bg-gray-50 p-1 hover:border-gray-300">
               <div className="space-y-2 rounded-sm bg-neutral-950 p-2">
                 <div className="space-y-2 rounded-md bg-neutral-800 p-2 shadow-sm">
                   <div className="h-2 w-[80px] rounded-lg bg-neutral-400" />
@@ -71,15 +66,13 @@ export default function Page() {
               Dark
             </span>
           </div>
-        </Button>
-        <Button
-          asChild
-          variant={"ghost"}
+        </button>
+        <button
           onClick={() => setTheme("system")}
-          className="w-fit h-fit"
+          className="w-fit h-fit p-2 hover:bg-gray-100 rounded-md"
         >
           <div className="flex flex-col">
-            <div className="items-center rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground">
+            <div className="items-center rounded-md border-2 border-gray-200 bg-gray-50 p-1 hover:border-gray-300">
               <div className="space-y-2 rounded-sm bg-neutral-300 p-2">
                 <div className="space-y-2 rounded-md bg-neutral-600 p-2 shadow-sm">
                   <div className="h-2 w-[80px] rounded-lg bg-neutral-400" />
@@ -99,7 +92,7 @@ export default function Page() {
               System
             </span>
           </div>
-        </Button>
+        </button>
       </div>
     </div>
   );

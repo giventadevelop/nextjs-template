@@ -24,13 +24,13 @@ export function TaskList({ tasks }: TaskListProps) {
   async function handleDelete(taskId: string) {
     if (confirm('Are you sure you want to delete this task?')) {
       await deleteTask(taskId)
-      router.refresh()
+      router.push('/dashboard')
     }
   }
 
   async function handleToggleCompletion(taskId: string) {
     await toggleTaskCompletion(taskId)
-    router.refresh()
+    router.push('/dashboard')
   }
 
   function getPriorityColor(priority: string) {
@@ -46,6 +46,19 @@ export function TaskList({ tasks }: TaskListProps) {
     }
   }
 
+  function getStatusColor(status: string) {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'text-green-600 bg-green-50'
+      case 'in_progress':
+        return 'text-blue-600 bg-blue-50'
+      case 'pending':
+        return 'text-yellow-600 bg-yellow-50'
+      default:
+        return 'text-gray-600 bg-gray-50'
+    }
+  }
+
   function formatDate(date: Date) {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
@@ -54,54 +67,67 @@ export function TaskList({ tasks }: TaskListProps) {
     })
   }
 
+  if (tasks.length === 0) {
+    return (
+      <tr>
+        <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+          No tasks found. Create your first task!
+        </td>
+      </tr>
+    )
+  }
+
   return (
-    <div className="space-y-4">
+    <>
       {tasks.map((task) => (
-        <div
-          key={task.id}
-          className="rounded-lg border bg-white p-4 shadow-sm transition-all hover:shadow-md"
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-3">
+        <tr key={task.id} className="hover:bg-gray-50">
+          <td className="px-6 py-4 whitespace-nowrap">
+            <div className="flex items-center">
               <input
                 type="checkbox"
                 checked={task.completed}
                 onChange={() => handleToggleCompletion(task.id)}
-                className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 rounded border-gray-300 text-[#39E079] focus:ring-[#39E079]"
               />
-              <div>
-                <h3
-                  className={`text-lg font-medium ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900'
-                    }`}
-                >
-                  {task.title}
-                </h3>
-                {task.description && (
-                  <p className="mt-1 text-sm text-gray-500">{task.description}</p>
-                )}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getPriorityColor(
-                      task.priority
-                    )}`}
-                  >
-                    {task.priority}
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
-                    {task.status}
-                  </span>
-                  {task.dueDate && (
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                      Due {formatDate(task.dueDate)}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <span
+                className={`ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusColor(
+                  task.status
+                )}`}
+              >
+                {task.status}
+              </span>
             </div>
-            <div className="flex space-x-2">
+          </td>
+          <td className="px-6 py-4">
+            <div className="flex flex-col">
+              <span
+                className={`text-sm font-medium ${task.completed ? 'text-gray-400 line-through' : 'text-gray-900'
+                  }`}
+              >
+                {task.title}
+              </span>
+              {task.description && (
+                <span className="mt-1 text-xs text-gray-500">{task.description}</span>
+              )}
+            </div>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap">
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getPriorityColor(
+                task.priority
+              )}`}
+            >
+              {task.priority}
+            </span>
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            {task.dueDate ? formatDate(task.dueDate) : '-'}
+          </td>
+          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => router.push(`/tasks/${task.id}/edit`)}
-                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
+                className="text-gray-400 hover:text-gray-500"
               >
                 <svg
                   className="h-5 w-5"
@@ -119,7 +145,7 @@ export function TaskList({ tasks }: TaskListProps) {
               </button>
               <button
                 onClick={() => handleDelete(task.id)}
-                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-500"
+                className="text-gray-400 hover:text-red-500"
               >
                 <svg
                   className="h-5 w-5"
@@ -136,14 +162,9 @@ export function TaskList({ tasks }: TaskListProps) {
                 </svg>
               </button>
             </div>
-          </div>
-        </div>
+          </td>
+        </tr>
       ))}
-      {tasks.length === 0 && (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-gray-500">No tasks found. Create your first task!</p>
-        </div>
-      )}
-    </div>
+    </>
   )
 }

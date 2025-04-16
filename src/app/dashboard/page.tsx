@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 interface Task {
   id: string;
   title: string;
+  status: string;
   completed: boolean;
   priority: string;
 }
@@ -24,12 +25,20 @@ export default async function DashboardPage() {
     orderBy: {
       createdAt: "desc",
     },
+    select: {
+      id: true,
+      title: true,
+      status: true,
+      completed: true,
+      priority: true,
+    },
   });
 
   const stats = {
     total: tasks.length,
-    completed: tasks.filter((task: Task) => task.completed).length,
-    pending: tasks.filter((task: Task) => !task.completed).length,
+    completed: tasks.filter((task: Task) => task.status === 'completed').length,
+    inProgress: tasks.filter((task: Task) => task.status === 'in_progress').length,
+    pending: tasks.filter((task: Task) => task.status === 'pending').length,
     highPriority: tasks.filter((task: Task) => task.priority === "high").length,
   };
 
@@ -53,17 +62,21 @@ export default async function DashboardPage() {
           </div>
 
           {/* Task Statistics */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-lg bg-white p-6 shadow-sm">
               <h3 className="text-sm font-medium text-gray-500">Total Tasks</h3>
               <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Completed Tasks</h3>
+              <h3 className="text-sm font-medium text-gray-500">Completed</h3>
               <p className="mt-2 text-3xl font-bold text-green-600">{stats.completed}</p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Pending Tasks</h3>
+              <h3 className="text-sm font-medium text-gray-500">In Progress</h3>
+              <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inProgress}</p>
+            </div>
+            <div className="rounded-lg bg-white p-6 shadow-sm">
+              <h3 className="text-sm font-medium text-gray-500">Pending</h3>
               <p className="mt-2 text-3xl font-bold text-yellow-600">{stats.pending}</p>
             </div>
             <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -75,7 +88,7 @@ export default async function DashboardPage() {
           {/* Quick Actions */}
           <div className="rounded-lg bg-white p-6 shadow-sm">
             <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Link
                 href="/tasks"
                 className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -89,10 +102,16 @@ export default async function DashboardPage() {
                 Create New Task
               </Link>
               <Link
-                href="/tasks?filter=high"
+                href="/tasks?status=in_progress"
                 className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
               >
-                View High Priority Tasks
+                View In Progress
+              </Link>
+              <Link
+                href="/tasks?priority=high"
+                className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                High Priority Tasks
               </Link>
             </div>
           </div>
@@ -119,10 +138,20 @@ export default async function DashboardPage() {
                       className="h-4 w-4 rounded border-gray-300 text-[#39E079]"
                     />
                     <span
-                      className={`ml-3 text-sm ${task.completed ? 'text-gray-500 line-through' : 'text-gray-900'
+                      className={`ml-3 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'
                         }`}
                     >
                       {task.title}
+                    </span>
+                    <span
+                      className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${task.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : task.status === 'in_progress'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}
+                    >
+                      {task.status}
                     </span>
                   </div>
                   <Link
