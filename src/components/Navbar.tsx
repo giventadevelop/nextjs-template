@@ -1,45 +1,20 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { useState } from "react";
-import { usePathname } from "next/navigation";
 
-import { Button } from "@/components/ui/button";
-
-import { AlignRight } from "lucide-react";
-import { defaultLinks } from "@/config/nav";
-
-export default function Navbar() {
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
+export function Navbar() {
   return (
-    <div className="md:hidden border-b mb-4 pb-2 w-full">
-      <nav className="flex justify-between w-full items-center">
-        <div className="font-semibold text-lg">Logo</div>
-        <Button variant="ghost" onClick={() => setOpen(!open)}>
-          <AlignRight />
-        </Button>
-      </nav>
-      {open ? (
-        <div className="my-4 p-4 bg-muted">
-          <ul className="space-y-2">
-            {defaultLinks.map((link) => (
-              <li key={link.title} onClick={() => setOpen(false)} className="">
-                <Link
-                  href={link.href}
-                  className={
-                    pathname === link.href
-                      ? "text-primary hover:text-primary font-semibold"
-                      : "text-muted-foreground hover:text-primary"
-                  }
-                >
-                  {link.title}
-                </Link>
-              </li>
-            ))}
-          </ul>
+    <div className="h-16 bg-white border-b border-gray-200">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 h-full">
+        <div className="flex items-center justify-between h-full">
+          <Link href="/" className="flex items-center gap-2">
+            <span className="text-xl">📋</span>
+            <span className="text-xl font-bold text-gray-900">TaskMngr</span>
+          </Link>
+          <UserButton afterSignOutUrl="/" />
         </div>
-      ) : null}
+      </div>
     </div>
   );
 }
