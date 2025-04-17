@@ -1,9 +1,12 @@
 import type { Config } from 'tailwindcss';
-import defaultTheme from 'tailwindcss/defaultTheme';
 
-const config: Config = {
-  darkMode: "class",
-  content: ["src/app/**/*.{ts,tsx}", "src/components/**/*.{ts,tsx}"],
+const config = {
+  content: [
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  darkMode: ["class"],
   theme: {
     container: {
       center: true,
@@ -49,12 +52,9 @@ const config: Config = {
         },
       },
       borderRadius: {
-        lg: `var(--radius)`,
-        md: `calc(var(--radius) - 2px)`,
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
-      },
-      fontFamily: {
-        sans: ["var(--font-sans)", ...(defaultTheme.fontFamily.sans as string[])],
       },
       keyframes: {
         "accordion-down": {
@@ -73,6 +73,6 @@ const config: Config = {
     },
   },
   plugins: [require("tailwindcss-animate")],
-};
+} satisfies Config;
 
 export default config;
