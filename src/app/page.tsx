@@ -2,7 +2,7 @@ import { auth, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default async function Page() {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">

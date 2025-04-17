@@ -12,7 +12,15 @@ export function Navbar() {
             <span className="text-xl">📋</span>
             <span className="text-xl font-bold text-gray-900">TaskMngr</span>
           </Link>
-          <UserButton afterSignOutUrl="/" />
+          <div className="flex items-center gap-4">
+            <Link
+              href="/profile"
+              className="text-gray-600 hover:text-gray-900"
+            >
+              Profile
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </div>
         </div>
       </div>
     </div>
