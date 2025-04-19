@@ -72,7 +72,7 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
     }
   };
 
-  const handleCancel = async () => {
+  const handleManageSubscription = async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -89,19 +89,11 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
           stripeCustomerId: currentSubscription.stripeCustomerId,
           isCurrentPlan: true,
           stripePriceId: currentSubscription.stripePriceId,
-          email: user.emailAddresses[0].emailAddress,
-          userId,
+          stripeSubscriptionId: currentSubscription.stripeSubscriptionId,
         }),
       });
 
-      const responseText = await response.text();
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse response:', responseText);
-        throw new Error('Invalid response from server');
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
@@ -120,7 +112,42 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
     }
   };
 
-  const isSubscribed = currentSubscription?.stripePriceId === PRO_PLAN.stripePriceId;
+  const handleCancelSubscription = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (!currentSubscription?.stripeSubscriptionId || !userId) {
+        throw new Error('Required information not available');
+      }
+
+      const response = await fetch('/api/billing/cancel-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stripeSubscriptionId: currentSubscription.stripeSubscriptionId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      setError(error instanceof Error ? error.message : 'An error occurred while canceling your subscription');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isSubscribed = currentSubscription?.stripePriceId === PRO_PLAN.stripePriceId &&
+    currentSubscription?.status !== 'canceled';
+
+  const showManageButton = isSubscribed && currentSubscription?.stripeSubscriptionId;
 
   return (
     <div className="max-w-2xl mx-auto px-6 lg:px-8">
@@ -157,18 +184,42 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
             {error}
           </div>
         )}
-        <Button
-          className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
-          size="lg"
-          onClick={isSubscribed ? handleCancel : handleSubscribe}
-          disabled={isLoading}
-        >
-          {isLoading
-            ? 'Processing...'
-            : isSubscribed
-              ? 'Manage Subscription'
-              : 'Subscribe Now'}
-        </Button>
+        {currentSubscription?.status === 'canceled' && (
+          <div className="mb-4 p-3 text-sm text-orange-800 bg-orange-100 rounded-md">
+            Your subscription has been canceled. You can subscribe again to restore access.
+          </div>
+        )}
+        <div className="space-y-4">
+          {showManageButton ? (
+            <>
+              <Button
+                className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
+                size="lg"
+                onClick={handleManageSubscription}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Manage Subscription'}
+              </Button>
+              <Button
+                className="w-full bg-red-500 hover:bg-red-600 text-white"
+                size="lg"
+                onClick={handleCancelSubscription}
+                disabled={isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Cancel Subscription'}
+              </Button>
+            </>
+          ) : (
+            <Button
+              className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
+              size="lg"
+              onClick={handleSubscribe}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : 'Subscribe Now'}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

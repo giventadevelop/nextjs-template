@@ -36,16 +36,16 @@ export async function POST(req: Request) {
       );
     }
 
-    let event: Stripe.Event;
+  let event: Stripe.Event;
 
-    try {
-      event = stripe.webhooks.constructEvent(
+  try {
+    event = stripe.webhooks.constructEvent(
         rawBody,
-        signature,
+      signature,
         webhookSecret
-      );
+    );
       console.log(`Webhook received: ${event.type} (ID: ${event.id})`);
-    } catch (err) {
+  } catch (err) {
       const error = err as Error;
       console.error('Webhook signature verification failed:', {
         error: error.message,
@@ -54,9 +54,9 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { error: `Webhook Error: ${error.message}` },
-        { status: 400 }
-      );
-    }
+      { status: 400 }
+    );
+  }
 
     // Handle subscription events
     if (event.type === "customer.subscription.created" ||
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
           }),
           // Mark the event as processed
           prisma.processedStripeEvent.create({
-            data: {
+          data: {
               eventId: event.id,
               type: event.type,
               processedAt: new Date(),

@@ -31,15 +31,39 @@ const defaultFormData: ProfileFormData = {
   notes: null,
 };
 
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[...Array(8)].map((_, i) => (
+          <div key={i}>
+            <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+            <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="h-4 w-24 bg-gray-200 rounded mb-2"></div>
+        <div className="h-32 bg-gray-200 rounded"></div>
+      </div>
+      <div className="flex justify-end">
+        <div className="h-10 w-32 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  );
+}
+
 export default function ProfileForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProfileFormData>(defaultFormData);
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setInitialLoading(true);
         const response = await fetch("/api/profile");
         if (!response.ok) {
           throw new Error("Failed to fetch profile");
@@ -59,6 +83,8 @@ export default function ProfileForm() {
       } catch (error) {
         console.error("Error fetching profile:", error);
         setError("Failed to fetch profile data");
+      } finally {
+        setInitialLoading(false);
       }
     };
 
@@ -114,6 +140,10 @@ export default function ProfileForm() {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return <LoadingSkeleton />;
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl mx-auto p-4">
