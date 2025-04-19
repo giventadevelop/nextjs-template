@@ -150,16 +150,16 @@ export async function POST(req: Request) {
                 userId: userId,
               },
             },
-            line_items: [
-              {
+        line_items: [
+          {
                 price: body.stripePriceId,
-                quantity: 1,
-              },
-            ],
-            metadata: {
+            quantity: 1,
+          },
+        ],
+        metadata: {
               userId: userId,
-            },
-          });
+        },
+      });
 
           if (!session.url) {
             throw new Error('Failed to create checkout session');

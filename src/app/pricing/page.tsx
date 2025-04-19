@@ -4,7 +4,6 @@ import { Metadata } from 'next';
 import { PricingPlans } from '@/components/subscription/PricingPlans';
 import { db } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { Navbar } from '@/components/Navbar';
 
 const messages = {
   'subscription-required': {
@@ -59,26 +58,23 @@ export default async function PricingPage({ searchParams }: PageProps) {
   const messageConfig = message ? messages[message] : null;
 
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
-        <div className="container mx-auto px-4">
-          {messageConfig && (
-            <div className={`mb-8 p-4 border rounded-lg text-center ${messageConfig.className}`}>
-              <p>{messageConfig.text}</p>
-            </div>
-          )}
-          <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Simple, Transparent Pricing
-            </h1>
-            <p className="text-xl text-gray-600">
-              Choose the plan that best fits your needs
-            </p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
+      <div className="container mx-auto px-4">
+        {messageConfig && (
+          <div className={`mb-8 p-4 border rounded-lg text-center ${messageConfig.className}`}>
+            <p>{messageConfig.text}</p>
           </div>
-          <PricingPlans currentSubscription={subscription} />
+        )}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Simple, Transparent Pricing
+          </h1>
+          <p className="text-xl text-gray-600">
+            Choose the plan that best fits your needs
+          </p>
         </div>
+        <PricingPlans currentSubscription={subscription} />
       </div>
-    </>
+    </div>
   );
 }

@@ -1,56 +1,20 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { Inter } from "next/font/google";
-import { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
-import TrpcProvider from "@/lib/trpc/Provider";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
+import TrpcProvider from "@/lib/trpc/Provider";
 import Script from "next/script";
+import Header from "@/components/Header";
+import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
-
-export const metadata: Metadata = {
-  title: "TaskMngr - Your Task Management Solution",
-  description: "Manage your tasks efficiently with TaskMngr",
-};
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
 
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Get headers early to avoid issues with dynamic usage
   const headersList = await headers();
-  const cookieHeader = headersList.get('cookie') ?? '';
-
-  // Debug Clerk configuration
-  if (process.env.NODE_ENV === 'development') {
-    console.log('Clerk Configuration:', {
-      publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.substring(0, 10) + '...',
-      signInUrl: process.env.NEXT_PUBLIC_CLERK_SIGN_IN_URL,
-      signUpUrl: process.env.NEXT_PUBLIC_CLERK_SIGN_UP_URL,
-      afterSignInUrl: process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL,
-      afterSignUpUrl: process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL,
-    });
-  }
-
-  if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    console.error('Missing NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY');
-    return (
-      <html lang="en">
-        <body className={inter.className}>
-          <div className="p-4">
-            <h1 className="text-red-500">Configuration Error</h1>
-            <p>Please check your environment variables.</p>
-          </div>
-        </body>
-      </html>
-    );
-  }
+  const cookies = headersList.get("cookie") ?? "";
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -80,7 +44,8 @@ export default async function RootLayout({
             },
           }}
         >
-          <TrpcProvider cookies={cookieHeader}>
+          <TrpcProvider cookies={cookies}>
+            <Header />
             {children}
           </TrpcProvider>
         </ClerkProvider>

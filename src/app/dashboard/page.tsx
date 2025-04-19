@@ -2,7 +2,6 @@ import { auth } from "@clerk/nextjs";
 import { headers, cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { Navbar } from "@/components/Navbar";
 import { DashboardContent } from "@/components/DashboardContent";
 import { Suspense } from "react";
 
@@ -123,20 +122,17 @@ export default async function DashboardPage({ searchParams }: PageProps) {
   };
 
   return (
-    <>
-      <Navbar />
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#39E079] mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading your dashboard...</p>
-            </div>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#39E079] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard...</p>
           </div>
-        }
-      >
-        <DashboardContent tasks={tasks} stats={stats} />
-      </Suspense>
-    </>
+        </div>
+      }
+    >
+      <DashboardContent tasks={tasks} stats={stats} />
+    </Suspense>
   );
 }
