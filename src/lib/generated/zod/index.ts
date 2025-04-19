@@ -20,6 +20,8 @@ export const UserProfileScalarFieldEnumSchema = z.enum(['id','userId','firstName
 
 export const ProcessedStripeEventScalarFieldEnumSchema = z.enum(['id','eventId','type','processedAt']);
 
+export const TicketTransactionScalarFieldEnumSchema = z.enum(['id','email','ticketType','quantity','pricePerUnit','totalAmount','status','purchaseDate','eventId','userId']);
+
 export const SortOrderSchema = z.enum(['asc','desc']);
 
 export const QueryModeSchema = z.enum(['default','insensitive']);
@@ -99,6 +101,25 @@ export const ProcessedStripeEventSchema = z.object({
 })
 
 export type ProcessedStripeEvent = z.infer<typeof ProcessedStripeEventSchema>
+
+/////////////////////////////////////////
+// TICKET TRANSACTION SCHEMA
+/////////////////////////////////////////
+
+export const TicketTransactionSchema = z.object({
+  id: z.string().cuid(),
+  email: z.string(),
+  ticketType: z.string(),
+  quantity: z.number().int(),
+  pricePerUnit: z.number(),
+  totalAmount: z.number(),
+  status: z.string(),
+  purchaseDate: z.coerce.date(),
+  eventId: z.string(),
+  userId: z.string().nullable(),
+})
+
+export type TicketTransaction = z.infer<typeof TicketTransactionSchema>
 
 /////////////////////////////////////////
 // SELECT & INCLUDE
@@ -181,6 +202,22 @@ export const ProcessedStripeEventSelectSchema: z.ZodType<Prisma.ProcessedStripeE
   eventId: z.boolean().optional(),
   type: z.boolean().optional(),
   processedAt: z.boolean().optional(),
+}).strict()
+
+// TICKET TRANSACTION
+//------------------------------------------------------
+
+export const TicketTransactionSelectSchema: z.ZodType<Prisma.TicketTransactionSelect> = z.object({
+  id: z.boolean().optional(),
+  email: z.boolean().optional(),
+  ticketType: z.boolean().optional(),
+  quantity: z.boolean().optional(),
+  pricePerUnit: z.boolean().optional(),
+  totalAmount: z.boolean().optional(),
+  status: z.boolean().optional(),
+  purchaseDate: z.boolean().optional(),
+  eventId: z.boolean().optional(),
+  userId: z.boolean().optional(),
 }).strict()
 
 
@@ -532,6 +569,88 @@ export const ProcessedStripeEventScalarWhereWithAggregatesInputSchema: z.ZodType
   processedAt: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
 }).strict();
 
+export const TicketTransactionWhereInputSchema: z.ZodType<Prisma.TicketTransactionWhereInput> = z.object({
+  AND: z.union([ z.lazy(() => TicketTransactionWhereInputSchema),z.lazy(() => TicketTransactionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => TicketTransactionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => TicketTransactionWhereInputSchema),z.lazy(() => TicketTransactionWhereInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  email: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  ticketType: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  quantity: z.union([ z.lazy(() => IntFilterSchema),z.number() ]).optional(),
+  pricePerUnit: z.union([ z.lazy(() => FloatFilterSchema),z.number() ]).optional(),
+  totalAmount: z.union([ z.lazy(() => FloatFilterSchema),z.number() ]).optional(),
+  status: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  purchaseDate: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  userId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+}).strict();
+
+export const TicketTransactionOrderByWithRelationInputSchema: z.ZodType<Prisma.TicketTransactionOrderByWithRelationInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  email: z.lazy(() => SortOrderSchema).optional(),
+  ticketType: z.lazy(() => SortOrderSchema).optional(),
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  purchaseDate: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  userId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+}).strict();
+
+export const TicketTransactionWhereUniqueInputSchema: z.ZodType<Prisma.TicketTransactionWhereUniqueInput> = z.object({
+  id: z.string().cuid()
+})
+.and(z.object({
+  id: z.string().cuid().optional(),
+  AND: z.union([ z.lazy(() => TicketTransactionWhereInputSchema),z.lazy(() => TicketTransactionWhereInputSchema).array() ]).optional(),
+  OR: z.lazy(() => TicketTransactionWhereInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => TicketTransactionWhereInputSchema),z.lazy(() => TicketTransactionWhereInputSchema).array() ]).optional(),
+  email: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  ticketType: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  quantity: z.union([ z.lazy(() => IntFilterSchema),z.number().int() ]).optional(),
+  pricePerUnit: z.union([ z.lazy(() => FloatFilterSchema),z.number() ]).optional(),
+  totalAmount: z.union([ z.lazy(() => FloatFilterSchema),z.number() ]).optional(),
+  status: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  purchaseDate: z.union([ z.lazy(() => DateTimeFilterSchema),z.coerce.date() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringFilterSchema),z.string() ]).optional(),
+  userId: z.union([ z.lazy(() => StringNullableFilterSchema),z.string() ]).optional().nullable(),
+}).strict());
+
+export const TicketTransactionOrderByWithAggregationInputSchema: z.ZodType<Prisma.TicketTransactionOrderByWithAggregationInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  email: z.lazy(() => SortOrderSchema).optional(),
+  ticketType: z.lazy(() => SortOrderSchema).optional(),
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  purchaseDate: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  userId: z.union([ z.lazy(() => SortOrderSchema),z.lazy(() => SortOrderInputSchema) ]).optional(),
+  _count: z.lazy(() => TicketTransactionCountOrderByAggregateInputSchema).optional(),
+  _avg: z.lazy(() => TicketTransactionAvgOrderByAggregateInputSchema).optional(),
+  _max: z.lazy(() => TicketTransactionMaxOrderByAggregateInputSchema).optional(),
+  _min: z.lazy(() => TicketTransactionMinOrderByAggregateInputSchema).optional(),
+  _sum: z.lazy(() => TicketTransactionSumOrderByAggregateInputSchema).optional()
+}).strict();
+
+export const TicketTransactionScalarWhereWithAggregatesInputSchema: z.ZodType<Prisma.TicketTransactionScalarWhereWithAggregatesInput> = z.object({
+  AND: z.union([ z.lazy(() => TicketTransactionScalarWhereWithAggregatesInputSchema),z.lazy(() => TicketTransactionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  OR: z.lazy(() => TicketTransactionScalarWhereWithAggregatesInputSchema).array().optional(),
+  NOT: z.union([ z.lazy(() => TicketTransactionScalarWhereWithAggregatesInputSchema),z.lazy(() => TicketTransactionScalarWhereWithAggregatesInputSchema).array() ]).optional(),
+  id: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  email: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  ticketType: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  quantity: z.union([ z.lazy(() => IntWithAggregatesFilterSchema),z.number() ]).optional(),
+  pricePerUnit: z.union([ z.lazy(() => FloatWithAggregatesFilterSchema),z.number() ]).optional(),
+  totalAmount: z.union([ z.lazy(() => FloatWithAggregatesFilterSchema),z.number() ]).optional(),
+  status: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  purchaseDate: z.union([ z.lazy(() => DateTimeWithAggregatesFilterSchema),z.coerce.date() ]).optional(),
+  eventId: z.union([ z.lazy(() => StringWithAggregatesFilterSchema),z.string() ]).optional(),
+  userId: z.union([ z.lazy(() => StringNullableWithAggregatesFilterSchema),z.string() ]).optional().nullable(),
+}).strict();
+
 export const SubscriptionCreateInputSchema: z.ZodType<Prisma.SubscriptionCreateInput> = z.object({
   stripeCustomerId: z.string().optional().nullable(),
   stripeSubscriptionId: z.string().optional().nullable(),
@@ -864,6 +983,97 @@ export const ProcessedStripeEventUncheckedUpdateManyInputSchema: z.ZodType<Prism
   processedAt: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
 }).strict();
 
+export const TicketTransactionCreateInputSchema: z.ZodType<Prisma.TicketTransactionCreateInput> = z.object({
+  id: z.string().cuid().optional(),
+  email: z.string(),
+  ticketType: z.string(),
+  quantity: z.number().int(),
+  pricePerUnit: z.number(),
+  totalAmount: z.number(),
+  status: z.string().optional(),
+  purchaseDate: z.coerce.date().optional(),
+  eventId: z.string(),
+  userId: z.string().optional().nullable()
+}).strict();
+
+export const TicketTransactionUncheckedCreateInputSchema: z.ZodType<Prisma.TicketTransactionUncheckedCreateInput> = z.object({
+  id: z.string().cuid().optional(),
+  email: z.string(),
+  ticketType: z.string(),
+  quantity: z.number().int(),
+  pricePerUnit: z.number(),
+  totalAmount: z.number(),
+  status: z.string().optional(),
+  purchaseDate: z.coerce.date().optional(),
+  eventId: z.string(),
+  userId: z.string().optional().nullable()
+}).strict();
+
+export const TicketTransactionUpdateInputSchema: z.ZodType<Prisma.TicketTransactionUpdateInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  ticketType: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  quantity: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  pricePerUnit: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  totalAmount: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  purchaseDate: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  userId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+}).strict();
+
+export const TicketTransactionUncheckedUpdateInputSchema: z.ZodType<Prisma.TicketTransactionUncheckedUpdateInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  ticketType: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  quantity: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  pricePerUnit: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  totalAmount: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  purchaseDate: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  userId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+}).strict();
+
+export const TicketTransactionCreateManyInputSchema: z.ZodType<Prisma.TicketTransactionCreateManyInput> = z.object({
+  id: z.string().cuid().optional(),
+  email: z.string(),
+  ticketType: z.string(),
+  quantity: z.number().int(),
+  pricePerUnit: z.number(),
+  totalAmount: z.number(),
+  status: z.string().optional(),
+  purchaseDate: z.coerce.date().optional(),
+  eventId: z.string(),
+  userId: z.string().optional().nullable()
+}).strict();
+
+export const TicketTransactionUpdateManyMutationInputSchema: z.ZodType<Prisma.TicketTransactionUpdateManyMutationInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  ticketType: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  quantity: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  pricePerUnit: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  totalAmount: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  purchaseDate: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  userId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+}).strict();
+
+export const TicketTransactionUncheckedUpdateManyInputSchema: z.ZodType<Prisma.TicketTransactionUncheckedUpdateManyInput> = z.object({
+  id: z.union([ z.string().cuid(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  email: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  ticketType: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  quantity: z.union([ z.number().int(),z.lazy(() => IntFieldUpdateOperationsInputSchema) ]).optional(),
+  pricePerUnit: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  totalAmount: z.union([ z.number(),z.lazy(() => FloatFieldUpdateOperationsInputSchema) ]).optional(),
+  status: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  purchaseDate: z.union([ z.coerce.date(),z.lazy(() => DateTimeFieldUpdateOperationsInputSchema) ]).optional(),
+  eventId: z.union([ z.string(),z.lazy(() => StringFieldUpdateOperationsInputSchema) ]).optional(),
+  userId: z.union([ z.string(),z.lazy(() => NullableStringFieldUpdateOperationsInputSchema) ]).optional().nullable(),
+}).strict();
+
 export const StringFilterSchema: z.ZodType<Prisma.StringFilter> = z.object({
   equals: z.string().optional(),
   in: z.string().array().optional(),
@@ -1149,6 +1359,111 @@ export const ProcessedStripeEventMinOrderByAggregateInputSchema: z.ZodType<Prism
   processedAt: z.lazy(() => SortOrderSchema).optional()
 }).strict();
 
+export const IntFilterSchema: z.ZodType<Prisma.IntFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntFilterSchema) ]).optional(),
+}).strict();
+
+export const FloatFilterSchema: z.ZodType<Prisma.FloatFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatFilterSchema) ]).optional(),
+}).strict();
+
+export const TicketTransactionCountOrderByAggregateInputSchema: z.ZodType<Prisma.TicketTransactionCountOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  email: z.lazy(() => SortOrderSchema).optional(),
+  ticketType: z.lazy(() => SortOrderSchema).optional(),
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  purchaseDate: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  userId: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const TicketTransactionAvgOrderByAggregateInputSchema: z.ZodType<Prisma.TicketTransactionAvgOrderByAggregateInput> = z.object({
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const TicketTransactionMaxOrderByAggregateInputSchema: z.ZodType<Prisma.TicketTransactionMaxOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  email: z.lazy(() => SortOrderSchema).optional(),
+  ticketType: z.lazy(() => SortOrderSchema).optional(),
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  purchaseDate: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  userId: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const TicketTransactionMinOrderByAggregateInputSchema: z.ZodType<Prisma.TicketTransactionMinOrderByAggregateInput> = z.object({
+  id: z.lazy(() => SortOrderSchema).optional(),
+  email: z.lazy(() => SortOrderSchema).optional(),
+  ticketType: z.lazy(() => SortOrderSchema).optional(),
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional(),
+  status: z.lazy(() => SortOrderSchema).optional(),
+  purchaseDate: z.lazy(() => SortOrderSchema).optional(),
+  eventId: z.lazy(() => SortOrderSchema).optional(),
+  userId: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const TicketTransactionSumOrderByAggregateInputSchema: z.ZodType<Prisma.TicketTransactionSumOrderByAggregateInput> = z.object({
+  quantity: z.lazy(() => SortOrderSchema).optional(),
+  pricePerUnit: z.lazy(() => SortOrderSchema).optional(),
+  totalAmount: z.lazy(() => SortOrderSchema).optional()
+}).strict();
+
+export const IntWithAggregatesFilterSchema: z.ZodType<Prisma.IntWithAggregatesFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional()
+}).strict();
+
+export const FloatWithAggregatesFilterSchema: z.ZodType<Prisma.FloatWithAggregatesFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _min: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _max: z.lazy(() => NestedFloatFilterSchema).optional()
+}).strict();
+
 export const UserProfileCreateNestedOneWithoutSubscriptionInputSchema: z.ZodType<Prisma.UserProfileCreateNestedOneWithoutSubscriptionInput> = z.object({
   create: z.union([ z.lazy(() => UserProfileCreateWithoutSubscriptionInputSchema),z.lazy(() => UserProfileUncheckedCreateWithoutSubscriptionInputSchema) ]).optional(),
   connectOrCreate: z.lazy(() => UserProfileCreateOrConnectWithoutSubscriptionInputSchema).optional(),
@@ -1213,6 +1528,22 @@ export const SubscriptionUncheckedUpdateOneWithoutUserProfileNestedInputSchema: 
   delete: z.union([ z.boolean(),z.lazy(() => SubscriptionWhereInputSchema) ]).optional(),
   connect: z.lazy(() => SubscriptionWhereUniqueInputSchema).optional(),
   update: z.union([ z.lazy(() => SubscriptionUpdateToOneWithWhereWithoutUserProfileInputSchema),z.lazy(() => SubscriptionUpdateWithoutUserProfileInputSchema),z.lazy(() => SubscriptionUncheckedUpdateWithoutUserProfileInputSchema) ]).optional(),
+}).strict();
+
+export const IntFieldUpdateOperationsInputSchema: z.ZodType<Prisma.IntFieldUpdateOperationsInput> = z.object({
+  set: z.number().optional(),
+  increment: z.number().optional(),
+  decrement: z.number().optional(),
+  multiply: z.number().optional(),
+  divide: z.number().optional()
+}).strict();
+
+export const FloatFieldUpdateOperationsInputSchema: z.ZodType<Prisma.FloatFieldUpdateOperationsInput> = z.object({
+  set: z.number().optional(),
+  increment: z.number().optional(),
+  decrement: z.number().optional(),
+  multiply: z.number().optional(),
+  divide: z.number().optional()
 }).strict();
 
 export const NestedStringFilterSchema: z.ZodType<Prisma.NestedStringFilter> = z.object({
@@ -1360,6 +1691,49 @@ export const NestedDateTimeWithAggregatesFilterSchema: z.ZodType<Prisma.NestedDa
   _count: z.lazy(() => NestedIntFilterSchema).optional(),
   _min: z.lazy(() => NestedDateTimeFilterSchema).optional(),
   _max: z.lazy(() => NestedDateTimeFilterSchema).optional()
+}).strict();
+
+export const NestedFloatFilterSchema: z.ZodType<Prisma.NestedFloatFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatFilterSchema) ]).optional(),
+}).strict();
+
+export const NestedIntWithAggregatesFilterSchema: z.ZodType<Prisma.NestedIntWithAggregatesFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedIntWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedIntFilterSchema).optional(),
+  _min: z.lazy(() => NestedIntFilterSchema).optional(),
+  _max: z.lazy(() => NestedIntFilterSchema).optional()
+}).strict();
+
+export const NestedFloatWithAggregatesFilterSchema: z.ZodType<Prisma.NestedFloatWithAggregatesFilter> = z.object({
+  equals: z.number().optional(),
+  in: z.number().array().optional(),
+  notIn: z.number().array().optional(),
+  lt: z.number().optional(),
+  lte: z.number().optional(),
+  gt: z.number().optional(),
+  gte: z.number().optional(),
+  not: z.union([ z.number(),z.lazy(() => NestedFloatWithAggregatesFilterSchema) ]).optional(),
+  _count: z.lazy(() => NestedIntFilterSchema).optional(),
+  _avg: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _sum: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _min: z.lazy(() => NestedFloatFilterSchema).optional(),
+  _max: z.lazy(() => NestedFloatFilterSchema).optional()
 }).strict();
 
 export const UserProfileCreateWithoutSubscriptionInputSchema: z.ZodType<Prisma.UserProfileCreateWithoutSubscriptionInput> = z.object({
@@ -1740,6 +2114,63 @@ export const ProcessedStripeEventFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.P
   where: ProcessedStripeEventWhereUniqueInputSchema,
 }).strict() ;
 
+export const TicketTransactionFindFirstArgsSchema: z.ZodType<Prisma.TicketTransactionFindFirstArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereInputSchema.optional(),
+  orderBy: z.union([ TicketTransactionOrderByWithRelationInputSchema.array(),TicketTransactionOrderByWithRelationInputSchema ]).optional(),
+  cursor: TicketTransactionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ TicketTransactionScalarFieldEnumSchema,TicketTransactionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const TicketTransactionFindFirstOrThrowArgsSchema: z.ZodType<Prisma.TicketTransactionFindFirstOrThrowArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereInputSchema.optional(),
+  orderBy: z.union([ TicketTransactionOrderByWithRelationInputSchema.array(),TicketTransactionOrderByWithRelationInputSchema ]).optional(),
+  cursor: TicketTransactionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ TicketTransactionScalarFieldEnumSchema,TicketTransactionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const TicketTransactionFindManyArgsSchema: z.ZodType<Prisma.TicketTransactionFindManyArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereInputSchema.optional(),
+  orderBy: z.union([ TicketTransactionOrderByWithRelationInputSchema.array(),TicketTransactionOrderByWithRelationInputSchema ]).optional(),
+  cursor: TicketTransactionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+  distinct: z.union([ TicketTransactionScalarFieldEnumSchema,TicketTransactionScalarFieldEnumSchema.array() ]).optional(),
+}).strict() ;
+
+export const TicketTransactionAggregateArgsSchema: z.ZodType<Prisma.TicketTransactionAggregateArgs> = z.object({
+  where: TicketTransactionWhereInputSchema.optional(),
+  orderBy: z.union([ TicketTransactionOrderByWithRelationInputSchema.array(),TicketTransactionOrderByWithRelationInputSchema ]).optional(),
+  cursor: TicketTransactionWhereUniqueInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict() ;
+
+export const TicketTransactionGroupByArgsSchema: z.ZodType<Prisma.TicketTransactionGroupByArgs> = z.object({
+  where: TicketTransactionWhereInputSchema.optional(),
+  orderBy: z.union([ TicketTransactionOrderByWithAggregationInputSchema.array(),TicketTransactionOrderByWithAggregationInputSchema ]).optional(),
+  by: TicketTransactionScalarFieldEnumSchema.array(),
+  having: TicketTransactionScalarWhereWithAggregatesInputSchema.optional(),
+  take: z.number().optional(),
+  skip: z.number().optional(),
+}).strict() ;
+
+export const TicketTransactionFindUniqueArgsSchema: z.ZodType<Prisma.TicketTransactionFindUniqueArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereUniqueInputSchema,
+}).strict() ;
+
+export const TicketTransactionFindUniqueOrThrowArgsSchema: z.ZodType<Prisma.TicketTransactionFindUniqueOrThrowArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereUniqueInputSchema,
+}).strict() ;
+
 export const SubscriptionCreateArgsSchema: z.ZodType<Prisma.SubscriptionCreateArgs> = z.object({
   select: SubscriptionSelectSchema.optional(),
   include: SubscriptionIncludeSchema.optional(),
@@ -1945,5 +2376,55 @@ export const ProcessedStripeEventUpdateManyAndReturnArgsSchema: z.ZodType<Prisma
 
 export const ProcessedStripeEventDeleteManyArgsSchema: z.ZodType<Prisma.ProcessedStripeEventDeleteManyArgs> = z.object({
   where: ProcessedStripeEventWhereInputSchema.optional(),
+  limit: z.number().optional(),
+}).strict() ;
+
+export const TicketTransactionCreateArgsSchema: z.ZodType<Prisma.TicketTransactionCreateArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  data: z.union([ TicketTransactionCreateInputSchema,TicketTransactionUncheckedCreateInputSchema ]),
+}).strict() ;
+
+export const TicketTransactionUpsertArgsSchema: z.ZodType<Prisma.TicketTransactionUpsertArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereUniqueInputSchema,
+  create: z.union([ TicketTransactionCreateInputSchema,TicketTransactionUncheckedCreateInputSchema ]),
+  update: z.union([ TicketTransactionUpdateInputSchema,TicketTransactionUncheckedUpdateInputSchema ]),
+}).strict() ;
+
+export const TicketTransactionCreateManyArgsSchema: z.ZodType<Prisma.TicketTransactionCreateManyArgs> = z.object({
+  data: z.union([ TicketTransactionCreateManyInputSchema,TicketTransactionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict() ;
+
+export const TicketTransactionCreateManyAndReturnArgsSchema: z.ZodType<Prisma.TicketTransactionCreateManyAndReturnArgs> = z.object({
+  data: z.union([ TicketTransactionCreateManyInputSchema,TicketTransactionCreateManyInputSchema.array() ]),
+  skipDuplicates: z.boolean().optional(),
+}).strict() ;
+
+export const TicketTransactionDeleteArgsSchema: z.ZodType<Prisma.TicketTransactionDeleteArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  where: TicketTransactionWhereUniqueInputSchema,
+}).strict() ;
+
+export const TicketTransactionUpdateArgsSchema: z.ZodType<Prisma.TicketTransactionUpdateArgs> = z.object({
+  select: TicketTransactionSelectSchema.optional(),
+  data: z.union([ TicketTransactionUpdateInputSchema,TicketTransactionUncheckedUpdateInputSchema ]),
+  where: TicketTransactionWhereUniqueInputSchema,
+}).strict() ;
+
+export const TicketTransactionUpdateManyArgsSchema: z.ZodType<Prisma.TicketTransactionUpdateManyArgs> = z.object({
+  data: z.union([ TicketTransactionUpdateManyMutationInputSchema,TicketTransactionUncheckedUpdateManyInputSchema ]),
+  where: TicketTransactionWhereInputSchema.optional(),
+  limit: z.number().optional(),
+}).strict() ;
+
+export const TicketTransactionUpdateManyAndReturnArgsSchema: z.ZodType<Prisma.TicketTransactionUpdateManyAndReturnArgs> = z.object({
+  data: z.union([ TicketTransactionUpdateManyMutationInputSchema,TicketTransactionUncheckedUpdateManyInputSchema ]),
+  where: TicketTransactionWhereInputSchema.optional(),
+  limit: z.number().optional(),
+}).strict() ;
+
+export const TicketTransactionDeleteManyArgsSchema: z.ZodType<Prisma.TicketTransactionDeleteManyArgs> = z.object({
+  where: TicketTransactionWhereInputSchema.optional(),
   limit: z.number().optional(),
 }).strict() ;
