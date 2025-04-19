@@ -3,7 +3,7 @@ import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import TrpcProvider from "@/lib/trpc/Provider";
 import Script from "next/script";
-import Header from "@/components/Header";
+import { Header } from "@/components/Header";
 import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });

@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { Subscription } from '@/lib/generated/client';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { storeSubscriptionPlans } from '@/config/subscriptions';
+import Link from 'next/link';
 
 const PRO_PLAN = storeSubscriptionPlans[0];
 
@@ -15,10 +16,19 @@ interface PricingPlansProps {
 
 export function PricingPlans({ currentSubscription }: PricingPlansProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useAuth();
   const { user } = useUser();
+
+  // Check if user just logged in and needs to subscribe
+  useEffect(() => {
+    const shouldSubscribe = searchParams?.get('subscribe') === 'true';
+    if (userId && shouldSubscribe && !currentSubscription) {
+      handleSubscribe();
+    }
+  }, [userId, searchParams]);
 
   const handleSubscribe = async () => {
     try {
@@ -190,33 +200,51 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
           </div>
         )}
         <div className="space-y-4">
-          {showManageButton ? (
+          {!userId ? (
             <>
-              <Button
-                className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
-                size="lg"
-                onClick={handleManageSubscription}
-                disabled={isLoading}
+              <Link
+                href={{
+                  pathname: "/sign-in",
+                  query: { redirect_url: "/pricing?subscribe=true" }
+                }}
+                className="block"
               >
-                {isLoading ? 'Processing...' : 'Manage Subscription'}
-              </Button>
-              <Button
-                className="w-full bg-red-500 hover:bg-red-600 text-white"
-                size="lg"
-                onClick={handleCancelSubscription}
-                disabled={isLoading}
-              >
-                {isLoading ? 'Processing...' : 'Cancel Subscription'}
-              </Button>
+                <Button
+                  className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
+                  size="lg"
+                >
+                  Get Started
+                </Button>
+              </Link>
             </>
-          ) : (
+          ) : showManageButton ? (
             <Button
-              className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
+              onClick={handleManageSubscription}
+              className="w-full bg-gray-800 hover:bg-gray-900 text-white"
               size="lg"
-              onClick={handleSubscribe}
               disabled={isLoading}
             >
-              {isLoading ? 'Processing...' : 'Subscribe Now'}
+              {isLoading ? 'Loading...' : 'Manage Subscription'}
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubscribe}
+              className="w-full bg-[#39E079] hover:bg-[#32c96d] text-white"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Loading...' : 'Subscribe Now'}
+            </Button>
+          )}
+          {showManageButton && (
+            <Button
+              onClick={handleCancelSubscription}
+              className="w-full border border-gray-300 hover:bg-gray-50"
+              variant="outline"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Loading...' : 'Cancel Subscription'}
             </Button>
           )}
         </div>

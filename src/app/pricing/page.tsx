@@ -3,7 +3,6 @@ import { headers, cookies } from 'next/headers';
 import { Metadata } from 'next';
 import { PricingPlans } from '@/components/subscription/PricingPlans';
 import { db } from '@/lib/db';
-import { redirect } from 'next/navigation';
 
 const messages = {
   'subscription-required': {
@@ -40,16 +39,13 @@ export default async function PricingPage({ searchParams }: PageProps) {
   await cookies(); // Ensure cookies are ready
   const { userId } = await auth();
 
-  if (!userId) {
-    redirect('/sign-in');
-  }
+  // Get subscription only if user is logged in
+  const subscription = userId ? await db.subscription.findFirst({
+    where: { userId },
+  }) : null;
 
   // Await searchParams access
   const messageParam = await (async () => searchParams?.message)();
-
-  const subscription = await db.subscription.findFirst({
-    where: { userId },
-  });
 
   // Validate and process message
   const message = messageParam && Object.keys(messages).includes(messageParam)
