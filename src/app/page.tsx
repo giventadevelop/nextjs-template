@@ -1,10 +1,7 @@
 import { auth } from "@clerk/nextjs";
-import { headers } from "next/headers";
 import Link from "next/link";
 
 export default async function Page() {
-  // Get headers early to avoid issues with dynamic usage
-  const headersList = await headers();
   const { userId } = await auth();
 
   return (

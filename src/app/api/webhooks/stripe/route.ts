@@ -36,16 +36,16 @@ export async function POST(req: Request) {
       );
     }
 
-  let event: Stripe.Event;
+    let event: Stripe.Event;
 
-  try {
-    event = stripe.webhooks.constructEvent(
+    try {
+      event = stripe.webhooks.constructEvent(
         rawBody,
-      signature,
+        signature,
         webhookSecret
-    );
+      );
       console.log(`Webhook received: ${event.type} (ID: ${event.id})`);
-  } catch (err) {
+    } catch (err) {
       const error = err as Error;
       console.error('Webhook signature verification failed:', {
         error: error.message,
@@ -54,14 +54,24 @@ export async function POST(req: Request) {
       });
       return NextResponse.json(
         { error: `Webhook Error: ${error.message}` },
-      { status: 400 }
-    );
-  }
+        { status: 400 }
+      );
+    }
+
+    // Check if we've already processed this event
+    const processedEvent = await prisma.processedStripeEvent.findUnique({
+      where: { eventId: event.id },
+    });
+
+    if (processedEvent) {
+      console.log(`Event ${event.id} already processed, skipping`);
+      return NextResponse.json({ received: true });
+    }
 
     // Handle subscription events
     if (event.type === "customer.subscription.created" ||
-        event.type === "customer.subscription.updated" ||
-        event.type === "customer.subscription.deleted") {
+      event.type === "customer.subscription.updated" ||
+      event.type === "customer.subscription.deleted") {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
       const userId = subscription.metadata.userId;
@@ -85,29 +95,6 @@ export async function POST(req: Request) {
       });
 
       try {
-        // Check if we've already processed this event
-        const processedEvent = await prisma.processedStripeEvent.findUnique({
-          where: { eventId: event.id },
-        });
-
-        if (processedEvent) {
-          console.log(`Event ${event.id} already processed, skipping`);
-          return NextResponse.json({ received: true });
-        }
-
-        // Find the subscription using userId
-        const existingSubscription = await prisma.subscription.findUnique({
-          where: { userId },
-        });
-
-        if (!existingSubscription) {
-          console.error(`No subscription found for user ID: ${userId}`);
-          return NextResponse.json(
-            { error: "Subscription not found" },
-            { status: 200 }
-          );
-        }
-
         // Use a transaction to ensure both operations succeed or fail together
         await prisma.$transaction([
           // Update the subscription
@@ -125,7 +112,7 @@ export async function POST(req: Request) {
           }),
           // Mark the event as processed
           prisma.processedStripeEvent.create({
-          data: {
+            data: {
               eventId: event.id,
               type: event.type,
               processedAt: new Date(),
@@ -137,11 +124,59 @@ export async function POST(req: Request) {
         return NextResponse.json({ received: true });
       } catch (dbError) {
         console.error("Database operation failed:", dbError);
-        // Return 200 even on processing error to prevent retries
         return NextResponse.json(
           { error: "Failed to update subscription in database" },
           { status: 200 }
         );
+      }
+    }
+
+    // Handle event ticket purchase completion
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object as Stripe.Checkout.Session;
+
+      // Only process event ticket purchases (not subscription checkouts)
+      if (session.mode === "payment" && session.metadata?.eventId) {
+        const { userId, eventId, tickets } = session.metadata;
+        const parsedTickets = JSON.parse(tickets);
+
+        try {
+          await prisma.$transaction([
+            // Create ticket transactions
+            ...parsedTickets.map((ticket: any) =>
+              prisma.ticketTransaction.create({
+                data: {
+                  userId,
+                  eventId,
+                  ticketType: ticket.type,
+                  quantity: ticket.quantity,
+                  pricePerTicket: ticket.price,
+                  totalAmount: ticket.price * ticket.quantity,
+                  status: 'completed',
+                  stripeSessionId: session.id,
+                  purchaseDate: new Date(),
+                }
+              })
+            ),
+            // Mark the event as processed
+            prisma.processedStripeEvent.create({
+              data: {
+                eventId: event.id,
+                type: event.type,
+                processedAt: new Date(),
+              },
+            }),
+          ]);
+
+          console.log(`Successfully processed ticket purchase event ${event.id}`);
+          return NextResponse.json({ received: true });
+        } catch (dbError) {
+          console.error("Failed to process ticket purchase:", dbError);
+          return NextResponse.json(
+            { error: "Failed to process ticket purchase" },
+            { status: 200 }
+          );
+        }
       }
     }
 
