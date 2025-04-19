@@ -1,5 +1,5 @@
 import { getServerAuth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
@@ -18,22 +18,40 @@ const profileSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const { userId } = await getServerAuth();
-
     if (!userId) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const profile = await db.userProfile.findUnique({
       where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        addressLine1: true,
+        addressLine2: true,
+        city: true,
+        state: true,
+        zipCode: true,
+        country: true,
+        createdAt: true,
+      }
     });
 
-    return NextResponse.json(profile);
+    if (!profile) {
+      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    return Response.json(profile);
   } catch (error) {
-    console.error("Error fetching profile:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    console.error('Error fetching profile:', error);
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

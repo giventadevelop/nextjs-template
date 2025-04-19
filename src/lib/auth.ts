@@ -29,8 +29,21 @@ export async function authenticatedRequest(
 }
 
 export async function getServerAuth() {
-  // Initialize headers first to avoid issues with dynamic usage
+  // First await headers
   await headers();
-  // Then use auth
-  return auth();
+  // Then get auth
+  const session = await auth();
+  return session;
+}
+
+export async function getUserAuth() {
+  const { userId, sessionClaims } = await getServerAuth();
+  return {
+    session: {
+      user: {
+        id: userId,
+        ...sessionClaims,
+      },
+    },
+  };
 }
