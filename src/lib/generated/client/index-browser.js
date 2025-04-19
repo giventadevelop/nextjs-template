@@ -164,6 +164,19 @@ exports.Prisma.ProcessedStripeEventScalarFieldEnum = {
   processedAt: 'processedAt'
 };
 
+exports.Prisma.TicketTransactionScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  ticketType: 'ticketType',
+  quantity: 'quantity',
+  pricePerUnit: 'pricePerUnit',
+  totalAmount: 'totalAmount',
+  status: 'status',
+  purchaseDate: 'purchaseDate',
+  eventId: 'eventId',
+  userId: 'userId'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -184,7 +197,8 @@ exports.Prisma.ModelName = {
   Subscription: 'Subscription',
   Task: 'Task',
   UserProfile: 'UserProfile',
-  ProcessedStripeEvent: 'ProcessedStripeEvent'
+  ProcessedStripeEvent: 'ProcessedStripeEvent',
+  TicketTransaction: 'TicketTransaction'
 };
 
 /**

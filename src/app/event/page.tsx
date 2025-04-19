@@ -13,6 +13,8 @@ interface TicketType {
 
 const EventPage = () => {
   const [selectedTickets, setSelectedTickets] = useState<{ [key: number]: number }>({});
+  const [email, setEmail] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const ticketTypes: TicketType[] = [
     {
@@ -73,6 +75,52 @@ const EventPage = () => {
       const ticket = ticketTypes.find(t => t.id === parseInt(ticketId));
       return total + (ticket?.price || 0) * quantity;
     }, 0);
+  };
+
+  const handleCheckout = async () => {
+    if (!email) {
+      alert('Please enter your email address');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Here you would integrate with your payment processing system
+      // After successful payment, create the transaction record
+      const response = await fetch('/api/tickets/purchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          tickets: Object.entries(selectedTickets).map(([ticketId, quantity]) => {
+            const ticket = ticketTypes.find(t => t.id === parseInt(ticketId));
+            return {
+              ticketType: ticket?.name,
+              quantity,
+              pricePerUnit: ticket?.price,
+              totalAmount: (ticket?.price || 0) * quantity,
+            };
+          }),
+          eventId: 'kanj-cine-star-2025', // You would typically get this from your event configuration
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process transaction');
+      }
+
+      // Clear the form and show success message
+      setSelectedTickets({});
+      setEmail('');
+      alert('Thank you for your purchase! Check your email for the tickets.');
+    } catch (error) {
+      console.error('Error processing transaction:', error);
+      alert('There was an error processing your transaction. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -156,6 +204,24 @@ const EventPage = () => {
               }
               return null;
             })}
+
+            {/* Email Input */}
+            <div className="mt-4">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
             <div className="border-t pt-4 mt-4">
               <div className="flex justify-between font-semibold text-lg">
                 <span>Total</span>
@@ -164,10 +230,10 @@ const EventPage = () => {
             </div>
             <button
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-md hover:bg-blue-700 transition-colors mt-6 disabled:bg-gray-400"
-              disabled={calculateTotal() === 0}
-              onClick={() => alert('Proceeding to checkout...')}
+              disabled={calculateTotal() === 0 || !email || isProcessing}
+              onClick={handleCheckout}
             >
-              Proceed to Checkout
+              {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
             </button>
           </div>
         </div>
