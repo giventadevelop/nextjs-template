@@ -1,0 +1,210 @@
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+(() => {
+var exports = {};
+exports.id = "app/api/webhooks/stripe/route";
+exports.ids = ["app/api/webhooks/stripe/route"];
+exports.modules = {
+
+/***/ "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fwebhooks%2Fstripe%2Froute&page=%2Fapi%2Fwebhooks%2Fstripe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fwebhooks%2Fstripe%2Froute.ts&appDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!":
+/*!*********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fwebhooks%2Fstripe%2Froute&page=%2Fapi%2Fwebhooks%2Fstripe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fwebhooks%2Fstripe%2Froute.ts&appDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D! ***!
+  \*********************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   patchFetch: () => (/* binding */ patchFetch),\n/* harmony export */   routeModule: () => (/* binding */ routeModule),\n/* harmony export */   serverHooks: () => (/* binding */ serverHooks),\n/* harmony export */   workAsyncStorage: () => (/* binding */ workAsyncStorage),\n/* harmony export */   workUnitAsyncStorage: () => (/* binding */ workUnitAsyncStorage)\n/* harmony export */ });\n/* harmony import */ var next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! next/dist/server/route-modules/app-route/module.compiled */ \"(rsc)/./node_modules/next/dist/server/route-modules/app-route/module.compiled.js\");\n/* harmony import */ var next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var next_dist_server_route_kind__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! next/dist/server/route-kind */ \"(rsc)/./node_modules/next/dist/server/route-kind.js\");\n/* harmony import */ var next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! next/dist/server/lib/patch-fetch */ \"(rsc)/./node_modules/next/dist/server/lib/patch-fetch.js\");\n/* harmony import */ var next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__webpack_require__.n(next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__);\n/* harmony import */ var C_Users_gain_git_nextjs_template_src_app_api_webhooks_stripe_route_ts__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./src/app/api/webhooks/stripe/route.ts */ \"(rsc)/./src/app/api/webhooks/stripe/route.ts\");\n\n\n\n\n// We inject the nextConfigOutput here so that we can use them in the route\n// module.\nconst nextConfigOutput = \"\"\nconst routeModule = new next_dist_server_route_modules_app_route_module_compiled__WEBPACK_IMPORTED_MODULE_0__.AppRouteRouteModule({\n    definition: {\n        kind: next_dist_server_route_kind__WEBPACK_IMPORTED_MODULE_1__.RouteKind.APP_ROUTE,\n        page: \"/api/webhooks/stripe/route\",\n        pathname: \"/api/webhooks/stripe\",\n        filename: \"route\",\n        bundlePath: \"app/api/webhooks/stripe/route\"\n    },\n    resolvedPagePath: \"C:\\\\Users\\\\gain\\\\git\\\\nextjs-template\\\\src\\\\app\\\\api\\\\webhooks\\\\stripe\\\\route.ts\",\n    nextConfigOutput,\n    userland: C_Users_gain_git_nextjs_template_src_app_api_webhooks_stripe_route_ts__WEBPACK_IMPORTED_MODULE_3__\n});\n// Pull out the exports that we need to expose from the module. This should\n// be eliminated when we've moved the other routes to the new format. These\n// are used to hook into the route.\nconst { workAsyncStorage, workUnitAsyncStorage, serverHooks } = routeModule;\nfunction patchFetch() {\n    return (0,next_dist_server_lib_patch_fetch__WEBPACK_IMPORTED_MODULE_2__.patchFetch)({\n        workAsyncStorage,\n        workUnitAsyncStorage\n    });\n}\n\n\n//# sourceMappingURL=app-route.js.map//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9ub2RlX21vZHVsZXMvbmV4dC9kaXN0L2J1aWxkL3dlYnBhY2svbG9hZGVycy9uZXh0LWFwcC1sb2FkZXIvaW5kZXguanM/bmFtZT1hcHAlMkZhcGklMkZ3ZWJob29rcyUyRnN0cmlwZSUyRnJvdXRlJnBhZ2U9JTJGYXBpJTJGd2ViaG9va3MlMkZzdHJpcGUlMkZyb3V0ZSZhcHBQYXRocz0mcGFnZVBhdGg9cHJpdmF0ZS1uZXh0LWFwcC1kaXIlMkZhcGklMkZ3ZWJob29rcyUyRnN0cmlwZSUyRnJvdXRlLnRzJmFwcERpcj1DJTNBJTVDVXNlcnMlNUNnYWluJTVDZ2l0JTVDbmV4dGpzLXRlbXBsYXRlJTVDc3JjJTVDYXBwJnBhZ2VFeHRlbnNpb25zPXRzeCZwYWdlRXh0ZW5zaW9ucz10cyZwYWdlRXh0ZW5zaW9ucz1qc3gmcGFnZUV4dGVuc2lvbnM9anMmcm9vdERpcj1DJTNBJTVDVXNlcnMlNUNnYWluJTVDZ2l0JTVDbmV4dGpzLXRlbXBsYXRlJmlzRGV2PXRydWUmdHNjb25maWdQYXRoPXRzY29uZmlnLmpzb24mYmFzZVBhdGg9JmFzc2V0UHJlZml4PSZuZXh0Q29uZmlnT3V0cHV0PSZwcmVmZXJyZWRSZWdpb249Jm1pZGRsZXdhcmVDb25maWc9ZTMwJTNEISIsIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7OztBQUErRjtBQUN2QztBQUNxQjtBQUNnQztBQUM3RztBQUNBO0FBQ0E7QUFDQSx3QkFBd0IseUdBQW1CO0FBQzNDO0FBQ0EsY0FBYyxrRUFBUztBQUN2QjtBQUNBO0FBQ0E7QUFDQTtBQUNBLEtBQUs7QUFDTDtBQUNBO0FBQ0EsWUFBWTtBQUNaLENBQUM7QUFDRDtBQUNBO0FBQ0E7QUFDQSxRQUFRLHNEQUFzRDtBQUM5RDtBQUNBLFdBQVcsNEVBQVc7QUFDdEI7QUFDQTtBQUNBLEtBQUs7QUFDTDtBQUMwRjs7QUFFMUYiLCJzb3VyY2VzIjpbIiJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBBcHBSb3V0ZVJvdXRlTW9kdWxlIH0gZnJvbSBcIm5leHQvZGlzdC9zZXJ2ZXIvcm91dGUtbW9kdWxlcy9hcHAtcm91dGUvbW9kdWxlLmNvbXBpbGVkXCI7XG5pbXBvcnQgeyBSb3V0ZUtpbmQgfSBmcm9tIFwibmV4dC9kaXN0L3NlcnZlci9yb3V0ZS1raW5kXCI7XG5pbXBvcnQgeyBwYXRjaEZldGNoIGFzIF9wYXRjaEZldGNoIH0gZnJvbSBcIm5leHQvZGlzdC9zZXJ2ZXIvbGliL3BhdGNoLWZldGNoXCI7XG5pbXBvcnQgKiBhcyB1c2VybGFuZCBmcm9tIFwiQzpcXFxcVXNlcnNcXFxcZ2FpblxcXFxnaXRcXFxcbmV4dGpzLXRlbXBsYXRlXFxcXHNyY1xcXFxhcHBcXFxcYXBpXFxcXHdlYmhvb2tzXFxcXHN0cmlwZVxcXFxyb3V0ZS50c1wiO1xuLy8gV2UgaW5qZWN0IHRoZSBuZXh0Q29uZmlnT3V0cHV0IGhlcmUgc28gdGhhdCB3ZSBjYW4gdXNlIHRoZW0gaW4gdGhlIHJvdXRlXG4vLyBtb2R1bGUuXG5jb25zdCBuZXh0Q29uZmlnT3V0cHV0ID0gXCJcIlxuY29uc3Qgcm91dGVNb2R1bGUgPSBuZXcgQXBwUm91dGVSb3V0ZU1vZHVsZSh7XG4gICAgZGVmaW5pdGlvbjoge1xuICAgICAgICBraW5kOiBSb3V0ZUtpbmQuQVBQX1JPVVRFLFxuICAgICAgICBwYWdlOiBcIi9hcGkvd2ViaG9va3Mvc3RyaXBlL3JvdXRlXCIsXG4gICAgICAgIHBhdGhuYW1lOiBcIi9hcGkvd2ViaG9va3Mvc3RyaXBlXCIsXG4gICAgICAgIGZpbGVuYW1lOiBcInJvdXRlXCIsXG4gICAgICAgIGJ1bmRsZVBhdGg6IFwiYXBwL2FwaS93ZWJob29rcy9zdHJpcGUvcm91dGVcIlxuICAgIH0sXG4gICAgcmVzb2x2ZWRQYWdlUGF0aDogXCJDOlxcXFxVc2Vyc1xcXFxnYWluXFxcXGdpdFxcXFxuZXh0anMtdGVtcGxhdGVcXFxcc3JjXFxcXGFwcFxcXFxhcGlcXFxcd2ViaG9va3NcXFxcc3RyaXBlXFxcXHJvdXRlLnRzXCIsXG4gICAgbmV4dENvbmZpZ091dHB1dCxcbiAgICB1c2VybGFuZFxufSk7XG4vLyBQdWxsIG91dCB0aGUgZXhwb3J0cyB0aGF0IHdlIG5lZWQgdG8gZXhwb3NlIGZyb20gdGhlIG1vZHVsZS4gVGhpcyBzaG91bGRcbi8vIGJlIGVsaW1pbmF0ZWQgd2hlbiB3ZSd2ZSBtb3ZlZCB0aGUgb3RoZXIgcm91dGVzIHRvIHRoZSBuZXcgZm9ybWF0LiBUaGVzZVxuLy8gYXJlIHVzZWQgdG8gaG9vayBpbnRvIHRoZSByb3V0ZS5cbmNvbnN0IHsgd29ya0FzeW5jU3RvcmFnZSwgd29ya1VuaXRBc3luY1N0b3JhZ2UsIHNlcnZlckhvb2tzIH0gPSByb3V0ZU1vZHVsZTtcbmZ1bmN0aW9uIHBhdGNoRmV0Y2goKSB7XG4gICAgcmV0dXJuIF9wYXRjaEZldGNoKHtcbiAgICAgICAgd29ya0FzeW5jU3RvcmFnZSxcbiAgICAgICAgd29ya1VuaXRBc3luY1N0b3JhZ2VcbiAgICB9KTtcbn1cbmV4cG9ydCB7IHJvdXRlTW9kdWxlLCB3b3JrQXN5bmNTdG9yYWdlLCB3b3JrVW5pdEFzeW5jU3RvcmFnZSwgc2VydmVySG9va3MsIHBhdGNoRmV0Y2gsICB9O1xuXG4vLyMgc291cmNlTWFwcGluZ1VSTD1hcHAtcm91dGUuanMubWFwIl0sIm5hbWVzIjpbXSwiaWdub3JlTGlzdCI6W10sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fwebhooks%2Fstripe%2Froute&page=%2Fapi%2Fwebhooks%2Fstripe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fwebhooks%2Fstripe%2Froute.ts&appDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!\n");
+
+/***/ }),
+
+/***/ "(rsc)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true!":
+/*!******************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true! ***!
+  \******************************************************************************************************/
+/***/ (() => {
+
+
+
+/***/ }),
+
+/***/ "(rsc)/./src/app/api/webhooks/stripe/route.ts":
+/*!**********************************************!*\
+  !*** ./src/app/api/webhooks/stripe/route.ts ***!
+  \**********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   POST: () => (/* binding */ POST),\n/* harmony export */   bodyParser: () => (/* binding */ bodyParser),\n/* harmony export */   runtime: () => (/* binding */ runtime)\n/* harmony export */ });\n/* harmony import */ var next_server__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! next/server */ \"(rsc)/./node_modules/next/dist/api/server.js\");\n/* harmony import */ var stripe__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! stripe */ \"(rsc)/./node_modules/stripe/esm/stripe.esm.node.js\");\n/* harmony import */ var _lib_prisma__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! @/lib/prisma */ \"(rsc)/./src/lib/prisma.ts\");\n\n\n\n// Configure for Node.js runtime\nconst runtime = 'nodejs';\n// Disable Next.js body parsing\nconst bodyParser = false;\nconst stripe = new stripe__WEBPACK_IMPORTED_MODULE_1__[\"default\"](process.env.STRIPE_SECRET_KEY, {\n    apiVersion: \"2023-10-16\"\n});\nconst webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;\nasync function POST(req) {\n    try {\n        const signature = req.headers.get(\"stripe-signature\");\n        if (!signature) {\n            console.error(\"No stripe signature found in headers\");\n            return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                error: \"No stripe signature found\"\n            }, {\n                status: 400\n            });\n        }\n        const rawBody = await req.text();\n        if (!rawBody) {\n            console.error(\"Empty request body received\");\n            return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                error: \"Empty request body\"\n            }, {\n                status: 400\n            });\n        }\n        let event;\n        try {\n            event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);\n            console.log(`Webhook received: ${event.type} (ID: ${event.id})`);\n        } catch (err) {\n            const error = err;\n            console.error('Webhook signature verification failed:', {\n                error: error.message,\n                signature: signature.slice(0, 10) + '...',\n                bodyLength: rawBody.length\n            });\n            return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                error: `Webhook Error: ${error.message}`\n            }, {\n                status: 400\n            });\n        }\n        // Handle subscription events\n        if (event.type === \"customer.subscription.created\" || event.type === \"customer.subscription.updated\" || event.type === \"customer.subscription.deleted\") {\n            const subscription = event.data.object;\n            const customerId = subscription.customer;\n            const userId = subscription.metadata.userId;\n            if (!userId) {\n                console.error('No userId found in subscription metadata', {\n                    subscriptionId: subscription.id,\n                    customerId\n                });\n                return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                    error: \"No userId found in subscription metadata\"\n                }, {\n                    status: 200\n                });\n            }\n            console.log(`Processing subscription event: ${event.type}`, {\n                customerId,\n                userId,\n                eventId: event.id,\n                subscriptionStatus: subscription.status\n            });\n            try {\n                // Check if we've already processed this event\n                const processedEvent = await _lib_prisma__WEBPACK_IMPORTED_MODULE_2__.prisma.processedStripeEvent.findUnique({\n                    where: {\n                        eventId: event.id\n                    }\n                });\n                if (processedEvent) {\n                    console.log(`Event ${event.id} already processed, skipping`);\n                    return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                        received: true\n                    });\n                }\n                // Find the subscription using userId\n                const existingSubscription = await _lib_prisma__WEBPACK_IMPORTED_MODULE_2__.prisma.subscription.findUnique({\n                    where: {\n                        userId\n                    }\n                });\n                if (!existingSubscription) {\n                    console.error(`No subscription found for user ID: ${userId}`);\n                    return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                        error: \"Subscription not found\"\n                    }, {\n                        status: 200\n                    });\n                }\n                // Use a transaction to ensure both operations succeed or fail together\n                await _lib_prisma__WEBPACK_IMPORTED_MODULE_2__.prisma.$transaction([\n                    // Update the subscription\n                    _lib_prisma__WEBPACK_IMPORTED_MODULE_2__.prisma.subscription.update({\n                        where: {\n                            userId\n                        },\n                        data: {\n                            status: subscription.status,\n                            stripeCustomerId: customerId,\n                            stripeSubscriptionId: subscription.id,\n                            stripePriceId: subscription.items.data[0]?.price.id,\n                            stripeCurrentPeriodEnd: new Date(subscription.current_period_end * 1000)\n                        }\n                    }),\n                    // Mark the event as processed\n                    _lib_prisma__WEBPACK_IMPORTED_MODULE_2__.prisma.processedStripeEvent.create({\n                        data: {\n                            eventId: event.id,\n                            type: event.type,\n                            processedAt: new Date()\n                        }\n                    })\n                ]);\n                console.log(`Successfully processed subscription event ${event.id}`);\n                return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                    received: true\n                });\n            } catch (dbError) {\n                console.error(\"Database operation failed:\", dbError);\n                // Return 200 even on processing error to prevent retries\n                return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n                    error: \"Failed to update subscription in database\"\n                }, {\n                    status: 200\n                });\n            }\n        }\n        // For other event types, just acknowledge receipt\n        console.log(`Successfully received webhook event: ${event.type} (ID: ${event.id})`);\n        return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n            received: true\n        });\n    } catch (error) {\n        console.error(\"Error processing webhook:\", error);\n        // Return 200 for general errors to prevent retries\n        return next_server__WEBPACK_IMPORTED_MODULE_0__.NextResponse.json({\n            error: \"Internal server error\"\n        }, {\n            status: 200\n        });\n    }\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9zcmMvYXBwL2FwaS93ZWJob29rcy9zdHJpcGUvcm91dGUudHMiLCJtYXBwaW5ncyI6Ijs7Ozs7Ozs7O0FBQTJDO0FBQ2Y7QUFDVTtBQUV0QyxnQ0FBZ0M7QUFDekIsTUFBTUcsVUFBVSxTQUFTO0FBRWhDLCtCQUErQjtBQUN4QixNQUFNQyxhQUFhLE1BQU07QUFFaEMsTUFBTUMsU0FBUyxJQUFJSiw4Q0FBTUEsQ0FBQ0ssUUFBUUMsR0FBRyxDQUFDQyxpQkFBaUIsRUFBRztJQUN4REMsWUFBWTtBQUNkO0FBRUEsTUFBTUMsZ0JBQWdCSixRQUFRQyxHQUFHLENBQUNJLHFCQUFxQjtBQUVoRCxlQUFlQyxLQUFLQyxHQUFZO0lBQ3JDLElBQUk7UUFDRixNQUFNQyxZQUFZRCxJQUFJRSxPQUFPLENBQUNDLEdBQUcsQ0FBQztRQUVsQyxJQUFJLENBQUNGLFdBQVc7WUFDZEcsUUFBUUMsS0FBSyxDQUFDO1lBQ2QsT0FBT2xCLHFEQUFZQSxDQUFDbUIsSUFBSSxDQUN0QjtnQkFBRUQsT0FBTztZQUE0QixHQUNyQztnQkFBRUUsUUFBUTtZQUFJO1FBRWxCO1FBRUEsTUFBTUMsVUFBVSxNQUFNUixJQUFJUyxJQUFJO1FBRTlCLElBQUksQ0FBQ0QsU0FBUztZQUNaSixRQUFRQyxLQUFLLENBQUM7WUFDZCxPQUFPbEIscURBQVlBLENBQUNtQixJQUFJLENBQ3RCO2dCQUFFRCxPQUFPO1lBQXFCLEdBQzlCO2dCQUFFRSxRQUFRO1lBQUk7UUFFbEI7UUFFRixJQUFJRztRQUVKLElBQUk7WUFDRkEsUUFBUWxCLE9BQU9tQixRQUFRLENBQUNDLGNBQWMsQ0FDbENKLFNBQ0ZQLFdBQ0VKO1lBRUZPLFFBQVFTLEdBQUcsQ0FBQyxDQUFDLGtCQUFrQixFQUFFSCxNQUFNSSxJQUFJLENBQUMsTUFBTSxFQUFFSixNQUFNSyxFQUFFLENBQUMsQ0FBQyxDQUFDO1FBQ25FLEVBQUUsT0FBT0MsS0FBSztZQUNWLE1BQU1YLFFBQVFXO1lBQ2RaLFFBQVFDLEtBQUssQ0FBQywwQ0FBMEM7Z0JBQ3REQSxPQUFPQSxNQUFNWSxPQUFPO2dCQUNwQmhCLFdBQVdBLFVBQVVpQixLQUFLLENBQUMsR0FBRyxNQUFNO2dCQUNwQ0MsWUFBWVgsUUFBUVksTUFBTTtZQUM1QjtZQUNBLE9BQU9qQyxxREFBWUEsQ0FBQ21CLElBQUksQ0FDdEI7Z0JBQUVELE9BQU8sQ0FBQyxlQUFlLEVBQUVBLE1BQU1ZLE9BQU8sRUFBRTtZQUFDLEdBQzdDO2dCQUFFVixRQUFRO1lBQUk7UUFFbEI7UUFFRSw2QkFBNkI7UUFDN0IsSUFBSUcsTUFBTUksSUFBSSxLQUFLLG1DQUNmSixNQUFNSSxJQUFJLEtBQUssbUNBQ2ZKLE1BQU1JLElBQUksS0FBSyxpQ0FBaUM7WUFDbEQsTUFBTU8sZUFBZVgsTUFBTVksSUFBSSxDQUFDQyxNQUFNO1lBQ3RDLE1BQU1DLGFBQWFILGFBQWFJLFFBQVE7WUFDeEMsTUFBTUMsU0FBU0wsYUFBYU0sUUFBUSxDQUFDRCxNQUFNO1lBRTNDLElBQUksQ0FBQ0EsUUFBUTtnQkFDWHRCLFFBQVFDLEtBQUssQ0FBQyw0Q0FBNEM7b0JBQ3hEdUIsZ0JBQWdCUCxhQUFhTixFQUFFO29CQUMvQlM7Z0JBQ0Y7Z0JBQ0EsT0FBT3JDLHFEQUFZQSxDQUFDbUIsSUFBSSxDQUN0QjtvQkFBRUQsT0FBTztnQkFBMkMsR0FDcEQ7b0JBQUVFLFFBQVE7Z0JBQUk7WUFFbEI7WUFFQUgsUUFBUVMsR0FBRyxDQUFDLENBQUMsK0JBQStCLEVBQUVILE1BQU1JLElBQUksRUFBRSxFQUFFO2dCQUMxRFU7Z0JBQ0FFO2dCQUNBRyxTQUFTbkIsTUFBTUssRUFBRTtnQkFDakJlLG9CQUFvQlQsYUFBYWQsTUFBTTtZQUN6QztZQUVBLElBQUk7Z0JBQ0YsOENBQThDO2dCQUM5QyxNQUFNd0IsaUJBQWlCLE1BQU0xQywrQ0FBTUEsQ0FBQzJDLG9CQUFvQixDQUFDQyxVQUFVLENBQUM7b0JBQ2xFQyxPQUFPO3dCQUFFTCxTQUFTbkIsTUFBTUssRUFBRTtvQkFBQztnQkFDN0I7Z0JBRUEsSUFBSWdCLGdCQUFnQjtvQkFDbEIzQixRQUFRUyxHQUFHLENBQUMsQ0FBQyxNQUFNLEVBQUVILE1BQU1LLEVBQUUsQ0FBQyw0QkFBNEIsQ0FBQztvQkFDM0QsT0FBTzVCLHFEQUFZQSxDQUFDbUIsSUFBSSxDQUFDO3dCQUFFNkIsVUFBVTtvQkFBSztnQkFDNUM7Z0JBRUEscUNBQXFDO2dCQUNyQyxNQUFNQyx1QkFBdUIsTUFBTS9DLCtDQUFNQSxDQUFDZ0MsWUFBWSxDQUFDWSxVQUFVLENBQUM7b0JBQ2hFQyxPQUFPO3dCQUFFUjtvQkFBTztnQkFDbEI7Z0JBRUEsSUFBSSxDQUFDVSxzQkFBc0I7b0JBQ3pCaEMsUUFBUUMsS0FBSyxDQUFDLENBQUMsbUNBQW1DLEVBQUVxQixRQUFRO29CQUM1RCxPQUFPdkMscURBQVlBLENBQUNtQixJQUFJLENBQ3RCO3dCQUFFRCxPQUFPO29CQUF5QixHQUNsQzt3QkFBRUUsUUFBUTtvQkFBSTtnQkFFbEI7Z0JBRUEsdUVBQXVFO2dCQUN2RSxNQUFNbEIsK0NBQU1BLENBQUNnRCxZQUFZLENBQUM7b0JBQ3hCLDBCQUEwQjtvQkFDMUJoRCwrQ0FBTUEsQ0FBQ2dDLFlBQVksQ0FBQ2lCLE1BQU0sQ0FBQzt3QkFDekJKLE9BQU87NEJBQUVSO3dCQUFPO3dCQUNoQkosTUFBTTs0QkFDSmYsUUFBUWMsYUFBYWQsTUFBTTs0QkFDM0JnQyxrQkFBa0JmOzRCQUNsQmdCLHNCQUFzQm5CLGFBQWFOLEVBQUU7NEJBQ3JDMEIsZUFBZXBCLGFBQWFxQixLQUFLLENBQUNwQixJQUFJLENBQUMsRUFBRSxFQUFFcUIsTUFBTTVCOzRCQUNqRDZCLHdCQUF3QixJQUFJQyxLQUMxQixhQUFzQkMsa0JBQWtCLEdBQUc7d0JBRS9DO29CQUNGO29CQUNBLDhCQUE4QjtvQkFDOUJ6RCwrQ0FBTUEsQ0FBQzJDLG9CQUFvQixDQUFDZSxNQUFNLENBQUM7d0JBQ25DekIsTUFBTTs0QkFDRk8sU0FBU25CLE1BQU1LLEVBQUU7NEJBQ2pCRCxNQUFNSixNQUFNSSxJQUFJOzRCQUNoQmtDLGFBQWEsSUFBSUg7d0JBQ25CO29CQUNGO2lCQUNEO2dCQUVEekMsUUFBUVMsR0FBRyxDQUFDLENBQUMsMENBQTBDLEVBQUVILE1BQU1LLEVBQUUsRUFBRTtnQkFDbkUsT0FBTzVCLHFEQUFZQSxDQUFDbUIsSUFBSSxDQUFDO29CQUFFNkIsVUFBVTtnQkFBSztZQUM1QyxFQUFFLE9BQU9jLFNBQVM7Z0JBQ2hCN0MsUUFBUUMsS0FBSyxDQUFDLDhCQUE4QjRDO2dCQUM1Qyx5REFBeUQ7Z0JBQ3pELE9BQU85RCxxREFBWUEsQ0FBQ21CLElBQUksQ0FDdEI7b0JBQUVELE9BQU87Z0JBQTRDLEdBQ3JEO29CQUFFRSxRQUFRO2dCQUFJO1lBRWxCO1FBQ0Y7UUFFQSxrREFBa0Q7UUFDbERILFFBQVFTLEdBQUcsQ0FBQyxDQUFDLHFDQUFxQyxFQUFFSCxNQUFNSSxJQUFJLENBQUMsTUFBTSxFQUFFSixNQUFNSyxFQUFFLENBQUMsQ0FBQyxDQUFDO1FBQ2xGLE9BQU81QixxREFBWUEsQ0FBQ21CLElBQUksQ0FBQztZQUFFNkIsVUFBVTtRQUFLO0lBQzVDLEVBQUUsT0FBTzlCLE9BQU87UUFDZEQsUUFBUUMsS0FBSyxDQUFDLDZCQUE2QkE7UUFDM0MsbURBQW1EO1FBQ25ELE9BQU9sQixxREFBWUEsQ0FBQ21CLElBQUksQ0FDdEI7WUFBRUQsT0FBTztRQUF3QixHQUNqQztZQUFFRSxRQUFRO1FBQUk7SUFFbEI7QUFDRiIsInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxnYWluXFxnaXRcXG5leHRqcy10ZW1wbGF0ZVxcc3JjXFxhcHBcXGFwaVxcd2ViaG9va3NcXHN0cmlwZVxccm91dGUudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgTmV4dFJlc3BvbnNlIH0gZnJvbSBcIm5leHQvc2VydmVyXCI7XHJcbmltcG9ydCBTdHJpcGUgZnJvbSBcInN0cmlwZVwiO1xyXG5pbXBvcnQgeyBwcmlzbWEgfSBmcm9tIFwiQC9saWIvcHJpc21hXCI7XHJcblxyXG4vLyBDb25maWd1cmUgZm9yIE5vZGUuanMgcnVudGltZVxyXG5leHBvcnQgY29uc3QgcnVudGltZSA9ICdub2RlanMnO1xyXG5cclxuLy8gRGlzYWJsZSBOZXh0LmpzIGJvZHkgcGFyc2luZ1xyXG5leHBvcnQgY29uc3QgYm9keVBhcnNlciA9IGZhbHNlO1xyXG5cclxuY29uc3Qgc3RyaXBlID0gbmV3IFN0cmlwZShwcm9jZXNzLmVudi5TVFJJUEVfU0VDUkVUX0tFWSEsIHtcclxuICBhcGlWZXJzaW9uOiBcIjIwMjMtMTAtMTZcIiBhcyBTdHJpcGUuTGF0ZXN0QXBpVmVyc2lvbixcclxufSk7XHJcblxyXG5jb25zdCB3ZWJob29rU2VjcmV0ID0gcHJvY2Vzcy5lbnYuU1RSSVBFX1dFQkhPT0tfU0VDUkVUITtcclxuXHJcbmV4cG9ydCBhc3luYyBmdW5jdGlvbiBQT1NUKHJlcTogUmVxdWVzdCkge1xyXG4gIHRyeSB7XHJcbiAgICBjb25zdCBzaWduYXR1cmUgPSByZXEuaGVhZGVycy5nZXQoXCJzdHJpcGUtc2lnbmF0dXJlXCIpO1xyXG5cclxuICAgIGlmICghc2lnbmF0dXJlKSB7XHJcbiAgICAgIGNvbnNvbGUuZXJyb3IoXCJObyBzdHJpcGUgc2lnbmF0dXJlIGZvdW5kIGluIGhlYWRlcnNcIik7XHJcbiAgICAgIHJldHVybiBOZXh0UmVzcG9uc2UuanNvbihcclxuICAgICAgICB7IGVycm9yOiBcIk5vIHN0cmlwZSBzaWduYXR1cmUgZm91bmRcIiB9LFxyXG4gICAgICAgIHsgc3RhdHVzOiA0MDAgfVxyXG4gICAgICApO1xyXG4gICAgfVxyXG5cclxuICAgIGNvbnN0IHJhd0JvZHkgPSBhd2FpdCByZXEudGV4dCgpO1xyXG5cclxuICAgIGlmICghcmF3Qm9keSkge1xyXG4gICAgICBjb25zb2xlLmVycm9yKFwiRW1wdHkgcmVxdWVzdCBib2R5IHJlY2VpdmVkXCIpO1xyXG4gICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oXHJcbiAgICAgICAgeyBlcnJvcjogXCJFbXB0eSByZXF1ZXN0IGJvZHlcIiB9LFxyXG4gICAgICAgIHsgc3RhdHVzOiA0MDAgfVxyXG4gICAgICApO1xyXG4gICAgfVxyXG5cclxuICBsZXQgZXZlbnQ6IFN0cmlwZS5FdmVudDtcclxuXHJcbiAgdHJ5IHtcclxuICAgIGV2ZW50ID0gc3RyaXBlLndlYmhvb2tzLmNvbnN0cnVjdEV2ZW50KFxyXG4gICAgICAgIHJhd0JvZHksXHJcbiAgICAgIHNpZ25hdHVyZSxcclxuICAgICAgICB3ZWJob29rU2VjcmV0XHJcbiAgICApO1xyXG4gICAgICBjb25zb2xlLmxvZyhgV2ViaG9vayByZWNlaXZlZDogJHtldmVudC50eXBlfSAoSUQ6ICR7ZXZlbnQuaWR9KWApO1xyXG4gIH0gY2F0Y2ggKGVycikge1xyXG4gICAgICBjb25zdCBlcnJvciA9IGVyciBhcyBFcnJvcjtcclxuICAgICAgY29uc29sZS5lcnJvcignV2ViaG9vayBzaWduYXR1cmUgdmVyaWZpY2F0aW9uIGZhaWxlZDonLCB7XHJcbiAgICAgICAgZXJyb3I6IGVycm9yLm1lc3NhZ2UsXHJcbiAgICAgICAgc2lnbmF0dXJlOiBzaWduYXR1cmUuc2xpY2UoMCwgMTApICsgJy4uLicsXHJcbiAgICAgICAgYm9keUxlbmd0aDogcmF3Qm9keS5sZW5ndGgsXHJcbiAgICAgIH0pO1xyXG4gICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oXHJcbiAgICAgICAgeyBlcnJvcjogYFdlYmhvb2sgRXJyb3I6ICR7ZXJyb3IubWVzc2FnZX1gIH0sXHJcbiAgICAgIHsgc3RhdHVzOiA0MDAgfVxyXG4gICAgKTtcclxuICB9XHJcblxyXG4gICAgLy8gSGFuZGxlIHN1YnNjcmlwdGlvbiBldmVudHNcclxuICAgIGlmIChldmVudC50eXBlID09PSBcImN1c3RvbWVyLnN1YnNjcmlwdGlvbi5jcmVhdGVkXCIgfHxcclxuICAgICAgICBldmVudC50eXBlID09PSBcImN1c3RvbWVyLnN1YnNjcmlwdGlvbi51cGRhdGVkXCIgfHxcclxuICAgICAgICBldmVudC50eXBlID09PSBcImN1c3RvbWVyLnN1YnNjcmlwdGlvbi5kZWxldGVkXCIpIHtcclxuICAgICAgY29uc3Qgc3Vic2NyaXB0aW9uID0gZXZlbnQuZGF0YS5vYmplY3QgYXMgU3RyaXBlLlN1YnNjcmlwdGlvbjtcclxuICAgICAgY29uc3QgY3VzdG9tZXJJZCA9IHN1YnNjcmlwdGlvbi5jdXN0b21lciBhcyBzdHJpbmc7XHJcbiAgICAgIGNvbnN0IHVzZXJJZCA9IHN1YnNjcmlwdGlvbi5tZXRhZGF0YS51c2VySWQ7XHJcblxyXG4gICAgICBpZiAoIXVzZXJJZCkge1xyXG4gICAgICAgIGNvbnNvbGUuZXJyb3IoJ05vIHVzZXJJZCBmb3VuZCBpbiBzdWJzY3JpcHRpb24gbWV0YWRhdGEnLCB7XHJcbiAgICAgICAgICBzdWJzY3JpcHRpb25JZDogc3Vic2NyaXB0aW9uLmlkLFxyXG4gICAgICAgICAgY3VzdG9tZXJJZCxcclxuICAgICAgICB9KTtcclxuICAgICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oXHJcbiAgICAgICAgICB7IGVycm9yOiBcIk5vIHVzZXJJZCBmb3VuZCBpbiBzdWJzY3JpcHRpb24gbWV0YWRhdGFcIiB9LFxyXG4gICAgICAgICAgeyBzdGF0dXM6IDIwMCB9XHJcbiAgICAgICAgKTtcclxuICAgICAgfVxyXG5cclxuICAgICAgY29uc29sZS5sb2coYFByb2Nlc3Npbmcgc3Vic2NyaXB0aW9uIGV2ZW50OiAke2V2ZW50LnR5cGV9YCwge1xyXG4gICAgICAgIGN1c3RvbWVySWQsXHJcbiAgICAgICAgdXNlcklkLFxyXG4gICAgICAgIGV2ZW50SWQ6IGV2ZW50LmlkLFxyXG4gICAgICAgIHN1YnNjcmlwdGlvblN0YXR1czogc3Vic2NyaXB0aW9uLnN0YXR1c1xyXG4gICAgICB9KTtcclxuXHJcbiAgICAgIHRyeSB7XHJcbiAgICAgICAgLy8gQ2hlY2sgaWYgd2UndmUgYWxyZWFkeSBwcm9jZXNzZWQgdGhpcyBldmVudFxyXG4gICAgICAgIGNvbnN0IHByb2Nlc3NlZEV2ZW50ID0gYXdhaXQgcHJpc21hLnByb2Nlc3NlZFN0cmlwZUV2ZW50LmZpbmRVbmlxdWUoe1xyXG4gICAgICAgICAgd2hlcmU6IHsgZXZlbnRJZDogZXZlbnQuaWQgfSxcclxuICAgICAgICB9KTtcclxuXHJcbiAgICAgICAgaWYgKHByb2Nlc3NlZEV2ZW50KSB7XHJcbiAgICAgICAgICBjb25zb2xlLmxvZyhgRXZlbnQgJHtldmVudC5pZH0gYWxyZWFkeSBwcm9jZXNzZWQsIHNraXBwaW5nYCk7XHJcbiAgICAgICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oeyByZWNlaXZlZDogdHJ1ZSB9KTtcclxuICAgICAgICB9XHJcblxyXG4gICAgICAgIC8vIEZpbmQgdGhlIHN1YnNjcmlwdGlvbiB1c2luZyB1c2VySWRcclxuICAgICAgICBjb25zdCBleGlzdGluZ1N1YnNjcmlwdGlvbiA9IGF3YWl0IHByaXNtYS5zdWJzY3JpcHRpb24uZmluZFVuaXF1ZSh7XHJcbiAgICAgICAgICB3aGVyZTogeyB1c2VySWQgfSxcclxuICAgICAgICB9KTtcclxuXHJcbiAgICAgICAgaWYgKCFleGlzdGluZ1N1YnNjcmlwdGlvbikge1xyXG4gICAgICAgICAgY29uc29sZS5lcnJvcihgTm8gc3Vic2NyaXB0aW9uIGZvdW5kIGZvciB1c2VyIElEOiAke3VzZXJJZH1gKTtcclxuICAgICAgICAgIHJldHVybiBOZXh0UmVzcG9uc2UuanNvbihcclxuICAgICAgICAgICAgeyBlcnJvcjogXCJTdWJzY3JpcHRpb24gbm90IGZvdW5kXCIgfSxcclxuICAgICAgICAgICAgeyBzdGF0dXM6IDIwMCB9XHJcbiAgICAgICAgICApO1xyXG4gICAgICAgIH1cclxuXHJcbiAgICAgICAgLy8gVXNlIGEgdHJhbnNhY3Rpb24gdG8gZW5zdXJlIGJvdGggb3BlcmF0aW9ucyBzdWNjZWVkIG9yIGZhaWwgdG9nZXRoZXJcclxuICAgICAgICBhd2FpdCBwcmlzbWEuJHRyYW5zYWN0aW9uKFtcclxuICAgICAgICAgIC8vIFVwZGF0ZSB0aGUgc3Vic2NyaXB0aW9uXHJcbiAgICAgICAgICBwcmlzbWEuc3Vic2NyaXB0aW9uLnVwZGF0ZSh7XHJcbiAgICAgICAgICAgIHdoZXJlOiB7IHVzZXJJZCB9LFxyXG4gICAgICAgICAgICBkYXRhOiB7XHJcbiAgICAgICAgICAgICAgc3RhdHVzOiBzdWJzY3JpcHRpb24uc3RhdHVzLFxyXG4gICAgICAgICAgICAgIHN0cmlwZUN1c3RvbWVySWQ6IGN1c3RvbWVySWQsXHJcbiAgICAgICAgICAgICAgc3RyaXBlU3Vic2NyaXB0aW9uSWQ6IHN1YnNjcmlwdGlvbi5pZCxcclxuICAgICAgICAgICAgICBzdHJpcGVQcmljZUlkOiBzdWJzY3JpcHRpb24uaXRlbXMuZGF0YVswXT8ucHJpY2UuaWQsXHJcbiAgICAgICAgICAgICAgc3RyaXBlQ3VycmVudFBlcmlvZEVuZDogbmV3IERhdGUoXHJcbiAgICAgICAgICAgICAgICAoc3Vic2NyaXB0aW9uIGFzIGFueSkuY3VycmVudF9wZXJpb2RfZW5kICogMTAwMFxyXG4gICAgICAgICAgICAgICksXHJcbiAgICAgICAgICAgIH0sXHJcbiAgICAgICAgICB9KSxcclxuICAgICAgICAgIC8vIE1hcmsgdGhlIGV2ZW50IGFzIHByb2Nlc3NlZFxyXG4gICAgICAgICAgcHJpc21hLnByb2Nlc3NlZFN0cmlwZUV2ZW50LmNyZWF0ZSh7XHJcbiAgICAgICAgICBkYXRhOiB7XHJcbiAgICAgICAgICAgICAgZXZlbnRJZDogZXZlbnQuaWQsXHJcbiAgICAgICAgICAgICAgdHlwZTogZXZlbnQudHlwZSxcclxuICAgICAgICAgICAgICBwcm9jZXNzZWRBdDogbmV3IERhdGUoKSxcclxuICAgICAgICAgICAgfSxcclxuICAgICAgICAgIH0pLFxyXG4gICAgICAgIF0pO1xyXG5cclxuICAgICAgICBjb25zb2xlLmxvZyhgU3VjY2Vzc2Z1bGx5IHByb2Nlc3NlZCBzdWJzY3JpcHRpb24gZXZlbnQgJHtldmVudC5pZH1gKTtcclxuICAgICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oeyByZWNlaXZlZDogdHJ1ZSB9KTtcclxuICAgICAgfSBjYXRjaCAoZGJFcnJvcikge1xyXG4gICAgICAgIGNvbnNvbGUuZXJyb3IoXCJEYXRhYmFzZSBvcGVyYXRpb24gZmFpbGVkOlwiLCBkYkVycm9yKTtcclxuICAgICAgICAvLyBSZXR1cm4gMjAwIGV2ZW4gb24gcHJvY2Vzc2luZyBlcnJvciB0byBwcmV2ZW50IHJldHJpZXNcclxuICAgICAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oXHJcbiAgICAgICAgICB7IGVycm9yOiBcIkZhaWxlZCB0byB1cGRhdGUgc3Vic2NyaXB0aW9uIGluIGRhdGFiYXNlXCIgfSxcclxuICAgICAgICAgIHsgc3RhdHVzOiAyMDAgfVxyXG4gICAgICAgICk7XHJcbiAgICAgIH1cclxuICAgIH1cclxuXHJcbiAgICAvLyBGb3Igb3RoZXIgZXZlbnQgdHlwZXMsIGp1c3QgYWNrbm93bGVkZ2UgcmVjZWlwdFxyXG4gICAgY29uc29sZS5sb2coYFN1Y2Nlc3NmdWxseSByZWNlaXZlZCB3ZWJob29rIGV2ZW50OiAke2V2ZW50LnR5cGV9IChJRDogJHtldmVudC5pZH0pYCk7XHJcbiAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oeyByZWNlaXZlZDogdHJ1ZSB9KTtcclxuICB9IGNhdGNoIChlcnJvcikge1xyXG4gICAgY29uc29sZS5lcnJvcihcIkVycm9yIHByb2Nlc3Npbmcgd2ViaG9vazpcIiwgZXJyb3IpO1xyXG4gICAgLy8gUmV0dXJuIDIwMCBmb3IgZ2VuZXJhbCBlcnJvcnMgdG8gcHJldmVudCByZXRyaWVzXHJcbiAgICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oXHJcbiAgICAgIHsgZXJyb3I6IFwiSW50ZXJuYWwgc2VydmVyIGVycm9yXCIgfSxcclxuICAgICAgeyBzdGF0dXM6IDIwMCB9XHJcbiAgICApO1xyXG4gIH1cclxufVxyXG4iXSwibmFtZXMiOlsiTmV4dFJlc3BvbnNlIiwiU3RyaXBlIiwicHJpc21hIiwicnVudGltZSIsImJvZHlQYXJzZXIiLCJzdHJpcGUiLCJwcm9jZXNzIiwiZW52IiwiU1RSSVBFX1NFQ1JFVF9LRVkiLCJhcGlWZXJzaW9uIiwid2ViaG9va1NlY3JldCIsIlNUUklQRV9XRUJIT09LX1NFQ1JFVCIsIlBPU1QiLCJyZXEiLCJzaWduYXR1cmUiLCJoZWFkZXJzIiwiZ2V0IiwiY29uc29sZSIsImVycm9yIiwianNvbiIsInN0YXR1cyIsInJhd0JvZHkiLCJ0ZXh0IiwiZXZlbnQiLCJ3ZWJob29rcyIsImNvbnN0cnVjdEV2ZW50IiwibG9nIiwidHlwZSIsImlkIiwiZXJyIiwibWVzc2FnZSIsInNsaWNlIiwiYm9keUxlbmd0aCIsImxlbmd0aCIsInN1YnNjcmlwdGlvbiIsImRhdGEiLCJvYmplY3QiLCJjdXN0b21lcklkIiwiY3VzdG9tZXIiLCJ1c2VySWQiLCJtZXRhZGF0YSIsInN1YnNjcmlwdGlvbklkIiwiZXZlbnRJZCIsInN1YnNjcmlwdGlvblN0YXR1cyIsInByb2Nlc3NlZEV2ZW50IiwicHJvY2Vzc2VkU3RyaXBlRXZlbnQiLCJmaW5kVW5pcXVlIiwid2hlcmUiLCJyZWNlaXZlZCIsImV4aXN0aW5nU3Vic2NyaXB0aW9uIiwiJHRyYW5zYWN0aW9uIiwidXBkYXRlIiwic3RyaXBlQ3VzdG9tZXJJZCIsInN0cmlwZVN1YnNjcmlwdGlvbklkIiwic3RyaXBlUHJpY2VJZCIsIml0ZW1zIiwicHJpY2UiLCJzdHJpcGVDdXJyZW50UGVyaW9kRW5kIiwiRGF0ZSIsImN1cnJlbnRfcGVyaW9kX2VuZCIsImNyZWF0ZSIsInByb2Nlc3NlZEF0IiwiZGJFcnJvciJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(rsc)/./src/app/api/webhooks/stripe/route.ts\n");
+
+/***/ }),
+
+/***/ "(rsc)/./src/lib/prisma.ts":
+/*!***************************!*\
+  !*** ./src/lib/prisma.ts ***!
+  \***************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   getPrismaClient: () => (/* binding */ getPrismaClient),\n/* harmony export */   prisma: () => (/* binding */ prisma)\n/* harmony export */ });\n/* harmony import */ var _prisma_client__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! @prisma/client */ \"@prisma/client\");\n/* harmony import */ var _prisma_client__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(_prisma_client__WEBPACK_IMPORTED_MODULE_0__);\n\nconst globalForPrisma = globalThis;\nconst prisma = globalForPrisma.prisma ?? new _prisma_client__WEBPACK_IMPORTED_MODULE_0__.PrismaClient({\n    log:  true ? [\n        'query',\n        'error',\n        'warn'\n    ] : 0\n});\nif (true) globalForPrisma.prisma = prisma;\nfunction getPrismaClient() {\n    try {\n        if (!prisma) {\n            throw new Error('Prisma client is not initialized');\n        }\n        return prisma;\n    } catch (error) {\n        console.error('Error getting Prisma client:', error);\n        throw new Error('Database connection failed');\n    }\n}\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHJzYykvLi9zcmMvbGliL3ByaXNtYS50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7O0FBQTZDO0FBRTdDLE1BQU1DLGtCQUFrQkM7QUFJakIsTUFBTUMsU0FDWEYsZ0JBQWdCRSxNQUFNLElBQ3RCLElBQUlILHdEQUFZQSxDQUFDO0lBQ2ZJLEtBQUtDLEtBQXNDLEdBQUc7UUFBQztRQUFTO1FBQVM7S0FBTyxHQUFHLENBQVM7QUFDdEYsR0FBRTtBQUVKLElBQUlBLElBQXFDLEVBQUVKLGdCQUFnQkUsTUFBTSxHQUFHQTtBQUU3RCxTQUFTRztJQUNkLElBQUk7UUFDRixJQUFJLENBQUNILFFBQVE7WUFDWCxNQUFNLElBQUlJLE1BQU07UUFDbEI7UUFDQSxPQUFPSjtJQUNULEVBQUUsT0FBT0ssT0FBTztRQUNkQyxRQUFRRCxLQUFLLENBQUMsZ0NBQWdDQTtRQUM5QyxNQUFNLElBQUlELE1BQU07SUFDbEI7QUFDRiIsInNvdXJjZXMiOlsiQzpcXFVzZXJzXFxnYWluXFxnaXRcXG5leHRqcy10ZW1wbGF0ZVxcc3JjXFxsaWJcXHByaXNtYS50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBQcmlzbWFDbGllbnQgfSBmcm9tICdAcHJpc21hL2NsaWVudCdcblxuY29uc3QgZ2xvYmFsRm9yUHJpc21hID0gZ2xvYmFsVGhpcyBhcyB1bmtub3duIGFzIHtcbiAgcHJpc21hOiBQcmlzbWFDbGllbnQgfCB1bmRlZmluZWRcbn1cblxuZXhwb3J0IGNvbnN0IHByaXNtYSA9XG4gIGdsb2JhbEZvclByaXNtYS5wcmlzbWEgPz9cbiAgbmV3IFByaXNtYUNsaWVudCh7XG4gICAgbG9nOiBwcm9jZXNzLmVudi5OT0RFX0VOViA9PT0gJ2RldmVsb3BtZW50JyA/IFsncXVlcnknLCAnZXJyb3InLCAnd2FybiddIDogWydlcnJvciddLFxuICB9KVxuXG5pZiAocHJvY2Vzcy5lbnYuTk9ERV9FTlYgIT09ICdwcm9kdWN0aW9uJykgZ2xvYmFsRm9yUHJpc21hLnByaXNtYSA9IHByaXNtYVxuXG5leHBvcnQgZnVuY3Rpb24gZ2V0UHJpc21hQ2xpZW50KCkge1xuICB0cnkge1xuICAgIGlmICghcHJpc21hKSB7XG4gICAgICB0aHJvdyBuZXcgRXJyb3IoJ1ByaXNtYSBjbGllbnQgaXMgbm90IGluaXRpYWxpemVkJylcbiAgICB9XG4gICAgcmV0dXJuIHByaXNtYVxuICB9IGNhdGNoIChlcnJvcikge1xuICAgIGNvbnNvbGUuZXJyb3IoJ0Vycm9yIGdldHRpbmcgUHJpc21hIGNsaWVudDonLCBlcnJvcilcbiAgICB0aHJvdyBuZXcgRXJyb3IoJ0RhdGFiYXNlIGNvbm5lY3Rpb24gZmFpbGVkJylcbiAgfVxufSJdLCJuYW1lcyI6WyJQcmlzbWFDbGllbnQiLCJnbG9iYWxGb3JQcmlzbWEiLCJnbG9iYWxUaGlzIiwicHJpc21hIiwibG9nIiwicHJvY2VzcyIsImdldFByaXNtYUNsaWVudCIsIkVycm9yIiwiZXJyb3IiLCJjb25zb2xlIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///(rsc)/./src/lib/prisma.ts\n");
+
+/***/ }),
+
+/***/ "(ssr)/./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true!":
+/*!******************************************************************************************************!*\
+  !*** ./node_modules/next/dist/build/webpack/loaders/next-flight-client-entry-loader.js?server=true! ***!
+  \******************************************************************************************************/
+/***/ (() => {
+
+
+
+/***/ }),
+
+/***/ "../app-render/after-task-async-storage.external":
+/*!***********************************************************************************!*\
+  !*** external "next/dist/server/app-render/after-task-async-storage.external.js" ***!
+  \***********************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/after-task-async-storage.external.js");
+
+/***/ }),
+
+/***/ "../app-render/work-async-storage.external":
+/*!*****************************************************************************!*\
+  !*** external "next/dist/server/app-render/work-async-storage.external.js" ***!
+  \*****************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/work-async-storage.external.js");
+
+/***/ }),
+
+/***/ "./work-unit-async-storage.external":
+/*!**********************************************************************************!*\
+  !*** external "next/dist/server/app-render/work-unit-async-storage.external.js" ***!
+  \**********************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/server/app-render/work-unit-async-storage.external.js");
+
+/***/ }),
+
+/***/ "@prisma/client":
+/*!*********************************!*\
+  !*** external "@prisma/client" ***!
+  \*********************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("@prisma/client");
+
+/***/ }),
+
+/***/ "child_process":
+/*!********************************!*\
+  !*** external "child_process" ***!
+  \********************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("child_process");
+
+/***/ }),
+
+/***/ "crypto":
+/*!*************************!*\
+  !*** external "crypto" ***!
+  \*************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("crypto");
+
+/***/ }),
+
+/***/ "events":
+/*!*************************!*\
+  !*** external "events" ***!
+  \*************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("events");
+
+/***/ }),
+
+/***/ "http":
+/*!***********************!*\
+  !*** external "http" ***!
+  \***********************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("http");
+
+/***/ }),
+
+/***/ "https":
+/*!************************!*\
+  !*** external "https" ***!
+  \************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("https");
+
+/***/ }),
+
+/***/ "next/dist/compiled/next-server/app-page.runtime.dev.js":
+/*!*************************************************************************!*\
+  !*** external "next/dist/compiled/next-server/app-page.runtime.dev.js" ***!
+  \*************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/compiled/next-server/app-page.runtime.dev.js");
+
+/***/ }),
+
+/***/ "next/dist/compiled/next-server/app-route.runtime.dev.js":
+/*!**************************************************************************!*\
+  !*** external "next/dist/compiled/next-server/app-route.runtime.dev.js" ***!
+  \**************************************************************************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("next/dist/compiled/next-server/app-route.runtime.dev.js");
+
+/***/ }),
+
+/***/ "util":
+/*!***********************!*\
+  !*** external "util" ***!
+  \***********************/
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("util");
+
+/***/ })
+
+};
+;
+
+// load runtime
+var __webpack_require__ = require("../../../../webpack-runtime.js");
+__webpack_require__.C(exports);
+var __webpack_exec__ = (moduleId) => (__webpack_require__(__webpack_require__.s = moduleId))
+var __webpack_exports__ = __webpack_require__.X(0, ["vendor-chunks/next","vendor-chunks/stripe","vendor-chunks/qs","vendor-chunks/object-inspect","vendor-chunks/get-intrinsic","vendor-chunks/side-channel-list","vendor-chunks/side-channel-weakmap","vendor-chunks/has-symbols","vendor-chunks/function-bind","vendor-chunks/side-channel-map","vendor-chunks/side-channel","vendor-chunks/get-proto","vendor-chunks/call-bind-apply-helpers","vendor-chunks/dunder-proto","vendor-chunks/math-intrinsics","vendor-chunks/call-bound","vendor-chunks/es-errors","vendor-chunks/gopd","vendor-chunks/es-define-property","vendor-chunks/hasown","vendor-chunks/es-object-atoms"], () => (__webpack_exec__("(rsc)/./node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2Fapi%2Fwebhooks%2Fstripe%2Froute&page=%2Fapi%2Fwebhooks%2Fstripe%2Froute&appPaths=&pagePath=private-next-app-dir%2Fapi%2Fwebhooks%2Fstripe%2Froute.ts&appDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=C%3A%5CUsers%5Cgain%5Cgit%5Cnextjs-template&isDev=true&tsconfigPath=tsconfig.json&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D!")));
+module.exports = __webpack_exports__;
+
+})();
