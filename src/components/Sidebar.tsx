@@ -1,7 +1,6 @@
 import Link from "next/link";
-
-import SidebarItems from "./SidebarItems";import { UserButton } from "@clerk/nextjs";
-
+import SidebarItems from "./SidebarItems";
+import { UserButtonWrapper } from "./auth/UserButtonWrapper";
 import { AuthSession, getUserAuth } from "@/lib/auth/utils";
 
 const Sidebar = async () => {
@@ -30,7 +29,7 @@ const UserDetails = ({ session }: { session: AuthSession }) => {
   if (!user?.name || user.name.length == 0) return null;
 
   return (
-    <Link href="/account">
+    <Link href="/profile">
       <div className="flex items-center justify-between w-full border-t border-border pt-4 px-2">
         <div className="text-muted-foreground">
           <p className="text-xs">{user.name ?? "John Doe"}</p>
@@ -38,7 +37,7 @@ const UserDetails = ({ session }: { session: AuthSession }) => {
             {user.email ?? "john@doe.com"}
           </p>
         </div>
-        <UserButton afterSignOutUrl="/" />
+        <UserButtonWrapper />
       </div>
     </Link>
   );

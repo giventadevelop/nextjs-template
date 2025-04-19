@@ -7,14 +7,22 @@ export interface SubscriptionPlan {
   features: Array<string>;
 }
 
-export const storeSubscriptionPlans: SubscriptionPlan[] = [
+export const storeSubscriptionPlans = [
   {
-    id: "pro",
-    name: "Pro",
-    description: "Pro tier that offers x, y, and z features.",
-    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? "",
-    price: 1000,
-    features: ["Feature 1", "Feature 2", "Feature 3"],
+    id: 'pro',
+    name: 'Pro',
+    description: 'Pro plan with all features',
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID,
+    price: 9.99,
+    features: [
+      'Unlimited tasks',
+      'Advanced task organization',
+      'Priority support',
+      'Custom task fields',
+      'Team collaboration',
+      'Access to dashboard',
+      'Premium features',
+    ],
   },
   {
     id: "max",
@@ -32,4 +40,4 @@ export const storeSubscriptionPlans: SubscriptionPlan[] = [
     price: 5000,
     features: ["Feature 1", "Feature 2", "Feature 3"],
   },
-];
+] as const;

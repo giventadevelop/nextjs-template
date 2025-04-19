@@ -17,23 +17,25 @@ interface ProfileFormData {
   notes: string | null;
 }
 
+const defaultFormData: ProfileFormData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: null,
+  addressLine1: null,
+  addressLine2: null,
+  city: null,
+  state: null,
+  zipCode: null,
+  country: null,
+  notes: null,
+};
+
 export default function ProfileForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<ProfileFormData>({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: null,
-    addressLine1: null,
-    addressLine2: null,
-    city: null,
-    state: null,
-    zipCode: null,
-    country: null,
-    notes: null,
-  });
+  const [formData, setFormData] = useState<ProfileFormData>(defaultFormData);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -43,8 +45,16 @@ export default function ProfileForm() {
           throw new Error("Failed to fetch profile");
         }
         const data = await response.json();
-        if (Object.keys(data).length > 0) {
-          setFormData(data);
+        // Only update form data if we got valid data back
+        if (data && typeof data === 'object' && data !== null) {
+          // Filter out any null or undefined values to avoid spreading them
+          const cleanData = Object.fromEntries(
+            Object.entries(data).filter(([_, value]) => value != null)
+          );
+          setFormData(prev => ({
+            ...defaultFormData, // Always start with default values
+            ...cleanData // Then overlay any existing data
+          }));
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -90,7 +100,10 @@ export default function ProfileForm() {
         throw new Error(data.error || "Failed to update profile");
       }
 
-      router.push("/dashboard");
+      // Show success message before redirecting
+      setError(null);
+      // Use replace to prevent back navigation to the form
+      router.replace("/");
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -272,7 +285,7 @@ export default function ProfileForm() {
       <div className="flex justify-between pt-4">
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/")}
           className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
         >
           Skip

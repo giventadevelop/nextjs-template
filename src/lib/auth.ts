@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getAuth } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 
 export async function authenticatedRequest(
   req: NextRequest,
@@ -24,4 +26,11 @@ export async function authenticatedRequest(
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
+}
+
+export async function getServerAuth() {
+  // Initialize headers first to avoid issues with dynamic usage
+  await headers();
+  // Then use auth
+  return auth();
 }

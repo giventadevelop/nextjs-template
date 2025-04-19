@@ -122,7 +122,8 @@ exports.Prisma.SubscriptionScalarFieldEnum = {
   stripeCustomerId: 'stripeCustomerId',
   stripeSubscriptionId: 'stripeSubscriptionId',
   stripePriceId: 'stripePriceId',
-  stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd'
+  stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd',
+  status: 'status'
 };
 
 exports.Prisma.TaskScalarFieldEnum = {
@@ -156,6 +157,13 @@ exports.Prisma.UserProfileScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.ProcessedStripeEventScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  type: 'type',
+  processedAt: 'processedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -175,7 +183,8 @@ exports.Prisma.NullsOrder = {
 exports.Prisma.ModelName = {
   Subscription: 'Subscription',
   Task: 'Task',
-  UserProfile: 'UserProfile'
+  UserProfile: 'UserProfile',
+  ProcessedStripeEvent: 'ProcessedStripeEvent'
 };
 
 /**

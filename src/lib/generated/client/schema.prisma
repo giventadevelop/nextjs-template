@@ -23,13 +23,15 @@ datasource db {
 }
 
 model Subscription {
-  userId                 String    @unique
-  stripeCustomerId       String    @unique @map(name: "stripe_customer_id")
-  stripeSubscriptionId   String?   @unique @map(name: "stripe_subscription_id")
-  stripePriceId          String?   @map(name: "stripe_price_id")
-  stripeCurrentPeriodEnd DateTime? @map(name: "stripe_current_period_end")
+  userId                 String      @unique
+  stripeCustomerId       String?     @unique @map(name: "stripe_customer_id")
+  stripeSubscriptionId   String?     @unique @map(name: "stripe_subscription_id")
+  stripePriceId          String?     @map(name: "stripe_price_id")
+  stripeCurrentPeriodEnd DateTime?   @map(name: "stripe_current_period_end")
+  status                 String      @default("pending") @map(name: "status")
+  userProfile            UserProfile @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-  @@id([userId, stripeCustomerId])
+  @@id([userId])
 }
 
 model Task {
@@ -47,4 +49,34 @@ model Task {
   @@index([userId])
   @@index([status])
   @@index([priority])
+}
+
+model UserProfile {
+  id           String        @id @default(cuid())
+  userId       String        @unique
+  firstName    String?
+  lastName     String?
+  email        String?
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  zipCode      String?
+  country      String?
+  notes        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  subscription Subscription?
+
+  @@index([userId])
+}
+
+model ProcessedStripeEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  type        String
+  processedAt DateTime @default(now())
+
+  @@index([eventId])
 }

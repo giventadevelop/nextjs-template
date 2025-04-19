@@ -1,6 +1,8 @@
-"use client";
+'use client';
 
 import Link from "next/link";
+import { Pagination } from "./Pagination";
+import { useSearchParams } from "next/navigation";
 
 interface Task {
   id: string;
@@ -21,7 +23,15 @@ interface DashboardContentProps {
   };
 }
 
-export function DashboardContent({ tasks, stats }: DashboardContentProps) {
+const PAGE_SIZE = 3;
+
+export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
+  const searchParams = useSearchParams();
+  const currentPage = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
+
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const paginatedTasks = tasks.slice(startIndex, startIndex + PAGE_SIZE);
+
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-8">
       {/* Dashboard Content */}
@@ -106,42 +116,58 @@ export function DashboardContent({ tasks, stats }: DashboardContentProps) {
             </Link>
           </div>
           <div className="mt-4 divide-y divide-gray-200">
-            {tasks.slice(0, 5).map((task: Task) => (
-              <div key={task.id} className="flex items-center justify-between py-4">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={task.completed}
-                    readOnly
-                    className="h-4 w-4 rounded border-gray-300 text-[#39E079]"
-                  />
-                  <span
-                    className={`ml-3 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'
-                      }`}
-                  >
-                    {task.title}
-                  </span>
-                  <span
-                    className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${task.status === 'completed'
-                      ? 'bg-green-100 text-green-800'
-                      : task.status === 'in_progress'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                      }`}
-                  >
-                    {task.status}
-                  </span>
-                </div>
+            {tasks.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-sm text-gray-500">No tasks found.</p>
                 <Link
-                  href={`/tasks/${task.id}/edit`}
-                  className="text-sm text-gray-500 hover:text-gray-700"
+                  href="/tasks/new"
+                  className="mt-2 inline-block text-sm font-medium text-[#39E079] hover:text-[#32c96d]"
                 >
-                  Edit
+                  Create your first task
                 </Link>
               </div>
-            ))}
-            {tasks.length === 0 && (
-              <p className="py-4 text-sm text-gray-500">No tasks found. Create your first task!</p>
+            ) : (
+              <>
+                {paginatedTasks.map((task: Task) => (
+                  <div key={task.id} className="flex items-center justify-between py-4">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={task.completed}
+                        readOnly
+                        className="h-4 w-4 rounded border-gray-300 text-[#39E079]"
+                      />
+                      <span
+                        className={`ml-3 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'
+                          }`}
+                      >
+                        {task.title}
+                      </span>
+                      <span
+                        className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${task.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : task.status === 'in_progress'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/tasks/${task.id}/edit`}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                ))}
+                <Pagination
+                  totalItems={tasks.length}
+                  pageSize={PAGE_SIZE}
+                  currentPage={currentPage}
+                />
+              </>
             )}
           </div>
         </div>
