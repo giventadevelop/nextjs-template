@@ -1,7 +1,11 @@
-import { auth, UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs";
+import { headers } from "next/headers";
 import Link from "next/link";
+import { UserButtonWrapper } from "@/components/auth/UserButtonWrapper";
 
 export default async function Page() {
+  // Get headers early to avoid issues with dynamic usage
+  const headersList = await headers();
   const { userId } = await auth();
 
   return (
@@ -18,18 +22,24 @@ export default async function Page() {
               {userId ? (
                 <div className="flex items-center gap-4">
                   <Link
+                    href="/profile"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
+                  >
+                    Profile
+                  </Link>
+                  <Link
                     href="/dashboard"
                     className="bg-[#39E079] text-[#141414] px-6 py-2 rounded-lg font-medium hover:bg-[#32c96d] transition-colors"
                   >
                     Go to Dashboard
                   </Link>
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButtonWrapper />
                 </div>
               ) : (
-                <>
+                <div className="flex items-center gap-4">
                   <Link
                     href="/sign-in"
-                    className="bg-[#39E079] text-[#141414] px-6 py-2 rounded-lg font-medium hover:bg-[#32c96d] transition-colors"
+                    className="text-gray-600 hover:text-gray-900 font-medium"
                   >
                     Sign In
                   </Link>
@@ -39,7 +49,7 @@ export default async function Page() {
                   >
                     Register
                   </Link>
-                </>
+                </div>
               )}
             </div>
           </div>
@@ -58,7 +68,7 @@ export default async function Page() {
           {!userId && (
             <Link
               href="/sign-up"
-              className="bg-[#39E079] text-[#141414] px-8 py-3 rounded-lg font-medium text-base hover:bg-[#32c96d] transition-colors"
+              className="bg-[#39E079] text-[#141414] px-8 py-3 rounded-lg font-medium text-base hover:bg-[#32c96d] transition-colors inline-block"
             >
               Get Started Free
             </Link>

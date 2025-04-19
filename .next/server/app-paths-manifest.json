@@ -1,8 +1,8 @@
 {
-  "/api/profile/route": "app/api/profile/route.js",
-  "/tasks/[id]/edit/page": "app/tasks/[id]/edit/page.js",
-  "/profile/page": "app/profile/page.js",
+  "/api/webhooks/stripe/route": "app/api/webhooks/stripe/route.js",
   "/page": "app/page.js",
+  "/profile/page": "app/profile/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/(auth)/sign-in/[[...sign-in]]/page": "app/(auth)/sign-in/[[...sign-in]]/page.js"
+  "/tasks/new/page": "app/tasks/new/page.js",
+  "/tasks/[id]/edit/page": "app/tasks/[id]/edit/page.js"
 }

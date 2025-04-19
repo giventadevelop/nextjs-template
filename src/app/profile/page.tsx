@@ -1,23 +1,21 @@
 import { auth } from "@clerk/nextjs";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import ProfileForm from "@/components/ProfileForm";
-import { Metadata, Viewport } from "next";
+import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Profile - TaskMngr",
   description: "Update your profile information",
 };
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
-
 export default async function ProfilePage() {
+  // Get headers early to avoid issues with dynamic usage
+  const headersList = await headers();
   const { userId } = await auth();
 
   if (!userId) {
-    redirect("/sign-in");
+    redirect('/sign-in');
   }
 
   return (

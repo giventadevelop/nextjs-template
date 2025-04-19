@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs";
+import { getServerAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
@@ -18,35 +18,28 @@ const profileSchema = z.object({
   notes: z.string().nullable().optional(),
 });
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { userId } = await auth();
+    const { userId } = await getServerAuth();
 
     if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const profile = await db.userProfile.findUnique({
       where: { userId },
     });
 
-    if (!profile) {
-      return NextResponse.json({});
-    }
-
     return NextResponse.json(profile);
   } catch (error) {
-    console.error("[PROFILE_GET]", error);
-    return NextResponse.json(
-      { error: "Failed to fetch profile" },
-      { status: 500 }
-    );
+    console.error("Error fetching profile:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const { userId } = await auth();
+    const { userId } = await getServerAuth();
 
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -90,63 +83,42 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
+    const { userId } = await getServerAuth();
+
     if (!userId) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const body = await request.json();
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      addressLine1,
-      addressLine2,
-      city,
-      state,
-      zipCode,
-      country,
-      notes,
-    } = body;
+    const data = await request.json();
 
-    // Update or create profile in database
     const profile = await db.userProfile.upsert({
-      where: {
-        userId: userId,
-      },
-      update: {
-        firstName,
-        lastName,
-        email,
-        phone,
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        zipCode,
-        country,
-        notes,
-      },
-      create: {
-        userId,
-        firstName,
-        lastName,
-        email,
-        phone,
-        addressLine1,
-        addressLine2,
-        city,
-        state,
-        zipCode,
-        country,
-        notes,
-      },
+      where: { userId },
+      create: { ...data, userId },
+      update: data,
     });
 
     return NextResponse.json(profile);
   } catch (error) {
-    console.error("[PROFILE_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Error updating profile:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const { userId } = await getServerAuth();
+
+    if (!userId) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    await db.userProfile.delete({
+      where: { userId },
+    });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
