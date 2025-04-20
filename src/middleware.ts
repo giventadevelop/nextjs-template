@@ -16,6 +16,7 @@ const publicPaths = [
   '/event(.*)',     // Make event pages public
   '/pricing(.*)',   // Make pricing page public
   '/api/webhooks(.*)', // Keep webhooks public
+  '/api/stripe/event-checkout', // Make event checkout public
 ];
 
 export default authMiddleware({
