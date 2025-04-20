@@ -10,8 +10,8 @@ dev-debug.log
 node_modules/
 
 # Next.js build output
-.next
-out
+.next/
+out/
 
 # Environment variables
 .env

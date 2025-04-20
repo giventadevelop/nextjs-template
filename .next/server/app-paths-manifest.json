@@ -1,10 +1,9 @@
 {
   "/api/profile/route": "app/api/profile/route.js",
-  "/event/page": "app/event/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/tasks/[id]/edit/page": "app/tasks/[id]/edit/page.js",
   "/profile/page": "app/profile/page.js",
-  "/event/success/page": "app/event/success/page.js",
   "/page": "app/page.js",
-  "/pricing/page": "app/pricing/page.js",
+  "/tasks/new/page": "app/tasks/new/page.js",
   "/(auth)/sign-in/[[...sign-in]]/page": "app/(auth)/sign-in/[[...sign-in]]/page.js"
 }

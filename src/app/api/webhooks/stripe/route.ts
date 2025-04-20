@@ -135,47 +135,31 @@ export async function POST(req: Request) {
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
 
-      // Only process event ticket purchases (not subscription checkouts)
+      // Handle successful payment for event tickets
       if (session.mode === "payment" && session.metadata?.eventId) {
-        const { userId, eventId, tickets } = session.metadata;
-        const parsedTickets = JSON.parse(tickets);
+        const { eventId, ticketDetails } = session.metadata;
+        const parsedTickets = JSON.parse(ticketDetails);
 
         try {
           await prisma.$transaction([
-            // Create ticket transactions
             ...parsedTickets.map((ticket: any) =>
               prisma.ticketTransaction.create({
                 data: {
-                  userId,
-                  eventId,
+                  eventId: eventId,
+                  email: session.customer_email || '',
                   ticketType: ticket.type,
                   quantity: ticket.quantity,
-                  pricePerTicket: ticket.price,
+                  pricePerUnit: ticket.price,
                   totalAmount: ticket.price * ticket.quantity,
                   status: 'completed',
-                  stripeSessionId: session.id,
                   purchaseDate: new Date(),
                 }
               })
-            ),
-            // Mark the event as processed
-            prisma.processedStripeEvent.create({
-              data: {
-                eventId: event.id,
-                type: event.type,
-                processedAt: new Date(),
-              },
-            }),
+            )
           ]);
-
-          console.log(`Successfully processed ticket purchase event ${event.id}`);
-          return NextResponse.json({ received: true });
-        } catch (dbError) {
-          console.error("Failed to process ticket purchase:", dbError);
-          return NextResponse.json(
-            { error: "Failed to process ticket purchase" },
-            { status: 200 }
-          );
+        } catch (error) {
+          console.error('Error creating ticket transactions:', error);
+          throw error;
         }
       }
     }

@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs";
 import { stripe } from "@/lib/stripe";
 
 export async function POST(request: Request) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { tickets, eventId, email } = body;
 
-    // Validate input
-    if (!tickets || !tickets.length || !eventId || !email) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
+    // Basic validation
+    if (!tickets?.length || !email) {
+      return new NextResponse(
+        JSON.stringify({ error: "Missing required fields" }),
         { status: 400 }
       );
     }
@@ -31,31 +22,33 @@ export async function POST(request: Request) {
           name: ticket.type,
           description: `Ticket for ${eventId}`,
         },
-        unit_amount: ticket.price * 100, // Convert to cents
+        unit_amount: Math.round(ticket.price * 100), // Convert to cents
       },
       quantity: ticket.quantity,
     }));
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: line_items,
+      mode: 'payment',
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event`,
       customer_email: email,
-      line_items,
-      mode: "payment",
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/event/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/event`,
       metadata: {
         eventId,
-        userId,
-        tickets: JSON.stringify(tickets),
-        email,
+        ticketDetails: JSON.stringify(tickets),
       },
     });
 
-    return NextResponse.json({ url: session.url });
-  } catch (error) {
-    console.error("Error creating checkout session:", error);
-    return NextResponse.json(
-      { error: "Failed to create checkout session" },
+    return new NextResponse(
+      JSON.stringify({ url: session.url }),
+      { status: 200 }
+    );
+  } catch (error: any) {
+    console.error('Stripe error:', error);
+    return new NextResponse(
+      JSON.stringify({ error: error.message || "Failed to create checkout session" }),
       { status: 500 }
     );
   }

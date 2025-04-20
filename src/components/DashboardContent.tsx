@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Pagination } from "./Pagination";
 import { useSearchParams } from "next/navigation";
+import { deleteTask } from "@/lib/actions/task";
 
 interface Task {
   id: string;
@@ -31,6 +32,12 @@ export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
 
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const paginatedTasks = tasks.slice(startIndex, startIndex + PAGE_SIZE);
+
+  const handleDelete = async (taskId: string) => {
+    if (confirm('Are you sure you want to delete this task?')) {
+      await deleteTask(taskId);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -154,12 +161,26 @@ export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
                         {task.status}
                       </span>
                     </div>
-                    <Link
-                      href={`/tasks/${task.id}/edit`}
-                      className="text-sm text-gray-500 hover:text-gray-700"
-                    >
-                      Edit
-                    </Link>
+                    <div className="flex items-center space-x-4">
+                      <Link
+                        href={`/tasks/${task.id}/edit`}
+                        className="text-sm text-gray-500 hover:text-gray-700 flex items-center"
+                      >
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(task.id)}
+                        className="text-sm text-red-500 hover:text-red-700 flex items-center"
+                      >
+                        <svg className="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
                 <Pagination
