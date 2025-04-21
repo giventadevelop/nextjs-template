@@ -68,6 +68,13 @@ const EventPage = () => {
       price: 0.60,
       description: 'Test ticket for production validation',
       available: 5
+    },
+    {
+      id: 8,
+      name: 'Test Ticket 2',
+      price: 0.70,
+      description: 'Test ticket for production validation',
+      available: 5
     }
   ];
 
