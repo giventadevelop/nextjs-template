@@ -33,11 +33,33 @@ alwaysApply: false
   }
   ```
 
-- **AWS Amplify Compatibility**
-  - Known issue with Next.js 15+ type definitions
-  - Required explicit type structure for successful builds
-  - Avoid parameter destructuring in function signatures
-  - Use context object pattern consistently
+- **Route Handler Type Definitions for AWS Amplify**
+  - Use exact type structure required by AWS Amplify builds
+  - Avoid custom type aliases for route parameters
+  - Use NextRequest from next/server
+
+  ```typescript
+  // ✅ DO: Use exact type structure
+  import { NextResponse } from 'next/server';
+  import type { NextRequest } from 'next/server';
+
+  export async function GET(
+    request: NextRequest,
+    { params }: { params: { id: string } }
+  ) {
+    return NextResponse.json({ data: params.id });
+  }
+
+  // ❌ DON'T: Use custom type aliases
+  type RouteParams = { params: { id: string } };
+
+  export async function GET(
+    request: NextRequest,
+    context: RouteParams  // This will fail in AWS Amplify
+  ) {
+    return NextResponse.json({ data: context.params.id });
+  }
+  ```
 
 - **Response Handling**
   - Always use NextResponse.json() for JSON responses
@@ -82,23 +104,24 @@ alwaysApply: false
   ```
 
 - **Dynamic Route Parameters**
-  - Define specific types for each route parameter
-  - Use descriptive names for parameter types
-  - Keep parameter types in sync with folder structure
+  - Use inline type definitions for params
+  - Match param names to folder structure
+  - Keep types simple and direct
 
   ```typescript
-  // ✅ DO: Clear parameter typing
-  type UserRouteParams = { params: { userId: string } };
-  type PostRouteParams = { params: { userId: string; postId: string } };
-
+  // ✅ DO: Inline parameter typing
   // For /api/users/[userId]/posts/[postId]
   export async function GET(
     request: NextRequest,
-    context: PostRouteParams
+    { params }: { params: { userId: string; postId: string } }
   ) {
-    const { userId, postId } = context.params;
+    const { userId, postId } = params;
     // ...
   }
+
+  // ❌ DON'T: Use separate type definitions
+  type PostRouteParams = { params: { userId: string; postId: string } };
+  export async function GET(request: NextRequest, context: PostRouteParams)
   ```
 
 - **Request Handling**
@@ -110,7 +133,7 @@ alwaysApply: false
   // ✅ DO: Proper request handling
   export async function GET(
     request: NextRequest,
-    context: RouteParams
+    { params }: { params: { id: string } }
   ) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q');
@@ -132,7 +155,7 @@ alwaysApply: false
   ```
 
 - **Testing Considerations**
-  - Mock NextRequest and RouteParams types in tests
+  - Mock the exact parameter structure
   - Test error handling paths
   - Verify response types and structures
 

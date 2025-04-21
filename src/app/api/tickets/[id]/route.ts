@@ -2,15 +2,13 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import type { NextRequest } from 'next/server';
 
-type RouteParams = { params: { id: string } };
-
 export async function GET(
   request: NextRequest,
-  context: RouteParams
+  { params }: { params: { id: string } }
 ) {
   try {
     const transaction = await prisma.ticketTransaction.findUnique({
-      where: { id: context.params.id },
+      where: { id: params.id },
     });
 
     if (!transaction) {
