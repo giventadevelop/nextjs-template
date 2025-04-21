@@ -1,7 +1,9 @@
 import { auth } from "@clerk/nextjs";
+import { headers, cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import Link from "next/link";
-import { Navbar } from "@/components/Navbar";
+import { DashboardContent } from "@/components/DashboardContent";
+import { Suspense } from "react";
 
 interface Task {
   id: string;
@@ -11,11 +13,88 @@ interface Task {
   priority: string;
 }
 
-export default async function DashboardPage() {
-  const { userId } = auth();
+interface PageProps {
+  searchParams: { success?: string; session_id?: string };
+}
+
+async function checkSubscriptionStatus(userId: string, isReturnFromStripe: boolean = false) {
+  // If returning from Stripe, try up to 3 times with a 1-second delay
+  const maxAttempts = isReturnFromStripe ? 3 : 1;
+  const delayMs = 1000; // 1 second
+
+  for (let i = 0; i < maxAttempts; i++) {
+    const subscription = await db.subscription.findFirst({
+      where: { userId },
+      select: {
+        stripeSubscriptionId: true,
+        stripePriceId: true,
+        stripeCurrentPeriodEnd: true,
+        status: true,
+      },
+    });
+
+    console.log('Subscription check attempt', i + 1, ':', {
+      userId,
+      subscription,
+      isReturnFromStripe,
+      attemptNumber: i + 1,
+      maxAttempts,
+    });
+
+    // If no subscription record exists, redirect to pricing
+    if (!subscription) {
+      return false;
+    }
+
+    // Check for valid subscription - include 'active', 'trialing', and 'incomplete' (payment processing)
+    const validStatuses = ['active', 'trialing', 'incomplete'];
+    const isValid = subscription.stripeSubscriptionId &&
+      validStatuses.includes(subscription.status || '');
+
+    if (isValid) {
+      return true;
+    }
+
+    // Only wait if we're returning from Stripe and this isn't the last attempt
+    if (isReturnFromStripe && i < maxAttempts - 1) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return false;
+}
+
+export default async function DashboardPage({ searchParams }: PageProps) {
+  // Initialize headers and auth
+  const headersList = await headers();
+  const cookiesList = await cookies();
+  const { userId } = await auth();
 
   if (!userId) {
-    return null;
+    redirect('/sign-in');
+  }
+
+  // Get search params
+  const success = searchParams?.success;
+  const sessionId = searchParams?.session_id;
+  const isReturnFromStripe = Boolean(success === 'true' || sessionId);
+
+  // Check subscription status with more retries if returning from Stripe
+  const hasActiveSubscription = await checkSubscriptionStatus(userId, isReturnFromStripe);
+
+  if (!hasActiveSubscription) {
+    // If we're returning from Stripe but subscription isn't active yet, wait a bit longer
+    if (isReturnFromStripe) {
+      // Wait for 2 seconds more
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Check one final time
+      const finalCheck = await checkSubscriptionStatus(userId, true);
+      if (!finalCheck) {
+        redirect('/pricing?message=subscription-pending');
+      }
+    } else {
+      redirect('/pricing?message=subscription-required');
+    }
   }
 
   const tasks = await db.task.findMany({
@@ -32,7 +111,7 @@ export default async function DashboardPage() {
       completed: true,
       priority: true,
     },
-  });
+  }) || [];
 
   const stats = {
     total: tasks.length,
@@ -43,132 +122,17 @@ export default async function DashboardPage() {
   };
 
   return (
-    <>
-      <Navbar />
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Dashboard Content */}
-        <div className="space-y-8 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-medium text-gray-500">Welcome back!</h2>
-              <h1 className="text-2xl font-bold text-gray-900">Your Dashboard</h1>
-            </div>
-            <Link
-              href="/tasks/new"
-              className="rounded-md bg-[#39E079] px-6 py-2 text-sm font-medium text-[#141414] hover:bg-[#32c96d] focus:outline-none focus:ring-2 focus:ring-[#39E079] focus:ring-offset-2"
-            >
-              Create Task
-            </Link>
-          </div>
-
-          {/* Task Statistics */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Total Tasks</h3>
-              <p className="mt-2 text-3xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Completed</h3>
-              <p className="mt-2 text-3xl font-bold text-green-600">{stats.completed}</p>
-            </div>
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">In Progress</h3>
-              <p className="mt-2 text-3xl font-bold text-blue-600">{stats.inProgress}</p>
-            </div>
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">Pending</h3>
-              <p className="mt-2 text-3xl font-bold text-yellow-600">{stats.pending}</p>
-            </div>
-            <div className="rounded-lg bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-medium text-gray-500">High Priority</h3>
-              <p className="mt-2 text-3xl font-bold text-red-600">{stats.highPriority}</p>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-medium text-gray-900">Quick Actions</h2>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Link
-                href="/tasks"
-                className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                View All Tasks
-              </Link>
-              <Link
-                href="/tasks/new"
-                className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Create New Task
-              </Link>
-              <Link
-                href="/tasks?status=in_progress"
-                className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                View In Progress
-              </Link>
-              <Link
-                href="/tasks?priority=high"
-                className="flex items-center justify-center rounded-lg border border-gray-200 p-4 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                High Priority Tasks
-              </Link>
-            </div>
-          </div>
-
-          {/* Recent Tasks */}
-          <div className="rounded-lg bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Recent Tasks</h2>
-              <Link
-                href="/tasks"
-                className="text-sm font-medium text-[#39E079] hover:text-[#32c96d]"
-              >
-                View All
-              </Link>
-            </div>
-            <div className="mt-4 divide-y divide-gray-200">
-              {tasks.slice(0, 5).map((task: Task) => (
-                <div key={task.id} className="flex items-center justify-between py-4">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={task.completed}
-                      readOnly
-                      className="h-4 w-4 rounded border-gray-300 text-[#39E079]"
-                    />
-                    <span
-                      className={`ml-3 text-sm ${task.status === 'completed' ? 'text-gray-500 line-through' : 'text-gray-900'
-                        }`}
-                    >
-                      {task.title}
-                    </span>
-                    <span
-                      className={`ml-2 inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${task.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : task.status === 'in_progress'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                    >
-                      {task.status}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/tasks/${task.id}/edit`}
-                    className="text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    Edit
-                  </Link>
-                </div>
-              ))}
-              {tasks.length === 0 && (
-                <p className="py-4 text-sm text-gray-500">No tasks found. Create your first task!</p>
-              )}
-            </div>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#39E079] mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading your dashboard...</p>
           </div>
         </div>
-      </div>
-    </>
+      }
+    >
+      <DashboardContent tasks={tasks} stats={stats} />
+    </Suspense>
   );
 }

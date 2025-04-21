@@ -1,51 +1,11 @@
-import { auth, UserButton } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs";
 import Link from "next/link";
 
 export default async function Page() {
-  const { userId } = auth();
+  const { userId } = await auth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-xl">📋</span>
-              <span className="text-xl font-bold text-gray-900">TaskMngr</span>
-            </Link>
-            <div className="flex items-center gap-4">
-              {userId ? (
-                <div className="flex items-center gap-4">
-                  <Link
-                    href="/dashboard"
-                    className="bg-[#39E079] text-[#141414] px-6 py-2 rounded-lg font-medium hover:bg-[#32c96d] transition-colors"
-                  >
-                    Go to Dashboard
-                  </Link>
-                  <UserButton afterSignOutUrl="/" />
-                </div>
-              ) : (
-                <>
-                  <Link
-                    href="/sign-in"
-                    className="bg-[#39E079] text-[#141414] px-6 py-2 rounded-lg font-medium hover:bg-[#32c96d] transition-colors"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    className="bg-[#39E079] text-[#141414] px-6 py-2 rounded-lg font-medium hover:bg-[#32c96d] transition-colors"
-                  >
-                    Register
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20">
         <div className="text-center">
@@ -58,7 +18,7 @@ export default async function Page() {
           {!userId && (
             <Link
               href="/sign-up"
-              className="bg-[#39E079] text-[#141414] px-8 py-3 rounded-lg font-medium text-base hover:bg-[#32c96d] transition-colors"
+              className="bg-[#39E079] text-[#141414] px-8 py-3 rounded-lg font-medium text-base hover:bg-[#32c96d] transition-colors inline-block"
             >
               Get Started Free
             </Link>

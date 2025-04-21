@@ -23,6 +23,21 @@ export type Subscription = $Result.DefaultSelection<Prisma.$SubscriptionPayload>
  * 
  */
 export type Task = $Result.DefaultSelection<Prisma.$TaskPayload>
+/**
+ * Model UserProfile
+ * 
+ */
+export type UserProfile = $Result.DefaultSelection<Prisma.$UserProfilePayload>
+/**
+ * Model ProcessedStripeEvent
+ * 
+ */
+export type ProcessedStripeEvent = $Result.DefaultSelection<Prisma.$ProcessedStripeEventPayload>
+/**
+ * Model TicketTransaction
+ * 
+ */
+export type TicketTransaction = $Result.DefaultSelection<Prisma.$TicketTransactionPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -168,6 +183,36 @@ export class PrismaClient<
     * ```
     */
   get task(): Prisma.TaskDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.userProfile`: Exposes CRUD operations for the **UserProfile** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more UserProfiles
+    * const userProfiles = await prisma.userProfile.findMany()
+    * ```
+    */
+  get userProfile(): Prisma.UserProfileDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.processedStripeEvent`: Exposes CRUD operations for the **ProcessedStripeEvent** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more ProcessedStripeEvents
+    * const processedStripeEvents = await prisma.processedStripeEvent.findMany()
+    * ```
+    */
+  get processedStripeEvent(): Prisma.ProcessedStripeEventDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.ticketTransaction`: Exposes CRUD operations for the **TicketTransaction** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more TicketTransactions
+    * const ticketTransactions = await prisma.ticketTransaction.findMany()
+    * ```
+    */
+  get ticketTransaction(): Prisma.TicketTransactionDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -609,7 +654,10 @@ export namespace Prisma {
 
   export const ModelName: {
     Subscription: 'Subscription',
-    Task: 'Task'
+    Task: 'Task',
+    UserProfile: 'UserProfile',
+    ProcessedStripeEvent: 'ProcessedStripeEvent',
+    TicketTransaction: 'TicketTransaction'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -628,7 +676,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "subscription" | "task"
+      modelProps: "subscription" | "task" | "userProfile" | "processedStripeEvent" | "ticketTransaction"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -780,6 +828,228 @@ export namespace Prisma {
           }
         }
       }
+      UserProfile: {
+        payload: Prisma.$UserProfilePayload<ExtArgs>
+        fields: Prisma.UserProfileFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.UserProfileFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.UserProfileFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          findFirst: {
+            args: Prisma.UserProfileFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.UserProfileFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          findMany: {
+            args: Prisma.UserProfileFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>[]
+          }
+          create: {
+            args: Prisma.UserProfileCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          createMany: {
+            args: Prisma.UserProfileCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.UserProfileCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>[]
+          }
+          delete: {
+            args: Prisma.UserProfileDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          update: {
+            args: Prisma.UserProfileUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          deleteMany: {
+            args: Prisma.UserProfileDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.UserProfileUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.UserProfileUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>[]
+          }
+          upsert: {
+            args: Prisma.UserProfileUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$UserProfilePayload>
+          }
+          aggregate: {
+            args: Prisma.UserProfileAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateUserProfile>
+          }
+          groupBy: {
+            args: Prisma.UserProfileGroupByArgs<ExtArgs>
+            result: $Utils.Optional<UserProfileGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.UserProfileCountArgs<ExtArgs>
+            result: $Utils.Optional<UserProfileCountAggregateOutputType> | number
+          }
+        }
+      }
+      ProcessedStripeEvent: {
+        payload: Prisma.$ProcessedStripeEventPayload<ExtArgs>
+        fields: Prisma.ProcessedStripeEventFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.ProcessedStripeEventFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.ProcessedStripeEventFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          findFirst: {
+            args: Prisma.ProcessedStripeEventFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.ProcessedStripeEventFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          findMany: {
+            args: Prisma.ProcessedStripeEventFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>[]
+          }
+          create: {
+            args: Prisma.ProcessedStripeEventCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          createMany: {
+            args: Prisma.ProcessedStripeEventCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.ProcessedStripeEventCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>[]
+          }
+          delete: {
+            args: Prisma.ProcessedStripeEventDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          update: {
+            args: Prisma.ProcessedStripeEventUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          deleteMany: {
+            args: Prisma.ProcessedStripeEventDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.ProcessedStripeEventUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.ProcessedStripeEventUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>[]
+          }
+          upsert: {
+            args: Prisma.ProcessedStripeEventUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ProcessedStripeEventPayload>
+          }
+          aggregate: {
+            args: Prisma.ProcessedStripeEventAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateProcessedStripeEvent>
+          }
+          groupBy: {
+            args: Prisma.ProcessedStripeEventGroupByArgs<ExtArgs>
+            result: $Utils.Optional<ProcessedStripeEventGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.ProcessedStripeEventCountArgs<ExtArgs>
+            result: $Utils.Optional<ProcessedStripeEventCountAggregateOutputType> | number
+          }
+        }
+      }
+      TicketTransaction: {
+        payload: Prisma.$TicketTransactionPayload<ExtArgs>
+        fields: Prisma.TicketTransactionFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.TicketTransactionFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.TicketTransactionFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          findFirst: {
+            args: Prisma.TicketTransactionFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.TicketTransactionFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          findMany: {
+            args: Prisma.TicketTransactionFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>[]
+          }
+          create: {
+            args: Prisma.TicketTransactionCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          createMany: {
+            args: Prisma.TicketTransactionCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.TicketTransactionCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>[]
+          }
+          delete: {
+            args: Prisma.TicketTransactionDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          update: {
+            args: Prisma.TicketTransactionUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          deleteMany: {
+            args: Prisma.TicketTransactionDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.TicketTransactionUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.TicketTransactionUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>[]
+          }
+          upsert: {
+            args: Prisma.TicketTransactionUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$TicketTransactionPayload>
+          }
+          aggregate: {
+            args: Prisma.TicketTransactionAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTicketTransaction>
+          }
+          groupBy: {
+            args: Prisma.TicketTransactionGroupByArgs<ExtArgs>
+            result: $Utils.Optional<TicketTransactionGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.TicketTransactionCountArgs<ExtArgs>
+            result: $Utils.Optional<TicketTransactionCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -866,6 +1136,9 @@ export namespace Prisma {
   export type GlobalOmitConfig = {
     subscription?: SubscriptionOmit
     task?: TaskOmit
+    userProfile?: UserProfileOmit
+    processedStripeEvent?: ProcessedStripeEventOmit
+    ticketTransaction?: TicketTransactionOmit
   }
 
   /* Types for Logging */
@@ -976,6 +1249,7 @@ export namespace Prisma {
     stripeSubscriptionId: string | null
     stripePriceId: string | null
     stripeCurrentPeriodEnd: Date | null
+    status: string | null
   }
 
   export type SubscriptionMaxAggregateOutputType = {
@@ -984,6 +1258,7 @@ export namespace Prisma {
     stripeSubscriptionId: string | null
     stripePriceId: string | null
     stripeCurrentPeriodEnd: Date | null
+    status: string | null
   }
 
   export type SubscriptionCountAggregateOutputType = {
@@ -992,6 +1267,7 @@ export namespace Prisma {
     stripeSubscriptionId: number
     stripePriceId: number
     stripeCurrentPeriodEnd: number
+    status: number
     _all: number
   }
 
@@ -1002,6 +1278,7 @@ export namespace Prisma {
     stripeSubscriptionId?: true
     stripePriceId?: true
     stripeCurrentPeriodEnd?: true
+    status?: true
   }
 
   export type SubscriptionMaxAggregateInputType = {
@@ -1010,6 +1287,7 @@ export namespace Prisma {
     stripeSubscriptionId?: true
     stripePriceId?: true
     stripeCurrentPeriodEnd?: true
+    status?: true
   }
 
   export type SubscriptionCountAggregateInputType = {
@@ -1018,6 +1296,7 @@ export namespace Prisma {
     stripeSubscriptionId?: true
     stripePriceId?: true
     stripeCurrentPeriodEnd?: true
+    status?: true
     _all?: true
   }
 
@@ -1095,10 +1374,11 @@ export namespace Prisma {
 
   export type SubscriptionGroupByOutputType = {
     userId: string
-    stripeCustomerId: string
+    stripeCustomerId: string | null
     stripeSubscriptionId: string | null
     stripePriceId: string | null
     stripeCurrentPeriodEnd: Date | null
+    status: string
     _count: SubscriptionCountAggregateOutputType | null
     _min: SubscriptionMinAggregateOutputType | null
     _max: SubscriptionMaxAggregateOutputType | null
@@ -1124,6 +1404,8 @@ export namespace Prisma {
     stripeSubscriptionId?: boolean
     stripePriceId?: boolean
     stripeCurrentPeriodEnd?: boolean
+    status?: boolean
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subscription"]>
 
   export type SubscriptionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1132,6 +1414,8 @@ export namespace Prisma {
     stripeSubscriptionId?: boolean
     stripePriceId?: boolean
     stripeCurrentPeriodEnd?: boolean
+    status?: boolean
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subscription"]>
 
   export type SubscriptionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -1140,6 +1424,8 @@ export namespace Prisma {
     stripeSubscriptionId?: boolean
     stripePriceId?: boolean
     stripeCurrentPeriodEnd?: boolean
+    status?: boolean
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["subscription"]>
 
   export type SubscriptionSelectScalar = {
@@ -1148,19 +1434,32 @@ export namespace Prisma {
     stripeSubscriptionId?: boolean
     stripePriceId?: boolean
     stripeCurrentPeriodEnd?: boolean
+    status?: boolean
   }
 
-  export type SubscriptionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "stripeCustomerId" | "stripeSubscriptionId" | "stripePriceId" | "stripeCurrentPeriodEnd", ExtArgs["result"]["subscription"]>
+  export type SubscriptionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"userId" | "stripeCustomerId" | "stripeSubscriptionId" | "stripePriceId" | "stripeCurrentPeriodEnd" | "status", ExtArgs["result"]["subscription"]>
+  export type SubscriptionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
+  }
+  export type SubscriptionIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
+  }
+  export type SubscriptionIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    userProfile?: boolean | UserProfileDefaultArgs<ExtArgs>
+  }
 
   export type $SubscriptionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Subscription"
-    objects: {}
+    objects: {
+      userProfile: Prisma.$UserProfilePayload<ExtArgs>
+    }
     scalars: $Extensions.GetPayloadResult<{
       userId: string
-      stripeCustomerId: string
+      stripeCustomerId: string | null
       stripeSubscriptionId: string | null
       stripePriceId: string | null
       stripeCurrentPeriodEnd: Date | null
+      status: string
     }, ExtArgs["result"]["subscription"]>
     composites: {}
   }
@@ -1555,6 +1854,7 @@ export namespace Prisma {
    */
   export interface Prisma__SubscriptionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    userProfile<T extends UserProfileDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserProfileDefaultArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1589,6 +1889,7 @@ export namespace Prisma {
     readonly stripeSubscriptionId: FieldRef<"Subscription", 'String'>
     readonly stripePriceId: FieldRef<"Subscription", 'String'>
     readonly stripeCurrentPeriodEnd: FieldRef<"Subscription", 'DateTime'>
+    readonly status: FieldRef<"Subscription", 'String'>
   }
     
 
@@ -1605,6 +1906,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
     /**
      * Filter, which Subscription to fetch.
      */
@@ -1624,6 +1929,10 @@ export namespace Prisma {
      */
     omit?: SubscriptionOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
+    /**
      * Filter, which Subscription to fetch.
      */
     where: SubscriptionWhereUniqueInput
@@ -1641,6 +1950,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
     /**
      * Filter, which Subscription to fetch.
      */
@@ -1690,6 +2003,10 @@ export namespace Prisma {
      */
     omit?: SubscriptionOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
+    /**
      * Filter, which Subscription to fetch.
      */
     where?: SubscriptionWhereInput
@@ -1738,6 +2055,10 @@ export namespace Prisma {
      */
     omit?: SubscriptionOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
+    /**
      * Filter, which Subscriptions to fetch.
      */
     where?: SubscriptionWhereInput
@@ -1781,6 +2102,10 @@ export namespace Prisma {
      */
     omit?: SubscriptionOmit<ExtArgs> | null
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
+    /**
      * The data needed to create a Subscription.
      */
     data: XOR<SubscriptionCreateInput, SubscriptionUncheckedCreateInput>
@@ -1814,6 +2139,10 @@ export namespace Prisma {
      */
     data: SubscriptionCreateManyInput | SubscriptionCreateManyInput[]
     skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionIncludeCreateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -1828,6 +2157,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
     /**
      * The data needed to update a Subscription.
      */
@@ -1880,6 +2213,10 @@ export namespace Prisma {
      * Limit how many Subscriptions to update.
      */
     limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionIncludeUpdateManyAndReturn<ExtArgs> | null
   }
 
   /**
@@ -1894,6 +2231,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
     /**
      * The filter to search for the Subscription to update in case it exists.
      */
@@ -1920,6 +2261,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
     /**
      * Filter which Subscription to delete.
      */
@@ -1952,6 +2297,10 @@ export namespace Prisma {
      * Omit specific fields from the Subscription
      */
     omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
   }
 
 
@@ -3016,6 +3365,3283 @@ export namespace Prisma {
 
 
   /**
+   * Model UserProfile
+   */
+
+  export type AggregateUserProfile = {
+    _count: UserProfileCountAggregateOutputType | null
+    _min: UserProfileMinAggregateOutputType | null
+    _max: UserProfileMaxAggregateOutputType | null
+  }
+
+  export type UserProfileMinAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    phone: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    zipCode: string | null
+    country: string | null
+    notes: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type UserProfileMaxAggregateOutputType = {
+    id: string | null
+    userId: string | null
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    phone: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    zipCode: string | null
+    country: string | null
+    notes: string | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type UserProfileCountAggregateOutputType = {
+    id: number
+    userId: number
+    firstName: number
+    lastName: number
+    email: number
+    phone: number
+    addressLine1: number
+    addressLine2: number
+    city: number
+    state: number
+    zipCode: number
+    country: number
+    notes: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type UserProfileMinAggregateInputType = {
+    id?: true
+    userId?: true
+    firstName?: true
+    lastName?: true
+    email?: true
+    phone?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    zipCode?: true
+    country?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type UserProfileMaxAggregateInputType = {
+    id?: true
+    userId?: true
+    firstName?: true
+    lastName?: true
+    email?: true
+    phone?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    zipCode?: true
+    country?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type UserProfileCountAggregateInputType = {
+    id?: true
+    userId?: true
+    firstName?: true
+    lastName?: true
+    email?: true
+    phone?: true
+    addressLine1?: true
+    addressLine2?: true
+    city?: true
+    state?: true
+    zipCode?: true
+    country?: true
+    notes?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type UserProfileAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserProfile to aggregate.
+     */
+    where?: UserProfileWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserProfiles to fetch.
+     */
+    orderBy?: UserProfileOrderByWithRelationInput | UserProfileOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: UserProfileWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserProfiles from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserProfiles.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned UserProfiles
+    **/
+    _count?: true | UserProfileCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: UserProfileMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: UserProfileMaxAggregateInputType
+  }
+
+  export type GetUserProfileAggregateType<T extends UserProfileAggregateArgs> = {
+        [P in keyof T & keyof AggregateUserProfile]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateUserProfile[P]>
+      : GetScalarType<T[P], AggregateUserProfile[P]>
+  }
+
+
+
+
+  export type UserProfileGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: UserProfileWhereInput
+    orderBy?: UserProfileOrderByWithAggregationInput | UserProfileOrderByWithAggregationInput[]
+    by: UserProfileScalarFieldEnum[] | UserProfileScalarFieldEnum
+    having?: UserProfileScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: UserProfileCountAggregateInputType | true
+    _min?: UserProfileMinAggregateInputType
+    _max?: UserProfileMaxAggregateInputType
+  }
+
+  export type UserProfileGroupByOutputType = {
+    id: string
+    userId: string
+    firstName: string | null
+    lastName: string | null
+    email: string | null
+    phone: string | null
+    addressLine1: string | null
+    addressLine2: string | null
+    city: string | null
+    state: string | null
+    zipCode: string | null
+    country: string | null
+    notes: string | null
+    createdAt: Date
+    updatedAt: Date
+    _count: UserProfileCountAggregateOutputType | null
+    _min: UserProfileMinAggregateOutputType | null
+    _max: UserProfileMaxAggregateOutputType | null
+  }
+
+  type GetUserProfileGroupByPayload<T extends UserProfileGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<UserProfileGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof UserProfileGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], UserProfileGroupByOutputType[P]>
+            : GetScalarType<T[P], UserProfileGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type UserProfileSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    email?: boolean
+    phone?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    zipCode?: boolean
+    country?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    subscription?: boolean | UserProfile$subscriptionArgs<ExtArgs>
+  }, ExtArgs["result"]["userProfile"]>
+
+  export type UserProfileSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    email?: boolean
+    phone?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    zipCode?: boolean
+    country?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["userProfile"]>
+
+  export type UserProfileSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    userId?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    email?: boolean
+    phone?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    zipCode?: boolean
+    country?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["userProfile"]>
+
+  export type UserProfileSelectScalar = {
+    id?: boolean
+    userId?: boolean
+    firstName?: boolean
+    lastName?: boolean
+    email?: boolean
+    phone?: boolean
+    addressLine1?: boolean
+    addressLine2?: boolean
+    city?: boolean
+    state?: boolean
+    zipCode?: boolean
+    country?: boolean
+    notes?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type UserProfileOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "firstName" | "lastName" | "email" | "phone" | "addressLine1" | "addressLine2" | "city" | "state" | "zipCode" | "country" | "notes" | "createdAt" | "updatedAt", ExtArgs["result"]["userProfile"]>
+  export type UserProfileInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    subscription?: boolean | UserProfile$subscriptionArgs<ExtArgs>
+  }
+  export type UserProfileIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type UserProfileIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $UserProfilePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "UserProfile"
+    objects: {
+      subscription: Prisma.$SubscriptionPayload<ExtArgs> | null
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      userId: string
+      firstName: string | null
+      lastName: string | null
+      email: string | null
+      phone: string | null
+      addressLine1: string | null
+      addressLine2: string | null
+      city: string | null
+      state: string | null
+      zipCode: string | null
+      country: string | null
+      notes: string | null
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["userProfile"]>
+    composites: {}
+  }
+
+  type UserProfileGetPayload<S extends boolean | null | undefined | UserProfileDefaultArgs> = $Result.GetResult<Prisma.$UserProfilePayload, S>
+
+  type UserProfileCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<UserProfileFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: UserProfileCountAggregateInputType | true
+    }
+
+  export interface UserProfileDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['UserProfile'], meta: { name: 'UserProfile' } }
+    /**
+     * Find zero or one UserProfile that matches the filter.
+     * @param {UserProfileFindUniqueArgs} args - Arguments to find a UserProfile
+     * @example
+     * // Get one UserProfile
+     * const userProfile = await prisma.userProfile.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends UserProfileFindUniqueArgs>(args: SelectSubset<T, UserProfileFindUniqueArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one UserProfile that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {UserProfileFindUniqueOrThrowArgs} args - Arguments to find a UserProfile
+     * @example
+     * // Get one UserProfile
+     * const userProfile = await prisma.userProfile.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends UserProfileFindUniqueOrThrowArgs>(args: SelectSubset<T, UserProfileFindUniqueOrThrowArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserProfile that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileFindFirstArgs} args - Arguments to find a UserProfile
+     * @example
+     * // Get one UserProfile
+     * const userProfile = await prisma.userProfile.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends UserProfileFindFirstArgs>(args?: SelectSubset<T, UserProfileFindFirstArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first UserProfile that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileFindFirstOrThrowArgs} args - Arguments to find a UserProfile
+     * @example
+     * // Get one UserProfile
+     * const userProfile = await prisma.userProfile.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends UserProfileFindFirstOrThrowArgs>(args?: SelectSubset<T, UserProfileFindFirstOrThrowArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more UserProfiles that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all UserProfiles
+     * const userProfiles = await prisma.userProfile.findMany()
+     * 
+     * // Get first 10 UserProfiles
+     * const userProfiles = await prisma.userProfile.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const userProfileWithIdOnly = await prisma.userProfile.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends UserProfileFindManyArgs>(args?: SelectSubset<T, UserProfileFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a UserProfile.
+     * @param {UserProfileCreateArgs} args - Arguments to create a UserProfile.
+     * @example
+     * // Create one UserProfile
+     * const UserProfile = await prisma.userProfile.create({
+     *   data: {
+     *     // ... data to create a UserProfile
+     *   }
+     * })
+     * 
+     */
+    create<T extends UserProfileCreateArgs>(args: SelectSubset<T, UserProfileCreateArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many UserProfiles.
+     * @param {UserProfileCreateManyArgs} args - Arguments to create many UserProfiles.
+     * @example
+     * // Create many UserProfiles
+     * const userProfile = await prisma.userProfile.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends UserProfileCreateManyArgs>(args?: SelectSubset<T, UserProfileCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many UserProfiles and returns the data saved in the database.
+     * @param {UserProfileCreateManyAndReturnArgs} args - Arguments to create many UserProfiles.
+     * @example
+     * // Create many UserProfiles
+     * const userProfile = await prisma.userProfile.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many UserProfiles and only return the `id`
+     * const userProfileWithIdOnly = await prisma.userProfile.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends UserProfileCreateManyAndReturnArgs>(args?: SelectSubset<T, UserProfileCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a UserProfile.
+     * @param {UserProfileDeleteArgs} args - Arguments to delete one UserProfile.
+     * @example
+     * // Delete one UserProfile
+     * const UserProfile = await prisma.userProfile.delete({
+     *   where: {
+     *     // ... filter to delete one UserProfile
+     *   }
+     * })
+     * 
+     */
+    delete<T extends UserProfileDeleteArgs>(args: SelectSubset<T, UserProfileDeleteArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one UserProfile.
+     * @param {UserProfileUpdateArgs} args - Arguments to update one UserProfile.
+     * @example
+     * // Update one UserProfile
+     * const userProfile = await prisma.userProfile.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends UserProfileUpdateArgs>(args: SelectSubset<T, UserProfileUpdateArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more UserProfiles.
+     * @param {UserProfileDeleteManyArgs} args - Arguments to filter UserProfiles to delete.
+     * @example
+     * // Delete a few UserProfiles
+     * const { count } = await prisma.userProfile.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends UserProfileDeleteManyArgs>(args?: SelectSubset<T, UserProfileDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserProfiles.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many UserProfiles
+     * const userProfile = await prisma.userProfile.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends UserProfileUpdateManyArgs>(args: SelectSubset<T, UserProfileUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more UserProfiles and returns the data updated in the database.
+     * @param {UserProfileUpdateManyAndReturnArgs} args - Arguments to update many UserProfiles.
+     * @example
+     * // Update many UserProfiles
+     * const userProfile = await prisma.userProfile.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more UserProfiles and only return the `id`
+     * const userProfileWithIdOnly = await prisma.userProfile.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends UserProfileUpdateManyAndReturnArgs>(args: SelectSubset<T, UserProfileUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one UserProfile.
+     * @param {UserProfileUpsertArgs} args - Arguments to update or create a UserProfile.
+     * @example
+     * // Update or create a UserProfile
+     * const userProfile = await prisma.userProfile.upsert({
+     *   create: {
+     *     // ... data to create a UserProfile
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the UserProfile we want to update
+     *   }
+     * })
+     */
+    upsert<T extends UserProfileUpsertArgs>(args: SelectSubset<T, UserProfileUpsertArgs<ExtArgs>>): Prisma__UserProfileClient<$Result.GetResult<Prisma.$UserProfilePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of UserProfiles.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileCountArgs} args - Arguments to filter UserProfiles to count.
+     * @example
+     * // Count the number of UserProfiles
+     * const count = await prisma.userProfile.count({
+     *   where: {
+     *     // ... the filter for the UserProfiles we want to count
+     *   }
+     * })
+    **/
+    count<T extends UserProfileCountArgs>(
+      args?: Subset<T, UserProfileCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], UserProfileCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a UserProfile.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends UserProfileAggregateArgs>(args: Subset<T, UserProfileAggregateArgs>): Prisma.PrismaPromise<GetUserProfileAggregateType<T>>
+
+    /**
+     * Group by UserProfile.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {UserProfileGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends UserProfileGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: UserProfileGroupByArgs['orderBy'] }
+        : { orderBy?: UserProfileGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, UserProfileGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetUserProfileGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the UserProfile model
+   */
+  readonly fields: UserProfileFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for UserProfile.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__UserProfileClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    subscription<T extends UserProfile$subscriptionArgs<ExtArgs> = {}>(args?: Subset<T, UserProfile$subscriptionArgs<ExtArgs>>): Prisma__SubscriptionClient<$Result.GetResult<Prisma.$SubscriptionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the UserProfile model
+   */
+  interface UserProfileFieldRefs {
+    readonly id: FieldRef<"UserProfile", 'String'>
+    readonly userId: FieldRef<"UserProfile", 'String'>
+    readonly firstName: FieldRef<"UserProfile", 'String'>
+    readonly lastName: FieldRef<"UserProfile", 'String'>
+    readonly email: FieldRef<"UserProfile", 'String'>
+    readonly phone: FieldRef<"UserProfile", 'String'>
+    readonly addressLine1: FieldRef<"UserProfile", 'String'>
+    readonly addressLine2: FieldRef<"UserProfile", 'String'>
+    readonly city: FieldRef<"UserProfile", 'String'>
+    readonly state: FieldRef<"UserProfile", 'String'>
+    readonly zipCode: FieldRef<"UserProfile", 'String'>
+    readonly country: FieldRef<"UserProfile", 'String'>
+    readonly notes: FieldRef<"UserProfile", 'String'>
+    readonly createdAt: FieldRef<"UserProfile", 'DateTime'>
+    readonly updatedAt: FieldRef<"UserProfile", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * UserProfile findUnique
+   */
+  export type UserProfileFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter, which UserProfile to fetch.
+     */
+    where: UserProfileWhereUniqueInput
+  }
+
+  /**
+   * UserProfile findUniqueOrThrow
+   */
+  export type UserProfileFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter, which UserProfile to fetch.
+     */
+    where: UserProfileWhereUniqueInput
+  }
+
+  /**
+   * UserProfile findFirst
+   */
+  export type UserProfileFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter, which UserProfile to fetch.
+     */
+    where?: UserProfileWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserProfiles to fetch.
+     */
+    orderBy?: UserProfileOrderByWithRelationInput | UserProfileOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserProfiles.
+     */
+    cursor?: UserProfileWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserProfiles from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserProfiles.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserProfiles.
+     */
+    distinct?: UserProfileScalarFieldEnum | UserProfileScalarFieldEnum[]
+  }
+
+  /**
+   * UserProfile findFirstOrThrow
+   */
+  export type UserProfileFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter, which UserProfile to fetch.
+     */
+    where?: UserProfileWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserProfiles to fetch.
+     */
+    orderBy?: UserProfileOrderByWithRelationInput | UserProfileOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for UserProfiles.
+     */
+    cursor?: UserProfileWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserProfiles from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserProfiles.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of UserProfiles.
+     */
+    distinct?: UserProfileScalarFieldEnum | UserProfileScalarFieldEnum[]
+  }
+
+  /**
+   * UserProfile findMany
+   */
+  export type UserProfileFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter, which UserProfiles to fetch.
+     */
+    where?: UserProfileWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of UserProfiles to fetch.
+     */
+    orderBy?: UserProfileOrderByWithRelationInput | UserProfileOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing UserProfiles.
+     */
+    cursor?: UserProfileWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` UserProfiles from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` UserProfiles.
+     */
+    skip?: number
+    distinct?: UserProfileScalarFieldEnum | UserProfileScalarFieldEnum[]
+  }
+
+  /**
+   * UserProfile create
+   */
+  export type UserProfileCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * The data needed to create a UserProfile.
+     */
+    data: XOR<UserProfileCreateInput, UserProfileUncheckedCreateInput>
+  }
+
+  /**
+   * UserProfile createMany
+   */
+  export type UserProfileCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many UserProfiles.
+     */
+    data: UserProfileCreateManyInput | UserProfileCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * UserProfile createManyAndReturn
+   */
+  export type UserProfileCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * The data used to create many UserProfiles.
+     */
+    data: UserProfileCreateManyInput | UserProfileCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * UserProfile update
+   */
+  export type UserProfileUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * The data needed to update a UserProfile.
+     */
+    data: XOR<UserProfileUpdateInput, UserProfileUncheckedUpdateInput>
+    /**
+     * Choose, which UserProfile to update.
+     */
+    where: UserProfileWhereUniqueInput
+  }
+
+  /**
+   * UserProfile updateMany
+   */
+  export type UserProfileUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update UserProfiles.
+     */
+    data: XOR<UserProfileUpdateManyMutationInput, UserProfileUncheckedUpdateManyInput>
+    /**
+     * Filter which UserProfiles to update
+     */
+    where?: UserProfileWhereInput
+    /**
+     * Limit how many UserProfiles to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserProfile updateManyAndReturn
+   */
+  export type UserProfileUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * The data used to update UserProfiles.
+     */
+    data: XOR<UserProfileUpdateManyMutationInput, UserProfileUncheckedUpdateManyInput>
+    /**
+     * Filter which UserProfiles to update
+     */
+    where?: UserProfileWhereInput
+    /**
+     * Limit how many UserProfiles to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserProfile upsert
+   */
+  export type UserProfileUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * The filter to search for the UserProfile to update in case it exists.
+     */
+    where: UserProfileWhereUniqueInput
+    /**
+     * In case the UserProfile found by the `where` argument doesn't exist, create a new UserProfile with this data.
+     */
+    create: XOR<UserProfileCreateInput, UserProfileUncheckedCreateInput>
+    /**
+     * In case the UserProfile was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<UserProfileUpdateInput, UserProfileUncheckedUpdateInput>
+  }
+
+  /**
+   * UserProfile delete
+   */
+  export type UserProfileDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+    /**
+     * Filter which UserProfile to delete.
+     */
+    where: UserProfileWhereUniqueInput
+  }
+
+  /**
+   * UserProfile deleteMany
+   */
+  export type UserProfileDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which UserProfiles to delete
+     */
+    where?: UserProfileWhereInput
+    /**
+     * Limit how many UserProfiles to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * UserProfile.subscription
+   */
+  export type UserProfile$subscriptionArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Subscription
+     */
+    select?: SubscriptionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Subscription
+     */
+    omit?: SubscriptionOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SubscriptionInclude<ExtArgs> | null
+    where?: SubscriptionWhereInput
+  }
+
+  /**
+   * UserProfile without action
+   */
+  export type UserProfileDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserProfile
+     */
+    select?: UserProfileSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the UserProfile
+     */
+    omit?: UserProfileOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserProfileInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model ProcessedStripeEvent
+   */
+
+  export type AggregateProcessedStripeEvent = {
+    _count: ProcessedStripeEventCountAggregateOutputType | null
+    _min: ProcessedStripeEventMinAggregateOutputType | null
+    _max: ProcessedStripeEventMaxAggregateOutputType | null
+  }
+
+  export type ProcessedStripeEventMinAggregateOutputType = {
+    id: string | null
+    eventId: string | null
+    type: string | null
+    processedAt: Date | null
+  }
+
+  export type ProcessedStripeEventMaxAggregateOutputType = {
+    id: string | null
+    eventId: string | null
+    type: string | null
+    processedAt: Date | null
+  }
+
+  export type ProcessedStripeEventCountAggregateOutputType = {
+    id: number
+    eventId: number
+    type: number
+    processedAt: number
+    _all: number
+  }
+
+
+  export type ProcessedStripeEventMinAggregateInputType = {
+    id?: true
+    eventId?: true
+    type?: true
+    processedAt?: true
+  }
+
+  export type ProcessedStripeEventMaxAggregateInputType = {
+    id?: true
+    eventId?: true
+    type?: true
+    processedAt?: true
+  }
+
+  export type ProcessedStripeEventCountAggregateInputType = {
+    id?: true
+    eventId?: true
+    type?: true
+    processedAt?: true
+    _all?: true
+  }
+
+  export type ProcessedStripeEventAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProcessedStripeEvent to aggregate.
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProcessedStripeEvents to fetch.
+     */
+    orderBy?: ProcessedStripeEventOrderByWithRelationInput | ProcessedStripeEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: ProcessedStripeEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProcessedStripeEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProcessedStripeEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned ProcessedStripeEvents
+    **/
+    _count?: true | ProcessedStripeEventCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: ProcessedStripeEventMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: ProcessedStripeEventMaxAggregateInputType
+  }
+
+  export type GetProcessedStripeEventAggregateType<T extends ProcessedStripeEventAggregateArgs> = {
+        [P in keyof T & keyof AggregateProcessedStripeEvent]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateProcessedStripeEvent[P]>
+      : GetScalarType<T[P], AggregateProcessedStripeEvent[P]>
+  }
+
+
+
+
+  export type ProcessedStripeEventGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ProcessedStripeEventWhereInput
+    orderBy?: ProcessedStripeEventOrderByWithAggregationInput | ProcessedStripeEventOrderByWithAggregationInput[]
+    by: ProcessedStripeEventScalarFieldEnum[] | ProcessedStripeEventScalarFieldEnum
+    having?: ProcessedStripeEventScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: ProcessedStripeEventCountAggregateInputType | true
+    _min?: ProcessedStripeEventMinAggregateInputType
+    _max?: ProcessedStripeEventMaxAggregateInputType
+  }
+
+  export type ProcessedStripeEventGroupByOutputType = {
+    id: string
+    eventId: string
+    type: string
+    processedAt: Date
+    _count: ProcessedStripeEventCountAggregateOutputType | null
+    _min: ProcessedStripeEventMinAggregateOutputType | null
+    _max: ProcessedStripeEventMaxAggregateOutputType | null
+  }
+
+  type GetProcessedStripeEventGroupByPayload<T extends ProcessedStripeEventGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<ProcessedStripeEventGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof ProcessedStripeEventGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], ProcessedStripeEventGroupByOutputType[P]>
+            : GetScalarType<T[P], ProcessedStripeEventGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type ProcessedStripeEventSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    type?: boolean
+    processedAt?: boolean
+  }, ExtArgs["result"]["processedStripeEvent"]>
+
+  export type ProcessedStripeEventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    type?: boolean
+    processedAt?: boolean
+  }, ExtArgs["result"]["processedStripeEvent"]>
+
+  export type ProcessedStripeEventSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    eventId?: boolean
+    type?: boolean
+    processedAt?: boolean
+  }, ExtArgs["result"]["processedStripeEvent"]>
+
+  export type ProcessedStripeEventSelectScalar = {
+    id?: boolean
+    eventId?: boolean
+    type?: boolean
+    processedAt?: boolean
+  }
+
+  export type ProcessedStripeEventOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "eventId" | "type" | "processedAt", ExtArgs["result"]["processedStripeEvent"]>
+
+  export type $ProcessedStripeEventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "ProcessedStripeEvent"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      eventId: string
+      type: string
+      processedAt: Date
+    }, ExtArgs["result"]["processedStripeEvent"]>
+    composites: {}
+  }
+
+  type ProcessedStripeEventGetPayload<S extends boolean | null | undefined | ProcessedStripeEventDefaultArgs> = $Result.GetResult<Prisma.$ProcessedStripeEventPayload, S>
+
+  type ProcessedStripeEventCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<ProcessedStripeEventFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: ProcessedStripeEventCountAggregateInputType | true
+    }
+
+  export interface ProcessedStripeEventDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['ProcessedStripeEvent'], meta: { name: 'ProcessedStripeEvent' } }
+    /**
+     * Find zero or one ProcessedStripeEvent that matches the filter.
+     * @param {ProcessedStripeEventFindUniqueArgs} args - Arguments to find a ProcessedStripeEvent
+     * @example
+     * // Get one ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends ProcessedStripeEventFindUniqueArgs>(args: SelectSubset<T, ProcessedStripeEventFindUniqueArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one ProcessedStripeEvent that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {ProcessedStripeEventFindUniqueOrThrowArgs} args - Arguments to find a ProcessedStripeEvent
+     * @example
+     * // Get one ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends ProcessedStripeEventFindUniqueOrThrowArgs>(args: SelectSubset<T, ProcessedStripeEventFindUniqueOrThrowArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProcessedStripeEvent that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventFindFirstArgs} args - Arguments to find a ProcessedStripeEvent
+     * @example
+     * // Get one ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends ProcessedStripeEventFindFirstArgs>(args?: SelectSubset<T, ProcessedStripeEventFindFirstArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first ProcessedStripeEvent that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventFindFirstOrThrowArgs} args - Arguments to find a ProcessedStripeEvent
+     * @example
+     * // Get one ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends ProcessedStripeEventFindFirstOrThrowArgs>(args?: SelectSubset<T, ProcessedStripeEventFindFirstOrThrowArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more ProcessedStripeEvents that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all ProcessedStripeEvents
+     * const processedStripeEvents = await prisma.processedStripeEvent.findMany()
+     * 
+     * // Get first 10 ProcessedStripeEvents
+     * const processedStripeEvents = await prisma.processedStripeEvent.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const processedStripeEventWithIdOnly = await prisma.processedStripeEvent.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends ProcessedStripeEventFindManyArgs>(args?: SelectSubset<T, ProcessedStripeEventFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a ProcessedStripeEvent.
+     * @param {ProcessedStripeEventCreateArgs} args - Arguments to create a ProcessedStripeEvent.
+     * @example
+     * // Create one ProcessedStripeEvent
+     * const ProcessedStripeEvent = await prisma.processedStripeEvent.create({
+     *   data: {
+     *     // ... data to create a ProcessedStripeEvent
+     *   }
+     * })
+     * 
+     */
+    create<T extends ProcessedStripeEventCreateArgs>(args: SelectSubset<T, ProcessedStripeEventCreateArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many ProcessedStripeEvents.
+     * @param {ProcessedStripeEventCreateManyArgs} args - Arguments to create many ProcessedStripeEvents.
+     * @example
+     * // Create many ProcessedStripeEvents
+     * const processedStripeEvent = await prisma.processedStripeEvent.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends ProcessedStripeEventCreateManyArgs>(args?: SelectSubset<T, ProcessedStripeEventCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many ProcessedStripeEvents and returns the data saved in the database.
+     * @param {ProcessedStripeEventCreateManyAndReturnArgs} args - Arguments to create many ProcessedStripeEvents.
+     * @example
+     * // Create many ProcessedStripeEvents
+     * const processedStripeEvent = await prisma.processedStripeEvent.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many ProcessedStripeEvents and only return the `id`
+     * const processedStripeEventWithIdOnly = await prisma.processedStripeEvent.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends ProcessedStripeEventCreateManyAndReturnArgs>(args?: SelectSubset<T, ProcessedStripeEventCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a ProcessedStripeEvent.
+     * @param {ProcessedStripeEventDeleteArgs} args - Arguments to delete one ProcessedStripeEvent.
+     * @example
+     * // Delete one ProcessedStripeEvent
+     * const ProcessedStripeEvent = await prisma.processedStripeEvent.delete({
+     *   where: {
+     *     // ... filter to delete one ProcessedStripeEvent
+     *   }
+     * })
+     * 
+     */
+    delete<T extends ProcessedStripeEventDeleteArgs>(args: SelectSubset<T, ProcessedStripeEventDeleteArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one ProcessedStripeEvent.
+     * @param {ProcessedStripeEventUpdateArgs} args - Arguments to update one ProcessedStripeEvent.
+     * @example
+     * // Update one ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends ProcessedStripeEventUpdateArgs>(args: SelectSubset<T, ProcessedStripeEventUpdateArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more ProcessedStripeEvents.
+     * @param {ProcessedStripeEventDeleteManyArgs} args - Arguments to filter ProcessedStripeEvents to delete.
+     * @example
+     * // Delete a few ProcessedStripeEvents
+     * const { count } = await prisma.processedStripeEvent.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends ProcessedStripeEventDeleteManyArgs>(args?: SelectSubset<T, ProcessedStripeEventDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ProcessedStripeEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many ProcessedStripeEvents
+     * const processedStripeEvent = await prisma.processedStripeEvent.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends ProcessedStripeEventUpdateManyArgs>(args: SelectSubset<T, ProcessedStripeEventUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more ProcessedStripeEvents and returns the data updated in the database.
+     * @param {ProcessedStripeEventUpdateManyAndReturnArgs} args - Arguments to update many ProcessedStripeEvents.
+     * @example
+     * // Update many ProcessedStripeEvents
+     * const processedStripeEvent = await prisma.processedStripeEvent.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more ProcessedStripeEvents and only return the `id`
+     * const processedStripeEventWithIdOnly = await prisma.processedStripeEvent.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends ProcessedStripeEventUpdateManyAndReturnArgs>(args: SelectSubset<T, ProcessedStripeEventUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one ProcessedStripeEvent.
+     * @param {ProcessedStripeEventUpsertArgs} args - Arguments to update or create a ProcessedStripeEvent.
+     * @example
+     * // Update or create a ProcessedStripeEvent
+     * const processedStripeEvent = await prisma.processedStripeEvent.upsert({
+     *   create: {
+     *     // ... data to create a ProcessedStripeEvent
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the ProcessedStripeEvent we want to update
+     *   }
+     * })
+     */
+    upsert<T extends ProcessedStripeEventUpsertArgs>(args: SelectSubset<T, ProcessedStripeEventUpsertArgs<ExtArgs>>): Prisma__ProcessedStripeEventClient<$Result.GetResult<Prisma.$ProcessedStripeEventPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of ProcessedStripeEvents.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventCountArgs} args - Arguments to filter ProcessedStripeEvents to count.
+     * @example
+     * // Count the number of ProcessedStripeEvents
+     * const count = await prisma.processedStripeEvent.count({
+     *   where: {
+     *     // ... the filter for the ProcessedStripeEvents we want to count
+     *   }
+     * })
+    **/
+    count<T extends ProcessedStripeEventCountArgs>(
+      args?: Subset<T, ProcessedStripeEventCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], ProcessedStripeEventCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a ProcessedStripeEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends ProcessedStripeEventAggregateArgs>(args: Subset<T, ProcessedStripeEventAggregateArgs>): Prisma.PrismaPromise<GetProcessedStripeEventAggregateType<T>>
+
+    /**
+     * Group by ProcessedStripeEvent.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {ProcessedStripeEventGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends ProcessedStripeEventGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: ProcessedStripeEventGroupByArgs['orderBy'] }
+        : { orderBy?: ProcessedStripeEventGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, ProcessedStripeEventGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetProcessedStripeEventGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the ProcessedStripeEvent model
+   */
+  readonly fields: ProcessedStripeEventFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for ProcessedStripeEvent.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__ProcessedStripeEventClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the ProcessedStripeEvent model
+   */
+  interface ProcessedStripeEventFieldRefs {
+    readonly id: FieldRef<"ProcessedStripeEvent", 'String'>
+    readonly eventId: FieldRef<"ProcessedStripeEvent", 'String'>
+    readonly type: FieldRef<"ProcessedStripeEvent", 'String'>
+    readonly processedAt: FieldRef<"ProcessedStripeEvent", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * ProcessedStripeEvent findUnique
+   */
+  export type ProcessedStripeEventFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ProcessedStripeEvent to fetch.
+     */
+    where: ProcessedStripeEventWhereUniqueInput
+  }
+
+  /**
+   * ProcessedStripeEvent findUniqueOrThrow
+   */
+  export type ProcessedStripeEventFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ProcessedStripeEvent to fetch.
+     */
+    where: ProcessedStripeEventWhereUniqueInput
+  }
+
+  /**
+   * ProcessedStripeEvent findFirst
+   */
+  export type ProcessedStripeEventFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ProcessedStripeEvent to fetch.
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProcessedStripeEvents to fetch.
+     */
+    orderBy?: ProcessedStripeEventOrderByWithRelationInput | ProcessedStripeEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProcessedStripeEvents.
+     */
+    cursor?: ProcessedStripeEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProcessedStripeEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProcessedStripeEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProcessedStripeEvents.
+     */
+    distinct?: ProcessedStripeEventScalarFieldEnum | ProcessedStripeEventScalarFieldEnum[]
+  }
+
+  /**
+   * ProcessedStripeEvent findFirstOrThrow
+   */
+  export type ProcessedStripeEventFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ProcessedStripeEvent to fetch.
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProcessedStripeEvents to fetch.
+     */
+    orderBy?: ProcessedStripeEventOrderByWithRelationInput | ProcessedStripeEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for ProcessedStripeEvents.
+     */
+    cursor?: ProcessedStripeEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProcessedStripeEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProcessedStripeEvents.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of ProcessedStripeEvents.
+     */
+    distinct?: ProcessedStripeEventScalarFieldEnum | ProcessedStripeEventScalarFieldEnum[]
+  }
+
+  /**
+   * ProcessedStripeEvent findMany
+   */
+  export type ProcessedStripeEventFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter, which ProcessedStripeEvents to fetch.
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of ProcessedStripeEvents to fetch.
+     */
+    orderBy?: ProcessedStripeEventOrderByWithRelationInput | ProcessedStripeEventOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing ProcessedStripeEvents.
+     */
+    cursor?: ProcessedStripeEventWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` ProcessedStripeEvents from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` ProcessedStripeEvents.
+     */
+    skip?: number
+    distinct?: ProcessedStripeEventScalarFieldEnum | ProcessedStripeEventScalarFieldEnum[]
+  }
+
+  /**
+   * ProcessedStripeEvent create
+   */
+  export type ProcessedStripeEventCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * The data needed to create a ProcessedStripeEvent.
+     */
+    data: XOR<ProcessedStripeEventCreateInput, ProcessedStripeEventUncheckedCreateInput>
+  }
+
+  /**
+   * ProcessedStripeEvent createMany
+   */
+  export type ProcessedStripeEventCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many ProcessedStripeEvents.
+     */
+    data: ProcessedStripeEventCreateManyInput | ProcessedStripeEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ProcessedStripeEvent createManyAndReturn
+   */
+  export type ProcessedStripeEventCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * The data used to create many ProcessedStripeEvents.
+     */
+    data: ProcessedStripeEventCreateManyInput | ProcessedStripeEventCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * ProcessedStripeEvent update
+   */
+  export type ProcessedStripeEventUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * The data needed to update a ProcessedStripeEvent.
+     */
+    data: XOR<ProcessedStripeEventUpdateInput, ProcessedStripeEventUncheckedUpdateInput>
+    /**
+     * Choose, which ProcessedStripeEvent to update.
+     */
+    where: ProcessedStripeEventWhereUniqueInput
+  }
+
+  /**
+   * ProcessedStripeEvent updateMany
+   */
+  export type ProcessedStripeEventUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update ProcessedStripeEvents.
+     */
+    data: XOR<ProcessedStripeEventUpdateManyMutationInput, ProcessedStripeEventUncheckedUpdateManyInput>
+    /**
+     * Filter which ProcessedStripeEvents to update
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * Limit how many ProcessedStripeEvents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProcessedStripeEvent updateManyAndReturn
+   */
+  export type ProcessedStripeEventUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * The data used to update ProcessedStripeEvents.
+     */
+    data: XOR<ProcessedStripeEventUpdateManyMutationInput, ProcessedStripeEventUncheckedUpdateManyInput>
+    /**
+     * Filter which ProcessedStripeEvents to update
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * Limit how many ProcessedStripeEvents to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProcessedStripeEvent upsert
+   */
+  export type ProcessedStripeEventUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * The filter to search for the ProcessedStripeEvent to update in case it exists.
+     */
+    where: ProcessedStripeEventWhereUniqueInput
+    /**
+     * In case the ProcessedStripeEvent found by the `where` argument doesn't exist, create a new ProcessedStripeEvent with this data.
+     */
+    create: XOR<ProcessedStripeEventCreateInput, ProcessedStripeEventUncheckedCreateInput>
+    /**
+     * In case the ProcessedStripeEvent was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<ProcessedStripeEventUpdateInput, ProcessedStripeEventUncheckedUpdateInput>
+  }
+
+  /**
+   * ProcessedStripeEvent delete
+   */
+  export type ProcessedStripeEventDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+    /**
+     * Filter which ProcessedStripeEvent to delete.
+     */
+    where: ProcessedStripeEventWhereUniqueInput
+  }
+
+  /**
+   * ProcessedStripeEvent deleteMany
+   */
+  export type ProcessedStripeEventDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which ProcessedStripeEvents to delete
+     */
+    where?: ProcessedStripeEventWhereInput
+    /**
+     * Limit how many ProcessedStripeEvents to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * ProcessedStripeEvent without action
+   */
+  export type ProcessedStripeEventDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the ProcessedStripeEvent
+     */
+    select?: ProcessedStripeEventSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the ProcessedStripeEvent
+     */
+    omit?: ProcessedStripeEventOmit<ExtArgs> | null
+  }
+
+
+  /**
+   * Model TicketTransaction
+   */
+
+  export type AggregateTicketTransaction = {
+    _count: TicketTransactionCountAggregateOutputType | null
+    _avg: TicketTransactionAvgAggregateOutputType | null
+    _sum: TicketTransactionSumAggregateOutputType | null
+    _min: TicketTransactionMinAggregateOutputType | null
+    _max: TicketTransactionMaxAggregateOutputType | null
+  }
+
+  export type TicketTransactionAvgAggregateOutputType = {
+    quantity: number | null
+    pricePerUnit: number | null
+    totalAmount: number | null
+  }
+
+  export type TicketTransactionSumAggregateOutputType = {
+    quantity: number | null
+    pricePerUnit: number | null
+    totalAmount: number | null
+  }
+
+  export type TicketTransactionMinAggregateOutputType = {
+    id: string | null
+    email: string | null
+    ticketType: string | null
+    quantity: number | null
+    pricePerUnit: number | null
+    totalAmount: number | null
+    status: string | null
+    purchaseDate: Date | null
+    eventId: string | null
+    userId: string | null
+  }
+
+  export type TicketTransactionMaxAggregateOutputType = {
+    id: string | null
+    email: string | null
+    ticketType: string | null
+    quantity: number | null
+    pricePerUnit: number | null
+    totalAmount: number | null
+    status: string | null
+    purchaseDate: Date | null
+    eventId: string | null
+    userId: string | null
+  }
+
+  export type TicketTransactionCountAggregateOutputType = {
+    id: number
+    email: number
+    ticketType: number
+    quantity: number
+    pricePerUnit: number
+    totalAmount: number
+    status: number
+    purchaseDate: number
+    eventId: number
+    userId: number
+    _all: number
+  }
+
+
+  export type TicketTransactionAvgAggregateInputType = {
+    quantity?: true
+    pricePerUnit?: true
+    totalAmount?: true
+  }
+
+  export type TicketTransactionSumAggregateInputType = {
+    quantity?: true
+    pricePerUnit?: true
+    totalAmount?: true
+  }
+
+  export type TicketTransactionMinAggregateInputType = {
+    id?: true
+    email?: true
+    ticketType?: true
+    quantity?: true
+    pricePerUnit?: true
+    totalAmount?: true
+    status?: true
+    purchaseDate?: true
+    eventId?: true
+    userId?: true
+  }
+
+  export type TicketTransactionMaxAggregateInputType = {
+    id?: true
+    email?: true
+    ticketType?: true
+    quantity?: true
+    pricePerUnit?: true
+    totalAmount?: true
+    status?: true
+    purchaseDate?: true
+    eventId?: true
+    userId?: true
+  }
+
+  export type TicketTransactionCountAggregateInputType = {
+    id?: true
+    email?: true
+    ticketType?: true
+    quantity?: true
+    pricePerUnit?: true
+    totalAmount?: true
+    status?: true
+    purchaseDate?: true
+    eventId?: true
+    userId?: true
+    _all?: true
+  }
+
+  export type TicketTransactionAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TicketTransaction to aggregate.
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TicketTransactions to fetch.
+     */
+    orderBy?: TicketTransactionOrderByWithRelationInput | TicketTransactionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: TicketTransactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TicketTransactions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TicketTransactions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned TicketTransactions
+    **/
+    _count?: true | TicketTransactionCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: TicketTransactionAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: TicketTransactionSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: TicketTransactionMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: TicketTransactionMaxAggregateInputType
+  }
+
+  export type GetTicketTransactionAggregateType<T extends TicketTransactionAggregateArgs> = {
+        [P in keyof T & keyof AggregateTicketTransaction]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTicketTransaction[P]>
+      : GetScalarType<T[P], AggregateTicketTransaction[P]>
+  }
+
+
+
+
+  export type TicketTransactionGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: TicketTransactionWhereInput
+    orderBy?: TicketTransactionOrderByWithAggregationInput | TicketTransactionOrderByWithAggregationInput[]
+    by: TicketTransactionScalarFieldEnum[] | TicketTransactionScalarFieldEnum
+    having?: TicketTransactionScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: TicketTransactionCountAggregateInputType | true
+    _avg?: TicketTransactionAvgAggregateInputType
+    _sum?: TicketTransactionSumAggregateInputType
+    _min?: TicketTransactionMinAggregateInputType
+    _max?: TicketTransactionMaxAggregateInputType
+  }
+
+  export type TicketTransactionGroupByOutputType = {
+    id: string
+    email: string
+    ticketType: string
+    quantity: number
+    pricePerUnit: number
+    totalAmount: number
+    status: string
+    purchaseDate: Date
+    eventId: string
+    userId: string | null
+    _count: TicketTransactionCountAggregateOutputType | null
+    _avg: TicketTransactionAvgAggregateOutputType | null
+    _sum: TicketTransactionSumAggregateOutputType | null
+    _min: TicketTransactionMinAggregateOutputType | null
+    _max: TicketTransactionMaxAggregateOutputType | null
+  }
+
+  type GetTicketTransactionGroupByPayload<T extends TicketTransactionGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<TicketTransactionGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof TicketTransactionGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], TicketTransactionGroupByOutputType[P]>
+            : GetScalarType<T[P], TicketTransactionGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type TicketTransactionSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    ticketType?: boolean
+    quantity?: boolean
+    pricePerUnit?: boolean
+    totalAmount?: boolean
+    status?: boolean
+    purchaseDate?: boolean
+    eventId?: boolean
+    userId?: boolean
+  }, ExtArgs["result"]["ticketTransaction"]>
+
+  export type TicketTransactionSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    ticketType?: boolean
+    quantity?: boolean
+    pricePerUnit?: boolean
+    totalAmount?: boolean
+    status?: boolean
+    purchaseDate?: boolean
+    eventId?: boolean
+    userId?: boolean
+  }, ExtArgs["result"]["ticketTransaction"]>
+
+  export type TicketTransactionSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    email?: boolean
+    ticketType?: boolean
+    quantity?: boolean
+    pricePerUnit?: boolean
+    totalAmount?: boolean
+    status?: boolean
+    purchaseDate?: boolean
+    eventId?: boolean
+    userId?: boolean
+  }, ExtArgs["result"]["ticketTransaction"]>
+
+  export type TicketTransactionSelectScalar = {
+    id?: boolean
+    email?: boolean
+    ticketType?: boolean
+    quantity?: boolean
+    pricePerUnit?: boolean
+    totalAmount?: boolean
+    status?: boolean
+    purchaseDate?: boolean
+    eventId?: boolean
+    userId?: boolean
+  }
+
+  export type TicketTransactionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "email" | "ticketType" | "quantity" | "pricePerUnit" | "totalAmount" | "status" | "purchaseDate" | "eventId" | "userId", ExtArgs["result"]["ticketTransaction"]>
+
+  export type $TicketTransactionPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "TicketTransaction"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      email: string
+      ticketType: string
+      quantity: number
+      pricePerUnit: number
+      totalAmount: number
+      status: string
+      purchaseDate: Date
+      eventId: string
+      userId: string | null
+    }, ExtArgs["result"]["ticketTransaction"]>
+    composites: {}
+  }
+
+  type TicketTransactionGetPayload<S extends boolean | null | undefined | TicketTransactionDefaultArgs> = $Result.GetResult<Prisma.$TicketTransactionPayload, S>
+
+  type TicketTransactionCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<TicketTransactionFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: TicketTransactionCountAggregateInputType | true
+    }
+
+  export interface TicketTransactionDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['TicketTransaction'], meta: { name: 'TicketTransaction' } }
+    /**
+     * Find zero or one TicketTransaction that matches the filter.
+     * @param {TicketTransactionFindUniqueArgs} args - Arguments to find a TicketTransaction
+     * @example
+     * // Get one TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends TicketTransactionFindUniqueArgs>(args: SelectSubset<T, TicketTransactionFindUniqueArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one TicketTransaction that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {TicketTransactionFindUniqueOrThrowArgs} args - Arguments to find a TicketTransaction
+     * @example
+     * // Get one TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends TicketTransactionFindUniqueOrThrowArgs>(args: SelectSubset<T, TicketTransactionFindUniqueOrThrowArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TicketTransaction that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionFindFirstArgs} args - Arguments to find a TicketTransaction
+     * @example
+     * // Get one TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends TicketTransactionFindFirstArgs>(args?: SelectSubset<T, TicketTransactionFindFirstArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first TicketTransaction that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionFindFirstOrThrowArgs} args - Arguments to find a TicketTransaction
+     * @example
+     * // Get one TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends TicketTransactionFindFirstOrThrowArgs>(args?: SelectSubset<T, TicketTransactionFindFirstOrThrowArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more TicketTransactions that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all TicketTransactions
+     * const ticketTransactions = await prisma.ticketTransaction.findMany()
+     * 
+     * // Get first 10 TicketTransactions
+     * const ticketTransactions = await prisma.ticketTransaction.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const ticketTransactionWithIdOnly = await prisma.ticketTransaction.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends TicketTransactionFindManyArgs>(args?: SelectSubset<T, TicketTransactionFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a TicketTransaction.
+     * @param {TicketTransactionCreateArgs} args - Arguments to create a TicketTransaction.
+     * @example
+     * // Create one TicketTransaction
+     * const TicketTransaction = await prisma.ticketTransaction.create({
+     *   data: {
+     *     // ... data to create a TicketTransaction
+     *   }
+     * })
+     * 
+     */
+    create<T extends TicketTransactionCreateArgs>(args: SelectSubset<T, TicketTransactionCreateArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many TicketTransactions.
+     * @param {TicketTransactionCreateManyArgs} args - Arguments to create many TicketTransactions.
+     * @example
+     * // Create many TicketTransactions
+     * const ticketTransaction = await prisma.ticketTransaction.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends TicketTransactionCreateManyArgs>(args?: SelectSubset<T, TicketTransactionCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many TicketTransactions and returns the data saved in the database.
+     * @param {TicketTransactionCreateManyAndReturnArgs} args - Arguments to create many TicketTransactions.
+     * @example
+     * // Create many TicketTransactions
+     * const ticketTransaction = await prisma.ticketTransaction.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many TicketTransactions and only return the `id`
+     * const ticketTransactionWithIdOnly = await prisma.ticketTransaction.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends TicketTransactionCreateManyAndReturnArgs>(args?: SelectSubset<T, TicketTransactionCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a TicketTransaction.
+     * @param {TicketTransactionDeleteArgs} args - Arguments to delete one TicketTransaction.
+     * @example
+     * // Delete one TicketTransaction
+     * const TicketTransaction = await prisma.ticketTransaction.delete({
+     *   where: {
+     *     // ... filter to delete one TicketTransaction
+     *   }
+     * })
+     * 
+     */
+    delete<T extends TicketTransactionDeleteArgs>(args: SelectSubset<T, TicketTransactionDeleteArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one TicketTransaction.
+     * @param {TicketTransactionUpdateArgs} args - Arguments to update one TicketTransaction.
+     * @example
+     * // Update one TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends TicketTransactionUpdateArgs>(args: SelectSubset<T, TicketTransactionUpdateArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more TicketTransactions.
+     * @param {TicketTransactionDeleteManyArgs} args - Arguments to filter TicketTransactions to delete.
+     * @example
+     * // Delete a few TicketTransactions
+     * const { count } = await prisma.ticketTransaction.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends TicketTransactionDeleteManyArgs>(args?: SelectSubset<T, TicketTransactionDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TicketTransactions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many TicketTransactions
+     * const ticketTransaction = await prisma.ticketTransaction.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends TicketTransactionUpdateManyArgs>(args: SelectSubset<T, TicketTransactionUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more TicketTransactions and returns the data updated in the database.
+     * @param {TicketTransactionUpdateManyAndReturnArgs} args - Arguments to update many TicketTransactions.
+     * @example
+     * // Update many TicketTransactions
+     * const ticketTransaction = await prisma.ticketTransaction.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more TicketTransactions and only return the `id`
+     * const ticketTransactionWithIdOnly = await prisma.ticketTransaction.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends TicketTransactionUpdateManyAndReturnArgs>(args: SelectSubset<T, TicketTransactionUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one TicketTransaction.
+     * @param {TicketTransactionUpsertArgs} args - Arguments to update or create a TicketTransaction.
+     * @example
+     * // Update or create a TicketTransaction
+     * const ticketTransaction = await prisma.ticketTransaction.upsert({
+     *   create: {
+     *     // ... data to create a TicketTransaction
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the TicketTransaction we want to update
+     *   }
+     * })
+     */
+    upsert<T extends TicketTransactionUpsertArgs>(args: SelectSubset<T, TicketTransactionUpsertArgs<ExtArgs>>): Prisma__TicketTransactionClient<$Result.GetResult<Prisma.$TicketTransactionPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of TicketTransactions.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionCountArgs} args - Arguments to filter TicketTransactions to count.
+     * @example
+     * // Count the number of TicketTransactions
+     * const count = await prisma.ticketTransaction.count({
+     *   where: {
+     *     // ... the filter for the TicketTransactions we want to count
+     *   }
+     * })
+    **/
+    count<T extends TicketTransactionCountArgs>(
+      args?: Subset<T, TicketTransactionCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], TicketTransactionCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a TicketTransaction.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends TicketTransactionAggregateArgs>(args: Subset<T, TicketTransactionAggregateArgs>): Prisma.PrismaPromise<GetTicketTransactionAggregateType<T>>
+
+    /**
+     * Group by TicketTransaction.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {TicketTransactionGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends TicketTransactionGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: TicketTransactionGroupByArgs['orderBy'] }
+        : { orderBy?: TicketTransactionGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, TicketTransactionGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTicketTransactionGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the TicketTransaction model
+   */
+  readonly fields: TicketTransactionFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for TicketTransaction.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__TicketTransactionClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the TicketTransaction model
+   */
+  interface TicketTransactionFieldRefs {
+    readonly id: FieldRef<"TicketTransaction", 'String'>
+    readonly email: FieldRef<"TicketTransaction", 'String'>
+    readonly ticketType: FieldRef<"TicketTransaction", 'String'>
+    readonly quantity: FieldRef<"TicketTransaction", 'Int'>
+    readonly pricePerUnit: FieldRef<"TicketTransaction", 'Float'>
+    readonly totalAmount: FieldRef<"TicketTransaction", 'Float'>
+    readonly status: FieldRef<"TicketTransaction", 'String'>
+    readonly purchaseDate: FieldRef<"TicketTransaction", 'DateTime'>
+    readonly eventId: FieldRef<"TicketTransaction", 'String'>
+    readonly userId: FieldRef<"TicketTransaction", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * TicketTransaction findUnique
+   */
+  export type TicketTransactionFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter, which TicketTransaction to fetch.
+     */
+    where: TicketTransactionWhereUniqueInput
+  }
+
+  /**
+   * TicketTransaction findUniqueOrThrow
+   */
+  export type TicketTransactionFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter, which TicketTransaction to fetch.
+     */
+    where: TicketTransactionWhereUniqueInput
+  }
+
+  /**
+   * TicketTransaction findFirst
+   */
+  export type TicketTransactionFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter, which TicketTransaction to fetch.
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TicketTransactions to fetch.
+     */
+    orderBy?: TicketTransactionOrderByWithRelationInput | TicketTransactionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TicketTransactions.
+     */
+    cursor?: TicketTransactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TicketTransactions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TicketTransactions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TicketTransactions.
+     */
+    distinct?: TicketTransactionScalarFieldEnum | TicketTransactionScalarFieldEnum[]
+  }
+
+  /**
+   * TicketTransaction findFirstOrThrow
+   */
+  export type TicketTransactionFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter, which TicketTransaction to fetch.
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TicketTransactions to fetch.
+     */
+    orderBy?: TicketTransactionOrderByWithRelationInput | TicketTransactionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for TicketTransactions.
+     */
+    cursor?: TicketTransactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TicketTransactions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TicketTransactions.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of TicketTransactions.
+     */
+    distinct?: TicketTransactionScalarFieldEnum | TicketTransactionScalarFieldEnum[]
+  }
+
+  /**
+   * TicketTransaction findMany
+   */
+  export type TicketTransactionFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter, which TicketTransactions to fetch.
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of TicketTransactions to fetch.
+     */
+    orderBy?: TicketTransactionOrderByWithRelationInput | TicketTransactionOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing TicketTransactions.
+     */
+    cursor?: TicketTransactionWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` TicketTransactions from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` TicketTransactions.
+     */
+    skip?: number
+    distinct?: TicketTransactionScalarFieldEnum | TicketTransactionScalarFieldEnum[]
+  }
+
+  /**
+   * TicketTransaction create
+   */
+  export type TicketTransactionCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * The data needed to create a TicketTransaction.
+     */
+    data: XOR<TicketTransactionCreateInput, TicketTransactionUncheckedCreateInput>
+  }
+
+  /**
+   * TicketTransaction createMany
+   */
+  export type TicketTransactionCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many TicketTransactions.
+     */
+    data: TicketTransactionCreateManyInput | TicketTransactionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TicketTransaction createManyAndReturn
+   */
+  export type TicketTransactionCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * The data used to create many TicketTransactions.
+     */
+    data: TicketTransactionCreateManyInput | TicketTransactionCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * TicketTransaction update
+   */
+  export type TicketTransactionUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * The data needed to update a TicketTransaction.
+     */
+    data: XOR<TicketTransactionUpdateInput, TicketTransactionUncheckedUpdateInput>
+    /**
+     * Choose, which TicketTransaction to update.
+     */
+    where: TicketTransactionWhereUniqueInput
+  }
+
+  /**
+   * TicketTransaction updateMany
+   */
+  export type TicketTransactionUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update TicketTransactions.
+     */
+    data: XOR<TicketTransactionUpdateManyMutationInput, TicketTransactionUncheckedUpdateManyInput>
+    /**
+     * Filter which TicketTransactions to update
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * Limit how many TicketTransactions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TicketTransaction updateManyAndReturn
+   */
+  export type TicketTransactionUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * The data used to update TicketTransactions.
+     */
+    data: XOR<TicketTransactionUpdateManyMutationInput, TicketTransactionUncheckedUpdateManyInput>
+    /**
+     * Filter which TicketTransactions to update
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * Limit how many TicketTransactions to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * TicketTransaction upsert
+   */
+  export type TicketTransactionUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * The filter to search for the TicketTransaction to update in case it exists.
+     */
+    where: TicketTransactionWhereUniqueInput
+    /**
+     * In case the TicketTransaction found by the `where` argument doesn't exist, create a new TicketTransaction with this data.
+     */
+    create: XOR<TicketTransactionCreateInput, TicketTransactionUncheckedCreateInput>
+    /**
+     * In case the TicketTransaction was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<TicketTransactionUpdateInput, TicketTransactionUncheckedUpdateInput>
+  }
+
+  /**
+   * TicketTransaction delete
+   */
+  export type TicketTransactionDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+    /**
+     * Filter which TicketTransaction to delete.
+     */
+    where: TicketTransactionWhereUniqueInput
+  }
+
+  /**
+   * TicketTransaction deleteMany
+   */
+  export type TicketTransactionDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which TicketTransactions to delete
+     */
+    where?: TicketTransactionWhereInput
+    /**
+     * Limit how many TicketTransactions to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * TicketTransaction without action
+   */
+  export type TicketTransactionDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the TicketTransaction
+     */
+    select?: TicketTransactionSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the TicketTransaction
+     */
+    omit?: TicketTransactionOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -3034,7 +6660,8 @@ export namespace Prisma {
     stripeCustomerId: 'stripeCustomerId',
     stripeSubscriptionId: 'stripeSubscriptionId',
     stripePriceId: 'stripePriceId',
-    stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd'
+    stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd',
+    status: 'status'
   };
 
   export type SubscriptionScalarFieldEnum = (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum]
@@ -3054,6 +6681,53 @@ export namespace Prisma {
   };
 
   export type TaskScalarFieldEnum = (typeof TaskScalarFieldEnum)[keyof typeof TaskScalarFieldEnum]
+
+
+  export const UserProfileScalarFieldEnum: {
+    id: 'id',
+    userId: 'userId',
+    firstName: 'firstName',
+    lastName: 'lastName',
+    email: 'email',
+    phone: 'phone',
+    addressLine1: 'addressLine1',
+    addressLine2: 'addressLine2',
+    city: 'city',
+    state: 'state',
+    zipCode: 'zipCode',
+    country: 'country',
+    notes: 'notes',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type UserProfileScalarFieldEnum = (typeof UserProfileScalarFieldEnum)[keyof typeof UserProfileScalarFieldEnum]
+
+
+  export const ProcessedStripeEventScalarFieldEnum: {
+    id: 'id',
+    eventId: 'eventId',
+    type: 'type',
+    processedAt: 'processedAt'
+  };
+
+  export type ProcessedStripeEventScalarFieldEnum = (typeof ProcessedStripeEventScalarFieldEnum)[keyof typeof ProcessedStripeEventScalarFieldEnum]
+
+
+  export const TicketTransactionScalarFieldEnum: {
+    id: 'id',
+    email: 'email',
+    ticketType: 'ticketType',
+    quantity: 'quantity',
+    pricePerUnit: 'pricePerUnit',
+    totalAmount: 'totalAmount',
+    status: 'status',
+    purchaseDate: 'purchaseDate',
+    eventId: 'eventId',
+    userId: 'userId'
+  };
+
+  export type TicketTransactionScalarFieldEnum = (typeof TicketTransactionScalarFieldEnum)[keyof typeof TicketTransactionScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -3132,6 +6806,20 @@ export namespace Prisma {
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
   /**
    * Deep Input Types
    */
@@ -3142,38 +6830,44 @@ export namespace Prisma {
     OR?: SubscriptionWhereInput[]
     NOT?: SubscriptionWhereInput | SubscriptionWhereInput[]
     userId?: StringFilter<"Subscription"> | string
-    stripeCustomerId?: StringFilter<"Subscription"> | string
+    stripeCustomerId?: StringNullableFilter<"Subscription"> | string | null
     stripeSubscriptionId?: StringNullableFilter<"Subscription"> | string | null
     stripePriceId?: StringNullableFilter<"Subscription"> | string | null
     stripeCurrentPeriodEnd?: DateTimeNullableFilter<"Subscription"> | Date | string | null
+    status?: StringFilter<"Subscription"> | string
+    userProfile?: XOR<UserProfileScalarRelationFilter, UserProfileWhereInput>
   }
 
   export type SubscriptionOrderByWithRelationInput = {
     userId?: SortOrder
-    stripeCustomerId?: SortOrder
+    stripeCustomerId?: SortOrderInput | SortOrder
     stripeSubscriptionId?: SortOrderInput | SortOrder
     stripePriceId?: SortOrderInput | SortOrder
     stripeCurrentPeriodEnd?: SortOrderInput | SortOrder
+    status?: SortOrder
+    userProfile?: UserProfileOrderByWithRelationInput
   }
 
   export type SubscriptionWhereUniqueInput = Prisma.AtLeast<{
     userId?: string
     stripeCustomerId?: string
     stripeSubscriptionId?: string
-    userId_stripeCustomerId?: SubscriptionUserIdStripeCustomerIdCompoundUniqueInput
     AND?: SubscriptionWhereInput | SubscriptionWhereInput[]
     OR?: SubscriptionWhereInput[]
     NOT?: SubscriptionWhereInput | SubscriptionWhereInput[]
     stripePriceId?: StringNullableFilter<"Subscription"> | string | null
     stripeCurrentPeriodEnd?: DateTimeNullableFilter<"Subscription"> | Date | string | null
-  }, "userId_stripeCustomerId" | "userId" | "stripeCustomerId" | "stripeSubscriptionId">
+    status?: StringFilter<"Subscription"> | string
+    userProfile?: XOR<UserProfileScalarRelationFilter, UserProfileWhereInput>
+  }, "userId" | "userId" | "stripeCustomerId" | "stripeSubscriptionId">
 
   export type SubscriptionOrderByWithAggregationInput = {
     userId?: SortOrder
-    stripeCustomerId?: SortOrder
+    stripeCustomerId?: SortOrderInput | SortOrder
     stripeSubscriptionId?: SortOrderInput | SortOrder
     stripePriceId?: SortOrderInput | SortOrder
     stripeCurrentPeriodEnd?: SortOrderInput | SortOrder
+    status?: SortOrder
     _count?: SubscriptionCountOrderByAggregateInput
     _max?: SubscriptionMaxOrderByAggregateInput
     _min?: SubscriptionMinOrderByAggregateInput
@@ -3184,10 +6878,11 @@ export namespace Prisma {
     OR?: SubscriptionScalarWhereWithAggregatesInput[]
     NOT?: SubscriptionScalarWhereWithAggregatesInput | SubscriptionScalarWhereWithAggregatesInput[]
     userId?: StringWithAggregatesFilter<"Subscription"> | string
-    stripeCustomerId?: StringWithAggregatesFilter<"Subscription"> | string
+    stripeCustomerId?: StringNullableWithAggregatesFilter<"Subscription"> | string | null
     stripeSubscriptionId?: StringNullableWithAggregatesFilter<"Subscription"> | string | null
     stripePriceId?: StringNullableWithAggregatesFilter<"Subscription"> | string | null
     stripeCurrentPeriodEnd?: DateTimeNullableWithAggregatesFilter<"Subscription"> | Date | string | null
+    status?: StringWithAggregatesFilter<"Subscription"> | string
   }
 
   export type TaskWhereInput = {
@@ -3267,60 +6962,297 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"Task"> | Date | string
   }
 
+  export type UserProfileWhereInput = {
+    AND?: UserProfileWhereInput | UserProfileWhereInput[]
+    OR?: UserProfileWhereInput[]
+    NOT?: UserProfileWhereInput | UserProfileWhereInput[]
+    id?: StringFilter<"UserProfile"> | string
+    userId?: StringFilter<"UserProfile"> | string
+    firstName?: StringNullableFilter<"UserProfile"> | string | null
+    lastName?: StringNullableFilter<"UserProfile"> | string | null
+    email?: StringNullableFilter<"UserProfile"> | string | null
+    phone?: StringNullableFilter<"UserProfile"> | string | null
+    addressLine1?: StringNullableFilter<"UserProfile"> | string | null
+    addressLine2?: StringNullableFilter<"UserProfile"> | string | null
+    city?: StringNullableFilter<"UserProfile"> | string | null
+    state?: StringNullableFilter<"UserProfile"> | string | null
+    zipCode?: StringNullableFilter<"UserProfile"> | string | null
+    country?: StringNullableFilter<"UserProfile"> | string | null
+    notes?: StringNullableFilter<"UserProfile"> | string | null
+    createdAt?: DateTimeFilter<"UserProfile"> | Date | string
+    updatedAt?: DateTimeFilter<"UserProfile"> | Date | string
+    subscription?: XOR<SubscriptionNullableScalarRelationFilter, SubscriptionWhereInput> | null
+  }
+
+  export type UserProfileOrderByWithRelationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    firstName?: SortOrderInput | SortOrder
+    lastName?: SortOrderInput | SortOrder
+    email?: SortOrderInput | SortOrder
+    phone?: SortOrderInput | SortOrder
+    addressLine1?: SortOrderInput | SortOrder
+    addressLine2?: SortOrderInput | SortOrder
+    city?: SortOrderInput | SortOrder
+    state?: SortOrderInput | SortOrder
+    zipCode?: SortOrderInput | SortOrder
+    country?: SortOrderInput | SortOrder
+    notes?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    subscription?: SubscriptionOrderByWithRelationInput
+  }
+
+  export type UserProfileWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    userId?: string
+    AND?: UserProfileWhereInput | UserProfileWhereInput[]
+    OR?: UserProfileWhereInput[]
+    NOT?: UserProfileWhereInput | UserProfileWhereInput[]
+    firstName?: StringNullableFilter<"UserProfile"> | string | null
+    lastName?: StringNullableFilter<"UserProfile"> | string | null
+    email?: StringNullableFilter<"UserProfile"> | string | null
+    phone?: StringNullableFilter<"UserProfile"> | string | null
+    addressLine1?: StringNullableFilter<"UserProfile"> | string | null
+    addressLine2?: StringNullableFilter<"UserProfile"> | string | null
+    city?: StringNullableFilter<"UserProfile"> | string | null
+    state?: StringNullableFilter<"UserProfile"> | string | null
+    zipCode?: StringNullableFilter<"UserProfile"> | string | null
+    country?: StringNullableFilter<"UserProfile"> | string | null
+    notes?: StringNullableFilter<"UserProfile"> | string | null
+    createdAt?: DateTimeFilter<"UserProfile"> | Date | string
+    updatedAt?: DateTimeFilter<"UserProfile"> | Date | string
+    subscription?: XOR<SubscriptionNullableScalarRelationFilter, SubscriptionWhereInput> | null
+  }, "id" | "userId">
+
+  export type UserProfileOrderByWithAggregationInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    firstName?: SortOrderInput | SortOrder
+    lastName?: SortOrderInput | SortOrder
+    email?: SortOrderInput | SortOrder
+    phone?: SortOrderInput | SortOrder
+    addressLine1?: SortOrderInput | SortOrder
+    addressLine2?: SortOrderInput | SortOrder
+    city?: SortOrderInput | SortOrder
+    state?: SortOrderInput | SortOrder
+    zipCode?: SortOrderInput | SortOrder
+    country?: SortOrderInput | SortOrder
+    notes?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: UserProfileCountOrderByAggregateInput
+    _max?: UserProfileMaxOrderByAggregateInput
+    _min?: UserProfileMinOrderByAggregateInput
+  }
+
+  export type UserProfileScalarWhereWithAggregatesInput = {
+    AND?: UserProfileScalarWhereWithAggregatesInput | UserProfileScalarWhereWithAggregatesInput[]
+    OR?: UserProfileScalarWhereWithAggregatesInput[]
+    NOT?: UserProfileScalarWhereWithAggregatesInput | UserProfileScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"UserProfile"> | string
+    userId?: StringWithAggregatesFilter<"UserProfile"> | string
+    firstName?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    lastName?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    email?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    phone?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    addressLine1?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    addressLine2?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    city?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    state?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    zipCode?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    country?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    notes?: StringNullableWithAggregatesFilter<"UserProfile"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"UserProfile"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"UserProfile"> | Date | string
+  }
+
+  export type ProcessedStripeEventWhereInput = {
+    AND?: ProcessedStripeEventWhereInput | ProcessedStripeEventWhereInput[]
+    OR?: ProcessedStripeEventWhereInput[]
+    NOT?: ProcessedStripeEventWhereInput | ProcessedStripeEventWhereInput[]
+    id?: StringFilter<"ProcessedStripeEvent"> | string
+    eventId?: StringFilter<"ProcessedStripeEvent"> | string
+    type?: StringFilter<"ProcessedStripeEvent"> | string
+    processedAt?: DateTimeFilter<"ProcessedStripeEvent"> | Date | string
+  }
+
+  export type ProcessedStripeEventOrderByWithRelationInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    type?: SortOrder
+    processedAt?: SortOrder
+  }
+
+  export type ProcessedStripeEventWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    eventId?: string
+    AND?: ProcessedStripeEventWhereInput | ProcessedStripeEventWhereInput[]
+    OR?: ProcessedStripeEventWhereInput[]
+    NOT?: ProcessedStripeEventWhereInput | ProcessedStripeEventWhereInput[]
+    type?: StringFilter<"ProcessedStripeEvent"> | string
+    processedAt?: DateTimeFilter<"ProcessedStripeEvent"> | Date | string
+  }, "id" | "eventId">
+
+  export type ProcessedStripeEventOrderByWithAggregationInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    type?: SortOrder
+    processedAt?: SortOrder
+    _count?: ProcessedStripeEventCountOrderByAggregateInput
+    _max?: ProcessedStripeEventMaxOrderByAggregateInput
+    _min?: ProcessedStripeEventMinOrderByAggregateInput
+  }
+
+  export type ProcessedStripeEventScalarWhereWithAggregatesInput = {
+    AND?: ProcessedStripeEventScalarWhereWithAggregatesInput | ProcessedStripeEventScalarWhereWithAggregatesInput[]
+    OR?: ProcessedStripeEventScalarWhereWithAggregatesInput[]
+    NOT?: ProcessedStripeEventScalarWhereWithAggregatesInput | ProcessedStripeEventScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"ProcessedStripeEvent"> | string
+    eventId?: StringWithAggregatesFilter<"ProcessedStripeEvent"> | string
+    type?: StringWithAggregatesFilter<"ProcessedStripeEvent"> | string
+    processedAt?: DateTimeWithAggregatesFilter<"ProcessedStripeEvent"> | Date | string
+  }
+
+  export type TicketTransactionWhereInput = {
+    AND?: TicketTransactionWhereInput | TicketTransactionWhereInput[]
+    OR?: TicketTransactionWhereInput[]
+    NOT?: TicketTransactionWhereInput | TicketTransactionWhereInput[]
+    id?: StringFilter<"TicketTransaction"> | string
+    email?: StringFilter<"TicketTransaction"> | string
+    ticketType?: StringFilter<"TicketTransaction"> | string
+    quantity?: IntFilter<"TicketTransaction"> | number
+    pricePerUnit?: FloatFilter<"TicketTransaction"> | number
+    totalAmount?: FloatFilter<"TicketTransaction"> | number
+    status?: StringFilter<"TicketTransaction"> | string
+    purchaseDate?: DateTimeFilter<"TicketTransaction"> | Date | string
+    eventId?: StringFilter<"TicketTransaction"> | string
+    userId?: StringNullableFilter<"TicketTransaction"> | string | null
+  }
+
+  export type TicketTransactionOrderByWithRelationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    ticketType?: SortOrder
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+    status?: SortOrder
+    purchaseDate?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+  }
+
+  export type TicketTransactionWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: TicketTransactionWhereInput | TicketTransactionWhereInput[]
+    OR?: TicketTransactionWhereInput[]
+    NOT?: TicketTransactionWhereInput | TicketTransactionWhereInput[]
+    email?: StringFilter<"TicketTransaction"> | string
+    ticketType?: StringFilter<"TicketTransaction"> | string
+    quantity?: IntFilter<"TicketTransaction"> | number
+    pricePerUnit?: FloatFilter<"TicketTransaction"> | number
+    totalAmount?: FloatFilter<"TicketTransaction"> | number
+    status?: StringFilter<"TicketTransaction"> | string
+    purchaseDate?: DateTimeFilter<"TicketTransaction"> | Date | string
+    eventId?: StringFilter<"TicketTransaction"> | string
+    userId?: StringNullableFilter<"TicketTransaction"> | string | null
+  }, "id">
+
+  export type TicketTransactionOrderByWithAggregationInput = {
+    id?: SortOrder
+    email?: SortOrder
+    ticketType?: SortOrder
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+    status?: SortOrder
+    purchaseDate?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrderInput | SortOrder
+    _count?: TicketTransactionCountOrderByAggregateInput
+    _avg?: TicketTransactionAvgOrderByAggregateInput
+    _max?: TicketTransactionMaxOrderByAggregateInput
+    _min?: TicketTransactionMinOrderByAggregateInput
+    _sum?: TicketTransactionSumOrderByAggregateInput
+  }
+
+  export type TicketTransactionScalarWhereWithAggregatesInput = {
+    AND?: TicketTransactionScalarWhereWithAggregatesInput | TicketTransactionScalarWhereWithAggregatesInput[]
+    OR?: TicketTransactionScalarWhereWithAggregatesInput[]
+    NOT?: TicketTransactionScalarWhereWithAggregatesInput | TicketTransactionScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"TicketTransaction"> | string
+    email?: StringWithAggregatesFilter<"TicketTransaction"> | string
+    ticketType?: StringWithAggregatesFilter<"TicketTransaction"> | string
+    quantity?: IntWithAggregatesFilter<"TicketTransaction"> | number
+    pricePerUnit?: FloatWithAggregatesFilter<"TicketTransaction"> | number
+    totalAmount?: FloatWithAggregatesFilter<"TicketTransaction"> | number
+    status?: StringWithAggregatesFilter<"TicketTransaction"> | string
+    purchaseDate?: DateTimeWithAggregatesFilter<"TicketTransaction"> | Date | string
+    eventId?: StringWithAggregatesFilter<"TicketTransaction"> | string
+    userId?: StringNullableWithAggregatesFilter<"TicketTransaction"> | string | null
+  }
+
   export type SubscriptionCreateInput = {
-    userId: string
-    stripeCustomerId: string
+    stripeCustomerId?: string | null
     stripeSubscriptionId?: string | null
     stripePriceId?: string | null
     stripeCurrentPeriodEnd?: Date | string | null
+    status?: string
+    userProfile: UserProfileCreateNestedOneWithoutSubscriptionInput
   }
 
   export type SubscriptionUncheckedCreateInput = {
     userId: string
-    stripeCustomerId: string
+    stripeCustomerId?: string | null
     stripeSubscriptionId?: string | null
     stripePriceId?: string | null
     stripeCurrentPeriodEnd?: Date | string | null
+    status?: string
   }
 
   export type SubscriptionUpdateInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    stripeCustomerId?: StringFieldUpdateOperationsInput | string
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
     stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
+    userProfile?: UserProfileUpdateOneRequiredWithoutSubscriptionNestedInput
   }
 
   export type SubscriptionUncheckedUpdateInput = {
     userId?: StringFieldUpdateOperationsInput | string
-    stripeCustomerId?: StringFieldUpdateOperationsInput | string
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
     stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type SubscriptionCreateManyInput = {
     userId: string
-    stripeCustomerId: string
+    stripeCustomerId?: string | null
     stripeSubscriptionId?: string | null
     stripePriceId?: string | null
     stripeCurrentPeriodEnd?: Date | string | null
+    status?: string
   }
 
   export type SubscriptionUpdateManyMutationInput = {
-    userId?: StringFieldUpdateOperationsInput | string
-    stripeCustomerId?: StringFieldUpdateOperationsInput | string
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
     stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type SubscriptionUncheckedUpdateManyInput = {
     userId?: StringFieldUpdateOperationsInput | string
-    stripeCustomerId?: StringFieldUpdateOperationsInput | string
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
     stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
     stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
   }
 
   export type TaskCreateInput = {
@@ -3414,6 +7346,276 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type UserProfileCreateInput = {
+    id?: string
+    userId: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+    phone?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    subscription?: SubscriptionCreateNestedOneWithoutUserProfileInput
+  }
+
+  export type UserProfileUncheckedCreateInput = {
+    id?: string
+    userId: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+    phone?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    subscription?: SubscriptionUncheckedCreateNestedOneWithoutUserProfileInput
+  }
+
+  export type UserProfileUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    subscription?: SubscriptionUpdateOneWithoutUserProfileNestedInput
+  }
+
+  export type UserProfileUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    subscription?: SubscriptionUncheckedUpdateOneWithoutUserProfileNestedInput
+  }
+
+  export type UserProfileCreateManyInput = {
+    id?: string
+    userId: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+    phone?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type UserProfileUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserProfileUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProcessedStripeEventCreateInput = {
+    id?: string
+    eventId: string
+    type: string
+    processedAt?: Date | string
+  }
+
+  export type ProcessedStripeEventUncheckedCreateInput = {
+    id?: string
+    eventId: string
+    type: string
+    processedAt?: Date | string
+  }
+
+  export type ProcessedStripeEventUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    processedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProcessedStripeEventUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    processedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProcessedStripeEventCreateManyInput = {
+    id?: string
+    eventId: string
+    type: string
+    processedAt?: Date | string
+  }
+
+  export type ProcessedStripeEventUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    processedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type ProcessedStripeEventUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    type?: StringFieldUpdateOperationsInput | string
+    processedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type TicketTransactionCreateInput = {
+    id?: string
+    email: string
+    ticketType: string
+    quantity: number
+    pricePerUnit: number
+    totalAmount: number
+    status?: string
+    purchaseDate?: Date | string
+    eventId: string
+    userId?: string | null
+  }
+
+  export type TicketTransactionUncheckedCreateInput = {
+    id?: string
+    email: string
+    ticketType: string
+    quantity: number
+    pricePerUnit: number
+    totalAmount: number
+    status?: string
+    purchaseDate?: Date | string
+    eventId: string
+    userId?: string | null
+  }
+
+  export type TicketTransactionUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    ticketType?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    pricePerUnit?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    purchaseDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type TicketTransactionUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    ticketType?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    pricePerUnit?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    purchaseDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type TicketTransactionCreateManyInput = {
+    id?: string
+    email: string
+    ticketType: string
+    quantity: number
+    pricePerUnit: number
+    totalAmount: number
+    status?: string
+    purchaseDate?: Date | string
+    eventId: string
+    userId?: string | null
+  }
+
+  export type TicketTransactionUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    ticketType?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    pricePerUnit?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    purchaseDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type TicketTransactionUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    email?: StringFieldUpdateOperationsInput | string
+    ticketType?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    pricePerUnit?: FloatFieldUpdateOperationsInput | number
+    totalAmount?: FloatFieldUpdateOperationsInput | number
+    status?: StringFieldUpdateOperationsInput | string
+    purchaseDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    eventId?: StringFieldUpdateOperationsInput | string
+    userId?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -3455,14 +7657,14 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type UserProfileScalarRelationFilter = {
+    is?: UserProfileWhereInput
+    isNot?: UserProfileWhereInput
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
-  }
-
-  export type SubscriptionUserIdStripeCustomerIdCompoundUniqueInput = {
-    userId: string
-    stripeCustomerId: string
   }
 
   export type SubscriptionCountOrderByAggregateInput = {
@@ -3471,6 +7673,7 @@ export namespace Prisma {
     stripeSubscriptionId?: SortOrder
     stripePriceId?: SortOrder
     stripeCurrentPeriodEnd?: SortOrder
+    status?: SortOrder
   }
 
   export type SubscriptionMaxOrderByAggregateInput = {
@@ -3479,6 +7682,7 @@ export namespace Prisma {
     stripeSubscriptionId?: SortOrder
     stripePriceId?: SortOrder
     stripeCurrentPeriodEnd?: SortOrder
+    status?: SortOrder
   }
 
   export type SubscriptionMinOrderByAggregateInput = {
@@ -3487,6 +7691,7 @@ export namespace Prisma {
     stripeSubscriptionId?: SortOrder
     stripePriceId?: SortOrder
     stripeCurrentPeriodEnd?: SortOrder
+    status?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -3616,8 +7821,195 @@ export namespace Prisma {
     _max?: NestedDateTimeFilter<$PrismaModel>
   }
 
-  export type StringFieldUpdateOperationsInput = {
-    set?: string
+  export type SubscriptionNullableScalarRelationFilter = {
+    is?: SubscriptionWhereInput | null
+    isNot?: SubscriptionWhereInput | null
+  }
+
+  export type UserProfileCountOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    zipCode?: SortOrder
+    country?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type UserProfileMaxOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    zipCode?: SortOrder
+    country?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type UserProfileMinOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+    firstName?: SortOrder
+    lastName?: SortOrder
+    email?: SortOrder
+    phone?: SortOrder
+    addressLine1?: SortOrder
+    addressLine2?: SortOrder
+    city?: SortOrder
+    state?: SortOrder
+    zipCode?: SortOrder
+    country?: SortOrder
+    notes?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type ProcessedStripeEventCountOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    type?: SortOrder
+    processedAt?: SortOrder
+  }
+
+  export type ProcessedStripeEventMaxOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    type?: SortOrder
+    processedAt?: SortOrder
+  }
+
+  export type ProcessedStripeEventMinOrderByAggregateInput = {
+    id?: SortOrder
+    eventId?: SortOrder
+    type?: SortOrder
+    processedAt?: SortOrder
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type TicketTransactionCountOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    ticketType?: SortOrder
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+    status?: SortOrder
+    purchaseDate?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type TicketTransactionAvgOrderByAggregateInput = {
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+  }
+
+  export type TicketTransactionMaxOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    ticketType?: SortOrder
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+    status?: SortOrder
+    purchaseDate?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type TicketTransactionMinOrderByAggregateInput = {
+    id?: SortOrder
+    email?: SortOrder
+    ticketType?: SortOrder
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+    status?: SortOrder
+    purchaseDate?: SortOrder
+    eventId?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type TicketTransactionSumOrderByAggregateInput = {
+    quantity?: SortOrder
+    pricePerUnit?: SortOrder
+    totalAmount?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
+  export type UserProfileCreateNestedOneWithoutSubscriptionInput = {
+    create?: XOR<UserProfileCreateWithoutSubscriptionInput, UserProfileUncheckedCreateWithoutSubscriptionInput>
+    connectOrCreate?: UserProfileCreateOrConnectWithoutSubscriptionInput
+    connect?: UserProfileWhereUniqueInput
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
@@ -3628,12 +8020,72 @@ export namespace Prisma {
     set?: Date | string | null
   }
 
+  export type StringFieldUpdateOperationsInput = {
+    set?: string
+  }
+
+  export type UserProfileUpdateOneRequiredWithoutSubscriptionNestedInput = {
+    create?: XOR<UserProfileCreateWithoutSubscriptionInput, UserProfileUncheckedCreateWithoutSubscriptionInput>
+    connectOrCreate?: UserProfileCreateOrConnectWithoutSubscriptionInput
+    upsert?: UserProfileUpsertWithoutSubscriptionInput
+    connect?: UserProfileWhereUniqueInput
+    update?: XOR<XOR<UserProfileUpdateToOneWithWhereWithoutSubscriptionInput, UserProfileUpdateWithoutSubscriptionInput>, UserProfileUncheckedUpdateWithoutSubscriptionInput>
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type SubscriptionCreateNestedOneWithoutUserProfileInput = {
+    create?: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+    connectOrCreate?: SubscriptionCreateOrConnectWithoutUserProfileInput
+    connect?: SubscriptionWhereUniqueInput
+  }
+
+  export type SubscriptionUncheckedCreateNestedOneWithoutUserProfileInput = {
+    create?: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+    connectOrCreate?: SubscriptionCreateOrConnectWithoutUserProfileInput
+    connect?: SubscriptionWhereUniqueInput
+  }
+
+  export type SubscriptionUpdateOneWithoutUserProfileNestedInput = {
+    create?: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+    connectOrCreate?: SubscriptionCreateOrConnectWithoutUserProfileInput
+    upsert?: SubscriptionUpsertWithoutUserProfileInput
+    disconnect?: SubscriptionWhereInput | boolean
+    delete?: SubscriptionWhereInput | boolean
+    connect?: SubscriptionWhereUniqueInput
+    update?: XOR<XOR<SubscriptionUpdateToOneWithWhereWithoutUserProfileInput, SubscriptionUpdateWithoutUserProfileInput>, SubscriptionUncheckedUpdateWithoutUserProfileInput>
+  }
+
+  export type SubscriptionUncheckedUpdateOneWithoutUserProfileNestedInput = {
+    create?: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+    connectOrCreate?: SubscriptionCreateOrConnectWithoutUserProfileInput
+    upsert?: SubscriptionUpsertWithoutUserProfileInput
+    disconnect?: SubscriptionWhereInput | boolean
+    delete?: SubscriptionWhereInput | boolean
+    connect?: SubscriptionWhereUniqueInput
+    update?: XOR<XOR<SubscriptionUpdateToOneWithWhereWithoutUserProfileInput, SubscriptionUpdateWithoutUserProfileInput>, SubscriptionUncheckedUpdateWithoutUserProfileInput>
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type FloatFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -3781,6 +8233,185 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
+  }
+
+  export type UserProfileCreateWithoutSubscriptionInput = {
+    id?: string
+    userId: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+    phone?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type UserProfileUncheckedCreateWithoutSubscriptionInput = {
+    id?: string
+    userId: string
+    firstName?: string | null
+    lastName?: string | null
+    email?: string | null
+    phone?: string | null
+    addressLine1?: string | null
+    addressLine2?: string | null
+    city?: string | null
+    state?: string | null
+    zipCode?: string | null
+    country?: string | null
+    notes?: string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type UserProfileCreateOrConnectWithoutSubscriptionInput = {
+    where: UserProfileWhereUniqueInput
+    create: XOR<UserProfileCreateWithoutSubscriptionInput, UserProfileUncheckedCreateWithoutSubscriptionInput>
+  }
+
+  export type UserProfileUpsertWithoutSubscriptionInput = {
+    update: XOR<UserProfileUpdateWithoutSubscriptionInput, UserProfileUncheckedUpdateWithoutSubscriptionInput>
+    create: XOR<UserProfileCreateWithoutSubscriptionInput, UserProfileUncheckedCreateWithoutSubscriptionInput>
+    where?: UserProfileWhereInput
+  }
+
+  export type UserProfileUpdateToOneWithWhereWithoutSubscriptionInput = {
+    where?: UserProfileWhereInput
+    data: XOR<UserProfileUpdateWithoutSubscriptionInput, UserProfileUncheckedUpdateWithoutSubscriptionInput>
+  }
+
+  export type UserProfileUpdateWithoutSubscriptionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type UserProfileUncheckedUpdateWithoutSubscriptionInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    userId?: StringFieldUpdateOperationsInput | string
+    firstName?: NullableStringFieldUpdateOperationsInput | string | null
+    lastName?: NullableStringFieldUpdateOperationsInput | string | null
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    phone?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine1?: NullableStringFieldUpdateOperationsInput | string | null
+    addressLine2?: NullableStringFieldUpdateOperationsInput | string | null
+    city?: NullableStringFieldUpdateOperationsInput | string | null
+    state?: NullableStringFieldUpdateOperationsInput | string | null
+    zipCode?: NullableStringFieldUpdateOperationsInput | string | null
+    country?: NullableStringFieldUpdateOperationsInput | string | null
+    notes?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type SubscriptionCreateWithoutUserProfileInput = {
+    stripeCustomerId?: string | null
+    stripeSubscriptionId?: string | null
+    stripePriceId?: string | null
+    stripeCurrentPeriodEnd?: Date | string | null
+    status?: string
+  }
+
+  export type SubscriptionUncheckedCreateWithoutUserProfileInput = {
+    stripeCustomerId?: string | null
+    stripeSubscriptionId?: string | null
+    stripePriceId?: string | null
+    stripeCurrentPeriodEnd?: Date | string | null
+    status?: string
+  }
+
+  export type SubscriptionCreateOrConnectWithoutUserProfileInput = {
+    where: SubscriptionWhereUniqueInput
+    create: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+  }
+
+  export type SubscriptionUpsertWithoutUserProfileInput = {
+    update: XOR<SubscriptionUpdateWithoutUserProfileInput, SubscriptionUncheckedUpdateWithoutUserProfileInput>
+    create: XOR<SubscriptionCreateWithoutUserProfileInput, SubscriptionUncheckedCreateWithoutUserProfileInput>
+    where?: SubscriptionWhereInput
+  }
+
+  export type SubscriptionUpdateToOneWithWhereWithoutUserProfileInput = {
+    where?: SubscriptionWhereInput
+    data: XOR<SubscriptionUpdateWithoutUserProfileInput, SubscriptionUncheckedUpdateWithoutUserProfileInput>
+  }
+
+  export type SubscriptionUpdateWithoutUserProfileInput = {
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
+  }
+
+  export type SubscriptionUncheckedUpdateWithoutUserProfileInput = {
+    stripeCustomerId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripeSubscriptionId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripePriceId?: NullableStringFieldUpdateOperationsInput | string | null
+    stripeCurrentPeriodEnd?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: StringFieldUpdateOperationsInput | string
   }
 
 

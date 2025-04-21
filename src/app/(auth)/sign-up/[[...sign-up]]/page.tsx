@@ -7,7 +7,7 @@ export default function SignUpPage() {
         <h1 className="text-4xl font-bold text-center text-gray-900">Create Account</h1>
         <p className="mt-2 text-center text-gray-600">Get started with TaskMngr</p>
       </div>
-      <SignUp />
+      <SignUp redirectUrl="/" afterSignUpUrl="/" />
     </div>
   );
 }

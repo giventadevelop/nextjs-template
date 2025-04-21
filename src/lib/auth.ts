@@ -1,6 +1,8 @@
 import { auth } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { getAuth } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 
 export async function authenticatedRequest(
   req: NextRequest,
@@ -24,4 +26,24 @@ export async function authenticatedRequest(
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
+}
+
+export async function getServerAuth() {
+  // First await headers
+  await headers();
+  // Then get auth
+  const session = await auth();
+  return session;
+}
+
+export async function getUserAuth() {
+  const { userId, sessionClaims } = await getServerAuth();
+  return {
+    session: {
+      user: {
+        id: userId,
+        ...sessionClaims,
+      },
+    },
+  };
 }

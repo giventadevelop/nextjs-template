@@ -26,6 +26,7 @@ export async function getUserSubscriptionPlan() {
       stripeSubscriptionId: null,
       stripeCurrentPeriodEnd: null,
       stripeCustomerId: null,
+      status: null,
       isSubscribed: false,
       isCanceled: false,
     };
@@ -33,6 +34,7 @@ export async function getUserSubscriptionPlan() {
   const isSubscribed =
     subscription.stripePriceId &&
     subscription.stripeCurrentPeriodEnd &&
+    (subscription.status === 'active' || subscription.status === 'trialing') &&
     subscription.stripeCurrentPeriodEnd.getTime() + 86_400_000 > Date.now();
 
   const plan = isSubscribed
@@ -42,11 +44,25 @@ export async function getUserSubscriptionPlan() {
     : null;
 
   let isCanceled = false;
-  if (isSubscribed && subscription.stripeSubscriptionId) {
-    const stripePlan = await stripe.subscriptions.retrieve(
-      subscription.stripeSubscriptionId
-    );
-    isCanceled = stripePlan.cancel_at_period_end;
+  let stripeSubscription;
+  if (subscription.stripeSubscriptionId) {
+    try {
+      stripeSubscription = await stripe.subscriptions.retrieve(
+        subscription.stripeSubscriptionId
+      );
+      isCanceled = stripeSubscription.cancel_at_period_end;
+
+      // Update local subscription status if it differs from Stripe
+      if (subscription.status !== stripeSubscription.status) {
+        await db.subscription.update({
+          where: { userId: session.user.id },
+          data: { status: stripeSubscription.status }
+        });
+        subscription.status = stripeSubscription.status;
+      }
+    } catch (error) {
+      console.error('Error retrieving subscription from Stripe:', error);
+    }
   }
 
   return {
@@ -54,6 +70,7 @@ export async function getUserSubscriptionPlan() {
     stripeSubscriptionId: subscription.stripeSubscriptionId,
     stripeCurrentPeriodEnd: subscription.stripeCurrentPeriodEnd,
     stripeCustomerId: subscription.stripeCustomerId,
+    status: subscription.status,
     isSubscribed,
     isCanceled,
   };

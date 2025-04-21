@@ -122,7 +122,8 @@ exports.Prisma.SubscriptionScalarFieldEnum = {
   stripeCustomerId: 'stripeCustomerId',
   stripeSubscriptionId: 'stripeSubscriptionId',
   stripePriceId: 'stripePriceId',
-  stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd'
+  stripeCurrentPeriodEnd: 'stripeCurrentPeriodEnd',
+  status: 'status'
 };
 
 exports.Prisma.TaskScalarFieldEnum = {
@@ -136,6 +137,44 @@ exports.Prisma.TaskScalarFieldEnum = {
   userId: 'userId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
+};
+
+exports.Prisma.UserProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  email: 'email',
+  phone: 'phone',
+  addressLine1: 'addressLine1',
+  addressLine2: 'addressLine2',
+  city: 'city',
+  state: 'state',
+  zipCode: 'zipCode',
+  country: 'country',
+  notes: 'notes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.ProcessedStripeEventScalarFieldEnum = {
+  id: 'id',
+  eventId: 'eventId',
+  type: 'type',
+  processedAt: 'processedAt'
+};
+
+exports.Prisma.TicketTransactionScalarFieldEnum = {
+  id: 'id',
+  email: 'email',
+  ticketType: 'ticketType',
+  quantity: 'quantity',
+  pricePerUnit: 'pricePerUnit',
+  totalAmount: 'totalAmount',
+  status: 'status',
+  purchaseDate: 'purchaseDate',
+  eventId: 'eventId',
+  userId: 'userId'
 };
 
 exports.Prisma.SortOrder = {
@@ -156,7 +195,10 @@ exports.Prisma.NullsOrder = {
 
 exports.Prisma.ModelName = {
   Subscription: 'Subscription',
-  Task: 'Task'
+  Task: 'Task',
+  UserProfile: 'UserProfile',
+  ProcessedStripeEvent: 'ProcessedStripeEvent',
+  TicketTransaction: 'TicketTransaction'
 };
 
 /**

@@ -1,8 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/tasks/new/page": "app/tasks/new/page.js",
-  "/tasks/page": "app/tasks/page.js",
-  "/tasks/[id]/edit/page": "app/tasks/[id]/edit/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/(auth)/sign-in/[[...sign-in]]/page": "app/(auth)/sign-in/[[...sign-in]]/page.js"
-}
