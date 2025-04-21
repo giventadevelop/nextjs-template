@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs";
-import { getPrismaClient } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+
+// Force Node.js runtime - Edge runtime is not compatible with Prisma
+export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
@@ -23,7 +26,7 @@ export async function POST(req: Request) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
+        { error: "Unauthorized" },
         { status: 401 }
       );
     }
@@ -46,19 +49,16 @@ export async function POST(req: Request) {
 
     if (!body.stripePriceId) {
       return NextResponse.json(
-        { error: "Missing required field: stripePriceId" },
+        { error: "Missing price ID" },
         { status: 400 }
       );
     }
-
-    // Initialize Prisma client
-    const prisma = getPrismaClient();
 
     try {
       const clerkUser = await currentUser();
       if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
         return NextResponse.json(
-          { error: "User email not found - Please update your email in profile" },
+          { error: "User email not found" },
           { status: 400 }
         );
       }
@@ -150,16 +150,16 @@ export async function POST(req: Request) {
                 userId: userId,
               },
             },
-        line_items: [
-          {
+            line_items: [
+              {
                 price: body.stripePriceId,
-            quantity: 1,
-          },
-        ],
-        metadata: {
+                quantity: 1,
+              },
+            ],
+            metadata: {
               userId: userId,
-        },
-      });
+            },
+          });
 
           if (!session.url) {
             throw new Error('Failed to create checkout session');
@@ -171,21 +171,21 @@ export async function POST(req: Request) {
       } catch (stripeError) {
         console.error('Stripe API error:', stripeError);
         return NextResponse.json(
-          { error: stripeError instanceof Error ? stripeError.message : 'Failed to process subscription' },
+          { error: 'Failed to process subscription' },
           { status: 400 }
         );
       }
     } catch (dbError) {
       console.error('Database operation failed:', dbError);
       return NextResponse.json(
-        { error: 'Failed to access database. Please try again later.' },
+        { error: 'Database error' },
         { status: 500 }
       );
     }
   } catch (error) {
     console.error('Subscription handler error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

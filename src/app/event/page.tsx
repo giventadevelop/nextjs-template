@@ -61,6 +61,13 @@ const EventPage = () => {
       price: 250,
       description: 'Very VIP access with premium exclusive perks',
       available: 10
+    },
+    {
+      id: 7,
+      name: 'Test Ticket',
+      price: 0.60,
+      description: 'Test ticket for production validation',
+      available: 5
     }
   ];
 
@@ -157,7 +164,7 @@ const EventPage = () => {
                 <div key={ticket.id} className="border rounded-lg p-6 bg-gray-50">
                   <h3 className="text-xl font-semibold text-gray-900">{ticket.name}</h3>
                   <p className="text-gray-600 mt-2">{ticket.description}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-4">${ticket.price}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-4">${ticket.price.toFixed(2)}</p>
                   <div className="mt-4 flex items-center">
                     <button
                       onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
@@ -208,7 +215,7 @@ const EventPage = () => {
 
                 <div className="flex justify-between items-center">
                   <div className="text-2xl font-bold">
-                    Total: ${calculateTotal()}
+                    Total: ${calculateTotal().toFixed(2)}
                   </div>
                   <button
                     onClick={handlePurchase}
