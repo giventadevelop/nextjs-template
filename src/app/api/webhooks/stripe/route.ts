@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
-// Configure for Node.js runtime
+// Force Node.js runtime - Edge runtime is not compatible with Prisma
 export const runtime = 'nodejs';
 
-// Disable Next.js body parsing
+// Disable body parsing for Stripe webhooks
 export const bodyParser = false;
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
