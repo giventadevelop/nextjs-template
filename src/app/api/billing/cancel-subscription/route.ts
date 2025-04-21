@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { getPrismaClient } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+
+// Force Node.js runtime - Edge runtime is not compatible with Prisma
+export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
@@ -26,9 +29,6 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // Initialize Prisma client
-    const prisma = getPrismaClient();
 
     try {
       // Verify that the subscription belongs to the user

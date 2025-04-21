@@ -80,3 +80,21 @@ model ProcessedStripeEvent {
 
   @@index([eventId])
 }
+
+model TicketTransaction {
+  id           String   @id @default(cuid())
+  email        String
+  ticketType   String // e.g., 'Regular Ticket', 'VIP', etc.
+  quantity     Int
+  pricePerUnit Float
+  totalAmount  Float
+  status       String   @default("completed")
+  purchaseDate DateTime @default(now())
+  eventId      String // Reference to the event (can be expanded later)
+  userId       String? // Optional link to user if they are registered
+
+  @@index([email])
+  @@index([ticketType])
+  @@index([purchaseDate])
+  @@index([userId])
+}
