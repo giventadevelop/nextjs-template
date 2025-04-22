@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser } from "@clerk/nextjs";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 import Stripe from "stripe";
+import { headers } from "next/headers";
+
+// Force Node.js runtime - Edge runtime is not compatible with Prisma
+export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
 });
-
-interface ManageStripeSubscriptionActionProps {
-  userId: string;
-  isSubscribed: boolean;
-  isCurrentPlan: boolean;
-  stripeCustomerId?: string;
-  stripeSubscriptionId?: string | null;
-  stripePriceId: string;
-  email: string;
-}
-
-// Force Node.js runtime - Edge runtime is not compatible with Prisma
-export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
   try {
@@ -34,9 +25,11 @@ export async function POST(req: Request) {
     // Get base URL from environment or request
     let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (!baseUrl) {
-      // Extract base URL from the request
-      const url = new URL(req.url);
-      baseUrl = `${url.protocol}//${url.host}`;
+      // Extract base URL from the request using headers
+      const headersList = await headers();
+      const host = headersList.get('host') || '';
+      const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+      baseUrl = `${protocol}://${host}`;
       console.warn('NEXT_PUBLIC_APP_URL not set, using request URL:', baseUrl);
     }
 
@@ -139,8 +132,8 @@ export async function POST(req: Request) {
           url = session.url;
         } else {
           const session = await stripe.checkout.sessions.create({
-            success_url: `${baseUrl}/dashboard`,
-            cancel_url: `${baseUrl}/dashboard`,
+            success_url: `${baseUrl}/dashboard?subscription=processing&session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${baseUrl}/pricing?message=subscription-failed`,
             payment_method_types: ['card'],
             mode: 'subscription',
             billing_address_collection: 'auto',
@@ -150,16 +143,16 @@ export async function POST(req: Request) {
                 userId: userId,
               },
             },
-        line_items: [
-          {
+            line_items: [
+              {
                 price: body.stripePriceId,
-            quantity: 1,
-          },
-        ],
-        metadata: {
+                quantity: 1,
+              },
+            ],
+            metadata: {
               userId: userId,
-        },
-      });
+            },
+          });
 
           if (!session.url) {
             throw new Error('Failed to create checkout session');

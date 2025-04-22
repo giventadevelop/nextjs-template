@@ -2,8 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../src/lib/generated/client"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+  output          = "../src/lib/generated/client"
 }
 
 generator zod {
@@ -18,7 +19,7 @@ generator zod {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  url       = env("POOLED_URL")
   directUrl = env("DIRECT_URL") // Used for migrations
 }
 

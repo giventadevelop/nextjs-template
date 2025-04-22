@@ -1,0 +1,154 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# TypeScript and Linting Best Practices
+
+- **Variable Usage**
+  ```typescript
+  // ✅ DO: Prefix unused variables with underscore
+  const _unusedVar = someValue;
+  function handler(_unusedParam: string) {}
+
+  // ❌ DON'T: Leave unused variables without prefix
+  const unusedVar = someValue;
+  function handler(unusedParam: string) {}
+  ```
+
+- **Type Safety**
+  ```typescript
+  // ✅ DO: Use specific types
+  interface UserData {
+    id: string;
+    name: string;
+  }
+  const userData: UserData = { id: '1', name: 'John' };
+
+  // ❌ DON'T: Use 'any' type
+  const userData: any = { id: '1', name: 'John' };
+  ```
+
+- **React Hooks**
+  ```typescript
+  // ✅ DO: Include all dependencies in useEffect
+  useEffect(() => {
+    if (subscription?.status === 'active') {
+      handleSubscribe();
+    }
+  }, [subscription, handleSubscribe]);
+
+  // ❌ DON'T: Miss dependencies
+  useEffect(() => {
+    if (subscription?.status === 'active') {
+      handleSubscribe();
+    }
+  }, []); // Missing dependencies
+  ```
+
+- **Variable Declaration**
+  ```typescript
+  // ✅ DO: Use const or let
+  const constantValue = 'never changes';
+  let mutableValue = 'can change';
+
+  // ❌ DON'T: Use var
+  var oldStyleVariable = 'avoid this';
+  ```
+
+- **Module Exports**
+  ```typescript
+  // ✅ DO: Name your exports
+  const config = {
+    // config options
+  };
+  export default config;
+
+  // ❌ DON'T: Use anonymous exports
+  export default {
+    // config options
+  };
+  ```
+
+- **Error Handling**
+  ```typescript
+  // ✅ DO: Use typed error handling
+  try {
+    await someOperation();
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error('Operation failed:', error.message);
+    }
+  }
+
+  // ❌ DON'T: Leave errors untyped
+  try {
+    await someOperation();
+  } catch (error: any) {
+    console.error('Operation failed:', error);
+  }
+  ```
+
+- **Request/Response Types**
+  ```typescript
+  // ✅ DO: Define specific types for API data
+  interface ApiResponse<T> {
+    data: T;
+    status: number;
+    message?: string;
+  }
+
+  // ❌ DON'T: Use any for API data
+  const response: any = await fetch('/api/data');
+  ```
+
+- **Function Parameters**
+  ```typescript
+  // ✅ DO: Mark optional parameters with ?
+  function updateUser(id: string, data: Partial<UserData>, notify?: boolean) {}
+
+  // ❌ DON'T: Use undefined type union
+  function updateUser(id: string, data: Partial<UserData>, notify: boolean | undefined) {}
+  ```
+
+- **Async Operations**
+  ```typescript
+  // ✅ DO: Properly type async operations
+  async function fetchData(): Promise<UserData> {
+    const response = await fetch('/api/user');
+    return response.json();
+  }
+
+  // ❌ DON'T: Return any from async operations
+  async function fetchData(): Promise<any> {
+    const response = await fetch('/api/user');
+    return response.json();
+  }
+  ```
+
+- **ESLint Configuration**
+  ```json
+  // Required ESLint rules in .eslintrc
+  {
+    "rules": {
+      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react-hooks/exhaustive-deps": "warn",
+      "no-var": "error",
+      "import/no-anonymous-default-export": "warn"
+    }
+  }
+  ```
+
+- **VSCode Integration**
+  - Enable "ESLint: Fix All Auto-Fixable Problems" on save
+  - Use the TypeScript ESLint extension
+  - Configure format on save
+
+- **Pre-commit Hooks**
+  - Run ESLint before commits
+  - Prevent commits with linting errors
+  - Auto-fix what can be fixed
+
+Follow these patterns to maintain consistent code quality and prevent common TypeScript/ESLint errors.
+

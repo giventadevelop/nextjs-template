@@ -1,0 +1,133 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Database Access Patterns
+
+- **Always Use the `db` Instance**
+  - Import the database instance from the centralized location
+  ```typescript
+  // ✅ DO: Use the db instance
+  import { db } from "@/lib/db";
+
+  // ❌ DON'T: Import prisma directly
+  import { prisma } from "@/lib/prisma";
+  import prisma from "@/lib/prisma";
+  ```
+
+- **Database Operations**
+  ```typescript
+  // ✅ DO: Use db for all database operations
+  const user = await db.user.findUnique({
+    where: { id: userId }
+  });
+
+  // ❌ DON'T: Use prisma directly
+  const user = await prisma.user.findUnique({
+    where: { id: userId }
+  });
+  ```
+
+- **Rationale**
+  - Ensures consistent database access across the application
+  - Maintains a single Prisma client instance
+  - Prevents connection pool exhaustion
+  - Enables centralized error handling and logging
+  - Makes it easier to add middleware or custom logic
+
+- **Error Prevention**
+  ```typescript
+  // ✅ DO: Handle database errors appropriately
+  try {
+    const result = await db.user.create({
+      data: userData
+    });
+  } catch (error) {
+    console.error('Database error:', error);
+    throw new Error('Failed to create user');
+  }
+  ```
+
+- **Runtime Considerations**
+  ```typescript
+  // ✅ DO: Specify Node.js runtime for API routes using Prisma
+  export const runtime = 'nodejs';
+
+  // ❌ DON'T: Use Edge runtime with Prisma operations
+  export const runtime = 'edge';
+  ```
+
+- **Connection Management**
+  - The `db` instance handles:
+    - Connection pooling
+    - Automatic reconnection
+    - Connection lifecycle
+    - Resource cleanup
+
+- **Testing Considerations**
+  ```typescript
+  // ✅ DO: Use db in tests for consistency
+  import { db } from "@/lib/db";
+
+  beforeEach(async () => {
+    await db.user.deleteMany();
+  });
+  ```
+
+- **Environment Setup**
+  ```env
+  # ✅ DO: Use consistent environment variables
+  DATABASE_URL="postgresql://..."
+  DIRECT_URL="postgresql://..."
+
+  # ❌ DON'T: Use different names for the same purpose
+  POSTGRES_URL="postgresql://..."
+  DB_URL="postgresql://..."
+  ```
+
+- **Migration and Schema Changes**
+  - Always use the `db` instance when writing migrations
+  - Keep schema changes synchronized with the database client
+
+- **Related Files**
+  - [db/index.ts](mdc:src/lib/db/index.ts): Central database export
+  - [prisma.ts](mdc:src/lib/prisma.ts): Prisma client configuration
+  - [schema.prisma](mdc:prisma/schema.prisma): Database schema
+
+- **Common Patterns**
+  ```typescript
+  // ✅ DO: Use transactions through db
+  const result = await db.$transaction([
+    db.user.create({ data: userData }),
+    db.profile.create({ data: profileData })
+  ]);
+
+  // ✅ DO: Use interactive transactions
+  const result = await db.$transaction(async (tx) => {
+    const user = await tx.user.create({ data: userData });
+    return await tx.profile.create({
+      data: { ...profileData, userId: user.id }
+    });
+  });
+  ```
+
+- **Middleware and Extensions**
+  ```typescript
+  // ✅ DO: Apply extensions through the db instance
+  const extendedDb = db.$extends({
+    result: {
+      user: {
+        fullName: {
+          needs: { firstName: true, lastName: true },
+          compute(user) {
+            return `${user.firstName} ${user.lastName}`;
+          }
+        }
+      }
+    }
+  });
+  ```
+
+Follow these patterns to maintain consistent and reliable database access across the application.
+

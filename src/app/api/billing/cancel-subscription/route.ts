@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
 import Stripe from "stripe";
 
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
 export const runtime = 'nodejs';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  apiVersion: "2025-03-31.basil",
 });
 
 export async function POST(req: Request) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     try {
       // Verify that the subscription belongs to the user
-      const subscription = await prisma.subscription.findFirst({
+      const subscription = await db.subscription.findFirst({
         where: {
           userId: userId,
           stripeSubscriptionId: body.stripeSubscriptionId,
@@ -47,23 +47,27 @@ export async function POST(req: Request) {
       }
 
       // Cancel the subscription in Stripe
-      const canceledSubscription = await stripe.subscriptions.cancel(body.stripeSubscriptionId);
+      const canceledSubscription = await stripe.subscriptions.cancel(
+        body.stripeSubscriptionId
+      ) as Stripe.Subscription;
+
+      // Get the subscription item's current period end
+      const subscriptionItem = canceledSubscription.items.data[0];
+      const currentPeriodEnd = subscriptionItem.current_period_end;
 
       // Update the subscription status in our database
-      await prisma.subscription.update({
+      await db.subscription.update({
         where: { userId },
         data: {
           status: canceledSubscription.status,
-          stripeCurrentPeriodEnd: canceledSubscription.current_period_end
-            ? new Date(canceledSubscription.current_period_end * 1000)
-            : null,
+          stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
         },
       });
 
       return NextResponse.json({
         success: true,
         status: canceledSubscription.status,
-        currentPeriodEnd: canceledSubscription.current_period_end
+        currentPeriodEnd: currentPeriodEnd
       });
     } catch (stripeError) {
       console.error('Stripe API error:', stripeError);

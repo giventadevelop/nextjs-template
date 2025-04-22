@@ -20,38 +20,67 @@ const profileSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await getServerAuth();
+    let userId: string | null = null;
+    try {
+      const session = await getServerAuth();
+      userId = session.userId;
+    } catch (error) {
+      // Return a proper response for unauthenticated users
+      return NextResponse.json({
+        isAuthenticated: false,
+        profile: null,
+      });
+    }
+
     if (!userId) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({
+        isAuthenticated: false,
+        profile: null,
+      });
     }
 
-    const profile = await db.userProfile.findUnique({
-      where: { userId },
-      select: {
-        id: true,
-        userId: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        addressLine1: true,
-        addressLine2: true,
-        city: true,
-        state: true,
-        zipCode: true,
-        country: true,
-        createdAt: true,
-      }
-    });
+    try {
+      const profile = await db.userProfile.findUnique({
+        where: { userId },
+        select: {
+          id: true,
+          userId: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          state: true,
+          zipCode: true,
+          country: true,
+          notes: true,
+          createdAt: true,
+        }
+      });
 
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
+      return NextResponse.json({
+        isAuthenticated: true,
+        profile: profile || {
+          userId,
+        }
+      });
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return NextResponse.json({
+        isAuthenticated: true,
+        error: 'Failed to fetch profile data',
+        profile: null
+      }, { status: 500 });
     }
-
-    return Response.json(profile);
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Profile GET error:', error);
+    return NextResponse.json({
+      isAuthenticated: false,
+      error: 'Internal server error',
+      profile: null
+    }, { status: 500 });
   }
 }
 
@@ -79,7 +108,10 @@ export async function PUT(request: Request) {
         update: validatedData,
       });
 
-      return NextResponse.json(profile);
+      return NextResponse.json({
+        isAuthenticated: true,
+        profile
+      });
     } catch (validationError) {
       console.error("[PROFILE_VALIDATION]", validationError);
       if (validationError instanceof z.ZodError) {

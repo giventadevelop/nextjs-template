@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs';
 import { headers, cookies } from 'next/headers';
 import { Metadata } from 'next';
-import { PricingPlans } from '@/components/subscription/PricingPlans';
+import PricingPlans from '@/components/subscription/PricingPlans';
 import { db } from '@/lib/db';
 
 const messages = {
@@ -37,12 +37,25 @@ export default async function PricingPage({ searchParams }: PageProps) {
   // Initialize headers and auth
   await headers();
   await cookies(); // Ensure cookies are ready
-  const { userId } = await auth();
 
-  // Get subscription only if user is logged in
-  const subscription = userId ? await db.subscription.findFirst({
-    where: { userId },
-  }) : null;
+  let subscription = null;
+  try {
+    const { userId } = await auth();
+    if (userId) {
+      subscription = await db.subscription.findFirst({
+        where: { userId },
+        select: {
+          status: true,
+          stripeSubscriptionId: true,
+          stripePriceId: true,
+          stripeCurrentPeriodEnd: true,
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching subscription:', error);
+    // Continue without subscription data
+  }
 
   // Await searchParams access
   const messageParam = await (async () => searchParams?.message)();

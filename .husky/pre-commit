@@ -1,0 +1,14 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run ESLint
+npx eslint . --max-warnings=0 || (
+    echo "🚫 ESLint found errors. Please fix them before committing."
+    false
+)
+
+# Run TypeScript compiler check
+npx tsc --noEmit || (
+    echo "🚫 TypeScript found errors. Please fix them before committing."
+    false
+)

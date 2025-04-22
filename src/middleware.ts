@@ -1,37 +1,24 @@
-import { authMiddleware } from "@clerk/nextjs";
-import { NextRequest } from "next/server";
+import { authMiddleware } from '@clerk/nextjs';
 
-// Define protected routes that require authentication
-const protectedPaths = [
-  '/dashboard(.*)',
-  '/tasks(.*)',
-  '/profile(.*)',
-];
-
-// Define public routes that don't require authentication
-const publicPaths = [
-  '/',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/event(.*)',     // Make event pages public
-  '/pricing(.*)',   // Make pricing page public
-  '/api/webhooks(.*)', // Keep webhooks public
-  '/api/stripe/event-checkout', // Make event checkout public
-];
-
+// Remove unused imports and variables
 export default authMiddleware({
-  publicRoutes: publicPaths,
-  ignoredRoutes: [
+  publicRoutes: [
+    '/',
     '/api/webhooks/stripe',
-    '/api/webhooks/clerk',
+    '/events',
+    '/events/(.*)',
+    '/pricing',
+    '/api/events/(.*)',
+    '/api/profile',  // Allow public access but handle auth state in the route
+    '/api/subscription/plans'  // Allow public access to pricing plans
+  ],
+  ignoredRoutes: [
+    '/api/webhooks(.*)',
+    '/_next/static/(.*)',
+    '/favicon.ico',
   ]
 });
 
 export const config = {
-  matcher: [
-    // Skip Next.js internals and all static files
-    '/((?!_next|[^?]*\\.[\\w]+$|_next).*)',
-    // Optional: Protect API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };

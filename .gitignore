@@ -34,3 +34,6 @@ out/
 # Task files
 tasks.json
 tasks/
+
+# Generated files
+src/lib/generated/

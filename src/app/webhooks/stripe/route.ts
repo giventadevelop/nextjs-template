@@ -1,12 +1,19 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { prisma } from "@/lib/prisma";
+import prisma from "@/lib/prisma";
 
 // Configure for Node.js runtime
 export const runtime = 'nodejs';
 
 // Disable Next.js body parsing
 export const bodyParser = false;
+
+interface TicketDetails {
+  quantity: number;
+  ticketType: string;
+  pricePerUnit: number;
+  totalAmount?: number;
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
@@ -72,22 +79,49 @@ export async function POST(req: Request) {
       switch (event.type) {
         case 'checkout.session.completed': {
           const session = event.data.object as Stripe.Checkout.Session;
-          const { eventId, ticketDetails } = session.metadata || {};
+          const userId = session.metadata?.userId;
 
-          // Check if this is a ticket purchase (has eventId and ticketDetails)
+          // Handle subscription checkout completion
+          if (session.mode === 'subscription' && userId) {
+            console.log('Processing subscription checkout completion:', {
+              userId,
+              customerEmail: session.customer_email,
+            });
+
+            // Get the subscription ID from the session
+            const subscriptionId = session.subscription as string;
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId) as Stripe.Subscription;
+            const currentPeriodEnd = subscription.items.data[0].current_period_end;
+
+            // Update the subscription in our database
+            await prisma.subscription.update({
+              where: { userId },
+              data: {
+                status: subscription.status,
+                stripeCustomerId: session.customer as string,
+                stripeSubscriptionId: subscriptionId,
+                stripePriceId: subscription.items.data[0]?.price.id,
+                stripeCurrentPeriodEnd: new Date(currentPeriodEnd * 1000),
+              },
+            });
+            console.log('Subscription updated successfully after checkout');
+          }
+
+          // Handle ticket purchase (existing code)
+          const { eventId, ticketDetails } = session.metadata || {};
           if (eventId && ticketDetails) {
             console.log('Processing ticket purchase:', {
               eventId,
               customerEmail: session.customer_email,
             });
 
-            const tickets = JSON.parse(ticketDetails);
+            const tickets = JSON.parse(ticketDetails) as TicketDetails[];
 
             // Create transaction records for each ticket type
             await Promise.all(
               tickets
-                .filter((ticket: any) => ticket.quantity > 0)
-                .map((ticket: any) =>
+                .filter((ticket: TicketDetails) => ticket.quantity > 0)
+                .map((ticket: TicketDetails) =>
                   prisma.ticketTransaction.create({
                     data: {
                       email: session.customer_email || '',
@@ -138,17 +172,21 @@ export async function POST(req: Request) {
             break;
           }
 
+          // Get subscription details
+          const subscriptionDetails = await stripe.subscriptions.retrieve(subscription.id) as Stripe.Subscription;
+          const newCurrentPeriodEnd = subscriptionDetails.items.data[0].current_period_end;
+
           // Update the subscription
           await prisma.subscription.update({
-            where: { userId },
+            where: {
+              userId: userId,
+            },
             data: {
-              status: subscription.status,
+              status: subscriptionDetails.status,
               stripeCustomerId: customerId,
               stripeSubscriptionId: subscription.id,
-              stripePriceId: subscription.items.data[0]?.price.id,
-              stripeCurrentPeriodEnd: new Date(
-                (subscription as any).current_period_end * 1000
-              ),
+              stripePriceId: subscriptionDetails.items.data[0]?.price.id,
+              stripeCurrentPeriodEnd: new Date(newCurrentPeriodEnd * 1000), // Convert Unix timestamp to Date
             },
           });
           console.log('Subscription updated successfully');

@@ -59,6 +59,7 @@ export default function ProfileForm() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ProfileFormData>(defaultFormData);
+  const [_isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -69,16 +70,19 @@ export default function ProfileForm() {
           throw new Error("Failed to fetch profile");
         }
         const data = await response.json();
-        // Only update form data if we got valid data back
-        if (data && typeof data === 'object' && data !== null) {
-          // Filter out any null or undefined values to avoid spreading them
+
+        setIsAuthenticated(data.isAuthenticated);
+
+        if (data.isAuthenticated && data.profile) {
           const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([_, value]) => value != null)
+            Object.entries(data.profile).filter(([_, value]) => value != null)
           );
-          setFormData(prev => ({
-            ...defaultFormData, // Always start with default values
-            ...cleanData // Then overlay any existing data
+          setFormData(_prev => ({
+            ...defaultFormData,
+            ...cleanData
           }));
+        } else {
+          setFormData(defaultFormData);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);

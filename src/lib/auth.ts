@@ -29,21 +29,38 @@ export async function authenticatedRequest(
 }
 
 export async function getServerAuth() {
-  // First await headers
-  await headers();
-  // Then get auth
-  const session = await auth();
-  return session;
+  try {
+    // Ensure headers are read first
+    await headers();
+
+    const { userId } = await auth();
+    if (!userId) {
+      throw new Error('No authenticated session found');
+    }
+
+    return { userId };
+  } catch (error) {
+    console.error('Server auth error:', error);
+    throw error;
+  }
 }
 
 export async function getUserAuth() {
-  const { userId, sessionClaims } = await getServerAuth();
-  return {
-    session: {
-      user: {
-        id: userId,
-        ...sessionClaims,
+  try {
+    const { userId } = await getServerAuth();
+    const { sessionClaims } = await auth();
+    return {
+      session: {
+        user: {
+          id: userId,
+          ...sessionClaims,
+        },
       },
-    },
-  };
+    };
+  } catch (error) {
+    console.error('User auth error:', error);
+    return {
+      session: null,
+    };
+  }
 }

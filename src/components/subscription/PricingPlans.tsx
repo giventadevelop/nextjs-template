@@ -14,21 +14,13 @@ interface PricingPlansProps {
   currentSubscription: Subscription | null;
 }
 
-export function PricingPlans({ currentSubscription }: PricingPlansProps) {
+export default function PricingPlans({ currentSubscription }: PricingPlansProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { userId } = useAuth();
   const { user } = useUser();
-
-  // Check if user just logged in and needs to subscribe
-  useEffect(() => {
-    const shouldSubscribe = searchParams?.get('subscribe') === 'true';
-    if (userId && shouldSubscribe && !currentSubscription) {
-      handleSubscribe();
-    }
-  }, [userId, searchParams]);
 
   const handleSubscribe = async () => {
     try {
@@ -81,6 +73,20 @@ export function PricingPlans({ currentSubscription }: PricingPlansProps) {
       setIsLoading(false);
     }
   };
+
+  // Check if user just logged in and needs to subscribe
+  useEffect(() => {
+    const shouldSubscribe = searchParams.get('subscribe') === 'true';
+    if (userId && shouldSubscribe && !currentSubscription) {
+      handleSubscribe();
+    }
+  }, [userId, searchParams, currentSubscription, handleSubscribe]);
+
+  useEffect(() => {
+    if (currentSubscription?.status === 'active') {
+      handleSubscribe();
+    }
+  }, [currentSubscription?.status, handleSubscribe]);
 
   const handleManageSubscription = async () => {
     try {

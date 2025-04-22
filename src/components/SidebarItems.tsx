@@ -2,46 +2,45 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-import { LucideIcon } from "lucide-react";
-
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { defaultLinks, additionalLinks } from "@/config/nav";
 
-export interface SidebarLink {
+export interface SidebarItem {
   title: string;
   href: string;
   icon: LucideIcon;
 }
 
-const SidebarItems = () => {
-  return (
-    <>
-      <SidebarLinkGroup links={defaultLinks} />
-      {additionalLinks.length > 0
-        ? additionalLinks.map((l) => (
-            <SidebarLinkGroup
-              links={l.links}
-              title={l.title}
-              border
-              key={l.title}
-            />
-          ))
-        : null}
-    </>
-  );
-};
-export default SidebarItems;
+interface SidebarLinkProps {
+  link: SidebarItem;
+  active?: boolean;
+  className?: string;
+}
 
-const SidebarLinkGroup = ({
-  links,
-  title,
-  border,
-}: {
-  links: SidebarLink[];
+function SidebarLink({ link, active, className }: SidebarLinkProps) {
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "flex items-center gap-2 rounded-lg px-3 py-2 text-gray-500 transition-all hover:text-gray-900",
+        active && "bg-gray-100 text-gray-900",
+        className
+      )}
+    >
+      <link.icon className="h-4 w-4" />
+      <span>{link.title}</span>
+    </Link>
+  );
+}
+
+interface SidebarLinkGroupProps {
+  links: SidebarItem[];
   title?: string;
   border?: boolean;
-}) => {
+}
+
+function SidebarLinkGroup({ links, title, border }: SidebarLinkGroupProps) {
   const fullPathname = usePathname();
   const pathname = "/" + fullPathname.split("/")[1];
 
@@ -61,31 +60,22 @@ const SidebarLinkGroup = ({
       </ul>
     </div>
   );
-};
-const SidebarLink = ({
-  link,
-  active,
-}: {
-  link: SidebarLink;
-  active: boolean;
-}) => {
+}
+
+export default function SidebarItems() {
   return (
-    <Link
-      href={link.href}
-      className={`group transition-colors p-2 inline-block hover:bg-popover hover:text-primary text-muted-foreground text-xs hover:shadow rounded-md w-full${
-        active ? " text-primary font-semibold" : ""
-      }`}
-    >
-      <div className="flex items-center">
-        <div
-          className={cn(
-            "opacity-0 left-0 h-6 w-[4px] absolute rounded-r-lg bg-primary",
-            active ? "opacity-100" : "",
-          )}
-        />
-        <link.icon className="h-3.5 mr-1" />
-        <span>{link.title}</span>
-      </div>
-    </Link>
+    <>
+      <SidebarLinkGroup links={defaultLinks} />
+      {additionalLinks.length > 0
+        ? additionalLinks.map((l) => (
+          <SidebarLinkGroup
+            links={l.links}
+            title={l.title}
+            border
+            key={l.title}
+          />
+        ))
+        : null}
+    </>
   );
-};
+}
