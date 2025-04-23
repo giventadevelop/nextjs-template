@@ -1,7 +1,7 @@
 import { stripe } from '@/lib/stripe';
 
-if (!process.env.API_BASE_URL) {
-  throw new Error('API_BASE_URL is not set');
+if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  throw new Error('NEXT_PUBLIC_API_BASE_URL is not set');
 }
 
 export default async function SuccessPage({
@@ -29,7 +29,7 @@ export default async function SuccessPage({
     }
 
     // Get transaction details from our API using the transaction ID from metadata
-    const response = await fetch(`${process.env.API_BASE_URL}/api/ticket-transactions/${session.metadata.transactionId}`);
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ticket-transactions/${session.metadata.transactionId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch transaction details');
     }
