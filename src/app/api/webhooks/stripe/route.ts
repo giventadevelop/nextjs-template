@@ -12,8 +12,8 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
 }
 
-if (!process.env.API_BASE_URL) {
-  throw new Error('API_BASE_URL is not set');
+if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+  throw new Error('NEXT_PUBLIC_API_BASE_URL is not set');
 }
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
           const transactions = await Promise.all(
             parsedTickets.map(async (ticket: any) => {
               console.log('Creating transaction with userId:', userId);
-              const response = await fetch(`${process.env.API_BASE_URL}/api/ticket-transactions`, {
+              const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ticket-transactions`, {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
