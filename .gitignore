@@ -34,3 +34,9 @@ out/
 # Task files
 tasks.json
 tasks/
+
+# Prisma generated files
+src/lib/generated/client/
+*.wasm
+query_engine_bg.*
+wasm-edge-light-loader.*
