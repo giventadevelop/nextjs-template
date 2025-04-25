@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // output: 'export',
 
   // Environment variables that should be exposed to the client
   env: {
@@ -45,3 +46,4 @@ const nextConfig = {
 };
 
 export default nextConfig;
+

@@ -10,6 +10,24 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
 });
 
+interface UserProfileDTO {
+  id?: number;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ManageStripeSubscriptionActionProps {
   userId: string;
   isSubscribed: boolean;
@@ -66,18 +84,53 @@ export async function POST(req: Request) {
       const email = clerkUser.emailAddresses[0].emailAddress;
 
       // First, ensure we have a UserProfile
-      let userProfile = await prisma.userProfile.findUnique({
-        where: { userId },
-      });
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!apiBaseUrl) {
+        throw new Error('API base URL not configured');
+      }
 
-      if (!userProfile) {
-        // Create UserProfile if it doesn't exist
-        userProfile = await prisma.userProfile.create({
-          data: {
-            userId,
-            email,
+      // Try to get existing user profile
+      let userProfile: UserProfileDTO | null = null;
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
         });
+
+        if (response.ok) {
+          userProfile = await response.json();
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+
+      // Create user profile if it doesn't exist
+      if (!userProfile) {
+        const now = new Date().toISOString();
+        const newUserProfile: UserProfileDTO = {
+          userId,
+          email,
+          createdAt: now,
+          updatedAt: now,
+        };
+
+        const response = await fetch(`${apiBaseUrl}/api/user-profiles`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newUserProfile),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to create user profile: ${response.statusText}`);
+        }
+
+        userProfile = await response.json();
       }
 
       // Now we can safely work with the subscription
