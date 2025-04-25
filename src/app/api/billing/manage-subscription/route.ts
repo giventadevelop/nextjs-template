@@ -1,20 +1,37 @@
-import { NextResponse } from "next/server";
-import { auth, currentUser } from "@clerk/nextjs";
-import { prisma } from "@/lib/prisma";
-import Stripe from "stripe";
+import { NextResponse } from 'next/server';
+import { auth, currentUser } from '@clerk/nextjs';
+import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
 });
 
-interface ManageStripeSubscriptionActionProps {
+interface UserProfileDTO {
+  id?: number;
   userId: string;
-  isSubscribed: boolean;
-  isCurrentPlan: boolean;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserSubscriptionDTO {
+  id?: number;
   stripeCustomerId?: string;
-  stripeSubscriptionId?: string | null;
-  stripePriceId: string;
-  email: string;
+  stripeSubscriptionId?: string;
+  stripePriceId?: string;
+  stripeCurrentPeriodEnd?: string;
+  status: string;
+  userProfile?: UserProfileDTO;
 }
 
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
@@ -25,10 +42,7 @@ export async function POST(req: Request) {
     const { userId } = auth();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "Unauthorized - Please sign in" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
     }
 
     // Get base URL from environment or request
@@ -48,50 +62,96 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     if (!body.stripePriceId) {
-      return NextResponse.json(
-        { error: "Missing required field: stripePriceId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required field: stripePriceId' }, { status: 400 });
     }
 
     try {
       const clerkUser = await currentUser();
       if (!clerkUser?.emailAddresses?.[0]?.emailAddress) {
         return NextResponse.json(
-          { error: "User email not found - Please update your email in profile" },
+          { error: 'User email not found - Please update your email in profile' },
           { status: 400 }
         );
       }
 
       const email = clerkUser.emailAddresses[0].emailAddress;
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-      // First, ensure we have a UserProfile
-      let userProfile = await prisma.userProfile.findUnique({
-        where: { userId },
-      });
-
-      if (!userProfile) {
-        // Create UserProfile if it doesn't exist
-        userProfile = await prisma.userProfile.create({
-          data: {
-            userId,
-            email,
-          },
-        });
+      if (!apiBaseUrl) {
+        throw new Error('API base URL not configured');
       }
 
-      // Now we can safely work with the subscription
-      let subscription = await prisma.subscription.findUnique({
-        where: { userId },
-      });
+      // Try to get existing user profile
+      let userProfile: UserProfileDTO | null = null;
 
-      if (!subscription) {
-        subscription = await prisma.subscription.create({
-          data: {
-            userId,
-            status: 'pending',
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
         });
+
+        if (response.ok) {
+          userProfile = await response.json();
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+
+      // Try to get existing subscription
+      let subscription: UserSubscriptionDTO | null = null;
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile?.id}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const subscriptions: UserSubscriptionDTO[] = await response.json();
+          subscription = subscriptions[0]; // Get the first subscription
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        throw new Error('Failed to fetch subscription data');
+      }
+
+      // Create subscription if it doesn't exist
+      if (!subscription) {
+        try {
+          const newSubscription: UserSubscriptionDTO = {
+            status: 'pending',
+            userProfile: {
+              userId,
+              email,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          };
+
+          const response = await fetch(`${apiBaseUrl}/api/user-subscriptions`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newSubscription),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to create subscription: ${response.statusText}`);
+          }
+
+          subscription = await response.json();
+        } catch (error) {
+          console.error('Error creating subscription:', error);
+          throw new Error('Failed to create subscription');
+        }
       }
 
       // If user already has a Stripe customer ID, use it
@@ -119,10 +179,31 @@ export async function POST(req: Request) {
           }
 
           // Update subscription with the customer ID
-          await prisma.subscription.update({
-            where: { userId },
-            data: { stripeCustomerId: customerId },
-          });
+          if (subscription && subscription.id) {
+            try {
+              const updatedSubscription: UserSubscriptionDTO = {
+                ...subscription,
+                stripeCustomerId: customerId,
+              };
+
+              const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/${subscription.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(updatedSubscription),
+              });
+
+              if (!response.ok) {
+                throw new Error(`Failed to update subscription: ${response.statusText}`);
+              }
+
+              subscription = await response.json();
+            } catch (error) {
+              console.error('Error updating subscription:', error);
+              throw new Error('Failed to update subscription with customer ID');
+            }
+          }
         }
 
         let url: string;
@@ -150,16 +231,16 @@ export async function POST(req: Request) {
                 userId: userId,
               },
             },
-        line_items: [
-          {
+            line_items: [
+              {
                 price: body.stripePriceId,
-            quantity: 1,
-          },
-        ],
-        metadata: {
+                quantity: 1,
+              },
+            ],
+            metadata: {
               userId: userId,
-        },
-      });
+            },
+          });
 
           if (!session.url) {
             throw new Error('Failed to create checkout session');
@@ -175,10 +256,10 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
-    } catch (dbError) {
-      console.error('Database operation failed:', dbError);
+    } catch (apiError) {
+      console.error('API operation failed:', apiError);
       return NextResponse.json(
-        { error: 'Failed to access database. Please try again later.' },
+        { error: apiError instanceof Error ? apiError.message : 'Failed to process API request' },
         { status: 500 }
       );
     }

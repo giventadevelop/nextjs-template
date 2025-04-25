@@ -1,8 +1,10 @@
-import { auth } from '@clerk/nextjs';
+import { auth, currentUser } from "@clerk/nextjs";
 import { headers, cookies } from 'next/headers';
 import { Metadata } from 'next';
 import { PricingPlans } from '@/components/subscription/PricingPlans';
-import { db } from '@/lib/db';
+
+
+
 
 const messages = {
   'subscription-required': {
@@ -28,6 +30,35 @@ interface PageProps {
   searchParams: { message?: string };
 }
 
+interface UserProfileDTO {
+  id?: string;
+  userId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email: string;
+  phone?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zipCode?: string | null;
+  country?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface UserSubscriptionDTO {
+  id?: string;
+  userId: string;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
+  stripePriceId: string | null;
+  stripeCurrentPeriodEnd: Date | null;
+  status: string;
+  userProfile?: UserProfileDTO;
+}
+
 export const metadata: Metadata = {
   title: "Pricing - TaskMngr",
   description: "Choose the right plan for your needs",
@@ -37,40 +68,152 @@ export default async function PricingPage({ searchParams }: PageProps) {
   // Initialize headers and auth
   await headers();
   await cookies(); // Ensure cookies are ready
-  const { userId } = await auth();
 
-  // Get subscription only if user is logged in
-  const subscription = userId ? await db.subscription.findFirst({
-    where: { userId },
-  }) : null;
+  try {
+    const { userId } = await auth();
+    const clerkUser = await currentUser();
 
-  // Await searchParams access
-  const messageParam = await (async () => searchParams?.message)();
+    if (!userId || !clerkUser?.emailAddresses?.[0]?.emailAddress) {
+      throw new Error("User information not found - Please update your profile");
+    }
 
-  // Validate and process message
-  const message = messageParam && Object.keys(messages).includes(messageParam)
-    ? (messageParam as MessageType)
-    : undefined;
-  const messageConfig = message ? messages[message] : null;
+    const email = clerkUser.emailAddresses[0].emailAddress;
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
-      <div className="container mx-auto px-4">
-        {messageConfig && (
-          <div className={`mb-8 p-4 border rounded-lg text-center ${messageConfig.className}`}>
-            <p>{messageConfig.text}</p>
+    if (!apiBaseUrl) {
+      throw new Error('API base URL not configured');
+    }
+    // Try to get existing user profile
+    let userProfile: UserProfileDTO | null = null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        userProfile = await response.json();
+      } else if (response.status !== 404) {
+        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+    // Get subscription only if user is logged in
+    // Try to get existing subscription
+    let subscription: UserSubscriptionDTO | null = null;
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile?.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const subscriptions: UserSubscriptionDTO[] = await response.json();
+        subscription = subscriptions[0]; // Get the first subscription
+      } else if (response.status !== 404) {
+        throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+      throw new Error('Failed to fetch subscription data');
+    }
+
+    // Create subscription if it doesn't exist
+    if (!subscription) {
+      try {
+        const newSubscription: UserSubscriptionDTO = {
+          userId,
+          status: 'pending',
+          stripeCustomerId: null,
+          stripeSubscriptionId: null,
+          stripePriceId: null,
+          stripeCurrentPeriodEnd: null,
+          userProfile: {
+            userId,
+            email,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }
+        };
+
+        const response = await fetch(`${apiBaseUrl}/api/user-subscriptions`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newSubscription),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to create subscription: ${response.statusText}`);
+        }
+
+        const responseData = await response.json();
+        subscription = {
+          ...responseData,
+          stripeCurrentPeriodEnd: responseData.stripeCurrentPeriodEnd ? new Date(responseData.stripeCurrentPeriodEnd) : null
+        };
+      } catch (error) {
+        console.error('Error creating subscription:', error);
+        throw new Error('Failed to create subscription');
+      }
+    } else if (subscription.stripeCurrentPeriodEnd && typeof subscription.stripeCurrentPeriodEnd === 'string') {
+      // Convert stripeCurrentPeriodEnd to Date if it's a string
+      subscription = {
+        ...subscription,
+        stripeCurrentPeriodEnd: new Date(subscription.stripeCurrentPeriodEnd)
+      };
+    }
+
+    // Await searchParams access
+    const messageParam = await (async () => searchParams?.message)();
+
+    // Validate and process message
+    const message = messageParam && Object.keys(messages).includes(messageParam)
+      ? (messageParam as MessageType)
+      : undefined;
+    const messageConfig = message ? messages[message] : null;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          {messageConfig && (
+            <div className={`mb-8 p-4 border rounded-lg text-center ${messageConfig.className}`}>
+              <p>{messageConfig.text}</p>
+            </div>
+          )}
+          <div className="text-center mb-16">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h1>
+            <p className="text-xl text-gray-600">
+              Choose the plan that best fits your needs
+            </p>
           </div>
-        )}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Simple, Transparent Pricing
-          </h1>
-          <p className="text-xl text-gray-600">
-            Choose the plan that best fits your needs
-          </p>
+          <PricingPlans currentSubscription={subscription} />
         </div>
-        <PricingPlans currentSubscription={subscription} />
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error('Error in PricingPage:', error);
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">
+              Error Loading Pricing
+            </h1>
+            <p className="text-xl text-gray-600">
+              There was an error loading the pricing information. Please try again later.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 }
