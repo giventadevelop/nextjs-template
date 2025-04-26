@@ -64,13 +64,18 @@ export const metadata: Metadata = {
   description: "Choose the right plan for your needs",
 };
 
-export default async function PricingPage({ searchParams }: PageProps) {
-  // Initialize headers and auth
-  await headers();
-  await cookies(); // Ensure cookies are ready
+// Force Node.js runtime
+export const runtime = 'nodejs';
 
+export default async function PricingPage({ searchParams }: PageProps) {
   try {
-    const { userId } = await auth();
+    // Initialize headers and auth at runtime
+    await headers();
+    await cookies(); // Ensure cookies are ready
+
+    // Initialize auth at runtime
+    const session = await auth();
+    const userId = session?.userId;
     const clerkUser = await currentUser();
 
     if (!userId || !clerkUser?.emailAddresses?.[0]?.emailAddress) {
@@ -200,18 +205,12 @@ export default async function PricingPage({ searchParams }: PageProps) {
       </div>
     );
   } catch (error) {
-    console.error('Error in PricingPage:', error);
+    console.error('Error in pricing page:', error);
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Error Loading Pricing
-            </h1>
-            <p className="text-xl text-gray-600">
-              There was an error loading the pricing information. Please try again later.
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-8">
+        <div className="bg-red-50 p-4 rounded-md">
+          <h2 className="text-red-800">Error loading pricing information</h2>
+          <p className="text-red-600">Please try again later</p>
         </div>
       </div>
     );

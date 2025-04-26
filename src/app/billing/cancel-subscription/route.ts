@@ -5,9 +5,16 @@ import Stripe from "stripe";
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
 export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
-});
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  });
+};
 
 interface UserProfileDTO {
   id?: number;
@@ -29,6 +36,7 @@ interface UserProfileDTO {
 
 interface UserSubscriptionDTO {
   id?: number;
+  userId?: string;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   stripePriceId?: string;
@@ -39,7 +47,9 @@ interface UserSubscriptionDTO {
 
 export async function POST(req: Request) {
   try {
-    const { userId } = auth();
+    // Initialize auth at runtime, not build time
+    const session = await auth();
+    const userId = session?.userId;
 
     if (!userId) {
       return NextResponse.json(
@@ -85,19 +95,20 @@ export async function POST(req: Request) {
         );
       }
 
-      // Cancel the subscription with Stripe
+      // Initialize Stripe and cancel the subscription
+      const stripe = getStripe();
       const stripeSubscription = await stripe.subscriptions.update(
         body.stripeSubscriptionId,
         { cancel_at_period_end: true }
       );
 
       // Update our subscription via API
-      const updatedSubscription = {
+      const updatedSubscription: UserSubscriptionDTO = {
         id: subscription.id,
-        userId: subscription.userId,
+        userId: userId,
         status: 'canceled',
         stripeSubscriptionId: subscription.stripeSubscriptionId,
-        stripeCurrentPeriodEnd: stripeSubscription.current_period_end ? new Date(stripeSubscription.current_period_end * 1000).toISOString() : undefined,
+        stripeCurrentPeriodEnd: stripeSubscription.cancel_at ? new Date(stripeSubscription.cancel_at * 1000).toISOString() : undefined,
         stripePriceId: subscription.stripePriceId,
         stripeCustomerId: subscription.stripeCustomerId
       };
