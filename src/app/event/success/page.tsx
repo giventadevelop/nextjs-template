@@ -22,7 +22,7 @@ export default async function SuccessPage({
 
   try {
     // Get session details from Stripe
-    const session = await stripe.checkout.sessions.retrieve(session_id);
+    const session = await stripe().checkout.sessions.retrieve(session_id);
 
     if (!session.metadata?.transactionId) {
       throw new Error('No transaction ID found in session metadata');
