@@ -2,20 +2,28 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 
-// Configure for Node.js runtime
+// Force Node.js runtime
 export const runtime = 'nodejs';
 
 // Disable Next.js body parsing
 export const bodyParser = false;
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
-});
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  });
+};
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
   try {
+    const stripe = getStripe(); // Initialize Stripe only when needed
     const signature = req.headers.get("stripe-signature");
 
     if (!signature) {

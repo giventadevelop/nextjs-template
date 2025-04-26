@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import StripeSDK from 'stripe';
 import { headers } from 'next/headers';
-import { stripe } from '@/lib/stripe';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 
@@ -11,17 +9,20 @@ export const runtime = 'nodejs';
 // Disable body parsing for Stripe webhooks
 export const bodyParser = false;
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
-}
-
 if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
   throw new Error('NEXT_PUBLIC_API_BASE_URL is not set');
 }
 
-const stripeSDK = new StripeSDK(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-03-31.basil',
-});
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  });
+};
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -45,6 +46,7 @@ const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
+    const stripe = getStripe(); // Initialize Stripe only when needed
     const body = await req.text();
     const headersList = await headers();
     const sig = headersList.get('stripe-signature');
@@ -53,10 +55,10 @@ export async function POST(req: Request) {
       return new NextResponse('No signature', { status: 400 });
     }
 
-    let event: StripeSDK.Event;
+    let event: Stripe.Event;
 
     try {
-      event = stripeSDK.webhooks.constructEvent(body, sig, webhookSecret);
+      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err: any) {
       console.error('Error verifying webhook signature:', err.message);
       return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
@@ -64,7 +66,7 @@ export async function POST(req: Request) {
 
     // Handle event ticket purchase completion
     if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as StripeSDK.Checkout.Session;
+      const session = event.data.object as Stripe.Checkout.Session;
 
       // Handle successful payment for event tickets
       if (session.mode === 'payment' && session.metadata?.eventId) {
@@ -115,7 +117,7 @@ export async function POST(req: Request) {
           // Store the first transaction ID in the session metadata
           // We'll use this to fetch transaction details in the success page
           if (transactions.length > 0) {
-            await stripeSDK.checkout.sessions.update(session.id, {
+            await stripe.checkout.sessions.update(session.id, {
               metadata: {
                 ...session.metadata,
                 transactionId: transactions[0].id.toString(),
