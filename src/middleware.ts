@@ -1,12 +1,12 @@
 import { authMiddleware } from "@clerk/nextjs";
-import { NextRequest } from "next/server";
 
 // Define protected routes that require authentication
-const protectedPaths = [
-  '/dashboard(.*)',
-  '/tasks(.*)',
-  '/profile(.*)',
-];
+// Commented out since currently unused, but kept for future reference
+// const protectedPaths = [
+//   '/dashboard(.*)',
+//   '/tasks(.*)',
+//   '/profile(.*)',
+// ];
 
 // Define public routes that don't require authentication
 const publicPaths = [
