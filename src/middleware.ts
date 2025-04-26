@@ -42,6 +42,8 @@ const initClerkMiddleware = () => {
       }
     }
 
+    console.log('CLERK_SECRET_KEY:', !!process.env.CLERK_SECRET_KEY);
+
     return authMiddleware({
       publicRoutes: publicPaths,
       ignoredRoutes: [
