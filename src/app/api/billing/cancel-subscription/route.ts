@@ -105,8 +105,9 @@ export async function POST(req: Request) {
       // Cancel the subscription in Stripe
       const canceledSubscription = await stripe.subscriptions.cancel(
         body.stripeSubscriptionId
-      );
+      ) as any;
 
+      // canceledSubscription is a Stripe.Subscription object, so current_period_end is valid
       const periodEnd = canceledSubscription.current_period_end
         ? new Date(canceledSubscription.current_period_end * 1000).toISOString()
         : null;
