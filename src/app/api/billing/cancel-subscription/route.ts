@@ -18,7 +18,7 @@ const getStripe = () => {
 };
 
 export async function POST(req: Request) {
-  /* try {
+  try {
     const { userId } = auth();
     const stripe = getStripe(); // Initialize Stripe only when needed
 
@@ -39,15 +39,63 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Verify that the subscription belongs to the user
-      const subscription = await prisma.subscription.findFirst({
-        where: {
-          userId: userId,
-          stripeSubscriptionId: body.stripeSubscriptionId,
-        },
-      });
+      // Get base URL from environment or request
+      let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+      if (!baseUrl) {
+        // Extract base URL from the request
+        const url = new URL(req.url);
+        baseUrl = `${url.protocol}//${url.host}`;
+        console.warn('NEXT_PUBLIC_APP_URL not set, using request URL:', baseUrl);
+      }
+      if (!baseUrl.startsWith('http')) {
+        baseUrl = `https://${baseUrl}`;
+      }
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!apiBaseUrl) {
+        throw new Error('API base URL not configured');
+      }
 
-      if (!subscription) {
+      // Get user profile
+      let userProfile = null;
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          userProfile = await response.json();
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch user profile: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+      if (!userProfile || !userProfile.id) {
+        return NextResponse.json(
+          { error: "User profile not found" },
+          { status: 404 }
+        );
+      }
+
+      // Get user subscriptions
+      let subscription = null;
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile.id}`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const subscriptions = await response.json();
+          subscription = subscriptions.find((sub: any) => sub.stripeSubscriptionId === body.stripeSubscriptionId);
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error fetching subscription:', error);
+        throw new Error('Failed to fetch subscription data');
+      }
+
+      if (!subscription || !subscription.id) {
         return NextResponse.json(
           { error: "Subscription not found or unauthorized" },
           { status: 404 }
@@ -60,17 +108,28 @@ export async function POST(req: Request) {
       );
 
       const periodEnd = canceledSubscription.current_period_end
-        ? new Date(canceledSubscription.current_period_end * 1000)
+        ? new Date(canceledSubscription.current_period_end * 1000).toISOString()
         : null;
 
-      // Update the subscription status in our database
-      await prisma.subscription.update({
-        where: { userId },
-        data: {
-          status: canceledSubscription.status,
-          stripeCurrentPeriodEnd: periodEnd,
-        },
-      });
+      // Update the subscription status in our database via API
+      const updatedSubscription = {
+        ...subscription,
+        status: canceledSubscription.status,
+        stripeCurrentPeriodEnd: periodEnd,
+      };
+      try {
+        const updateResponse = await fetch(`${apiBaseUrl}/api/user-subscriptions/${subscription.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedSubscription),
+        });
+        if (!updateResponse.ok) {
+          throw new Error(`Failed to update subscription: ${updateResponse.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error updating subscription:', error);
+        throw new Error('Failed to update subscription');
+      }
 
       return NextResponse.json({
         success: true,
@@ -90,5 +149,5 @@ export async function POST(req: Request) {
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
-  } */
+  }
 }
