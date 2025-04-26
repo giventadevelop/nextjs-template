@@ -2,33 +2,39 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 
-interface ProfileFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string | null;
-  addressLine1: string | null;
-  addressLine2: string | null;
-  city: string | null;
-  state: string | null;
-  zipCode: string | null;
-  country: string | null;
-  notes: string | null;
+interface UserProfileDTO {
+  id?: number;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-const defaultFormData: ProfileFormData = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: null,
-  addressLine1: null,
-  addressLine2: null,
-  city: null,
-  state: null,
-  zipCode: null,
-  country: null,
-  notes: null,
+const defaultFormData: Omit<UserProfileDTO, 'createdAt' | 'updatedAt'> = {
+  userId: '',
+  firstName: '',
+  lastName: '',
+  email: '',
+  phone: '',
+  addressLine1: '',
+  addressLine2: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  country: '',
+  notes: ''
 };
 
 function LoadingSkeleton() {
@@ -55,87 +61,202 @@ function LoadingSkeleton() {
 
 export default function ProfileForm() {
   const router = useRouter();
+  const { userId } = useAuth();
+
+  // Add immediate console log for debugging
+  console.log('DEBUG - Environment Check:', {
+    apiUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+    isDefined: typeof process.env.NEXT_PUBLIC_API_BASE_URL !== 'undefined',
+    envKeys: Object.keys(process.env)
+  });
+
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState<ProfileFormData>(defaultFormData);
+  const [formData, setFormData] = useState<Omit<UserProfileDTO, 'createdAt' | 'updatedAt'>>(defaultFormData);
+  const [profileId, setProfileId] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
+      console.log('Current userId:', userId); // Changed to console.log
+
+      if (!userId) {
+        console.log('No userId available, skipping profile fetch');
+        return;
+      }
+
       try {
         setInitialLoading(true);
-        const response = await fetch("/api/profile");
-        if (!response.ok) {
-          throw new Error("Failed to fetch profile");
+
+        // Log all environment variables (only in development)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Environment variables:', {
+            NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+            NODE_ENV: process.env.NODE_ENV
+          });
         }
-        const data = await response.json();
-        // Only update form data if we got valid data back
-        if (data && typeof data === 'object' && data !== null) {
-          // Filter out any null or undefined values to avoid spreading them
-          const cleanData = Object.fromEntries(
-            Object.entries(data).filter(([_, value]) => value != null)
-          );
-          setFormData(prev => ({
-            ...defaultFormData, // Always start with default values
-            ...cleanData // Then overlay any existing data
-          }));
+
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        console.log('API Base URL:', apiBaseUrl); // Changed to console.log
+
+        if (!apiBaseUrl) {
+          console.error('API base URL is not configured');
+          setError("API configuration error - please check environment variables");
+          return;
+        }
+
+        console.log('Fetching profile for userId:', userId);
+
+        // Use userId.equals as a query parameter
+        const queryParams = new URLSearchParams({
+          'userId.equals': userId
+        });
+
+        const url = `${apiBaseUrl}/api/user-profiles?${queryParams}`;
+        console.log('Full URL being fetched:', url); // Changed to console.log
+
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+
+          console.log('Response status:', response.status);
+
+          if (!response.ok) {
+            if (response.status === 404) {
+              console.log('No profile found for userId:', userId);
+              return;
+            }
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('Profile data received:', data);
+
+          // Since we're using userId.equals, we should get either an empty array or an array with one item
+          const userProfile = Array.isArray(data) ? data[0] : data;
+
+          if (userProfile) {
+            setProfileId(userProfile.id);
+            // Filter out any null or undefined values to avoid spreading them
+            const cleanData = Object.fromEntries(
+              Object.entries(userProfile).filter(([_, value]) => value != null)
+            );
+            setFormData(prev => ({
+              ...defaultFormData,
+              ...cleanData
+            }));
+            console.log('Profile data set:', cleanData);
+          } else {
+            console.log('No profile data found in response');
+          }
+        } catch (fetchError) {
+          console.error('Fetch error:', fetchError);
+          const errorMessage = fetchError instanceof Error ? fetchError.message : 'Failed to fetch profile';
+          throw new Error(`Network error: ${errorMessage}`);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
-        setError("Failed to fetch profile data");
+        setError(error instanceof Error ? error.message : "Failed to fetch profile data");
       } finally {
         setInitialLoading(false);
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [userId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value || null,
+      [name]: value || '',
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!userId) {
+      console.debug('No userId available, cannot submit form');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+      if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
+        throw new Error("API base URL is not configured");
+      }
+
+      console.debug('Checking if profile exists for userId:', userId);
+
+      // First check if profile exists
+      const queryParams = new URLSearchParams({
+        'userId.equals': userId
       });
 
-      const data = await response.json();
+      const checkResponse = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-profiles?${queryParams}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const existingProfiles = await checkResponse.json();
+      const existingProfile = Array.isArray(existingProfiles) ? existingProfiles[0] : existingProfiles;
+
+      console.debug('Existing profile check result:', existingProfile);
+
+      const profileData = {
+        ...(existingProfile?.id ? { id: existingProfile.id } : {}),
+        userId,
+        firstName: formData.firstName || '',
+        lastName: formData.lastName || '',
+        email: formData.email || '',
+        phone: formData.phone || '',
+        addressLine1: formData.addressLine1 || '',
+        addressLine2: formData.addressLine2 || '',
+        city: formData.city || '',
+        state: formData.state || '',
+        zipCode: formData.zipCode || '',
+        country: formData.country || '',
+        notes: formData.notes || '',
+        createdAt: existingProfile?.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      const method = existingProfile ? 'PUT' : 'POST';
+      const apiUrl = existingProfile
+        ? `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-profiles/${existingProfile.id}`
+        : `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-profiles`;
+
+      console.debug(`${method}ing profile data:`, profileData);
+
+      const response = await fetch(apiUrl, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(profileData),
+      });
 
       if (!response.ok) {
-        if (data.details) {
-          // Handle validation errors
-          const errorMessages = data.details
-            .map((error: { message: string }) => error.message)
-            .join(", ");
-          throw new Error(errorMessages);
-        }
-        throw new Error(data.error || "Failed to update profile");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to ${method.toLowerCase()} profile`);
       }
+
+      console.debug('Profile saved successfully');
 
       // Show success message before redirecting
       setError(null);
       // Use replace to prevent back navigation to the form
       router.replace("/");
     } catch (error) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("An unexpected error occurred");
-      }
+      console.error("Error saving profile:", error);
+      setError(error instanceof Error ? error.message : "An unexpected error occurred");
     } finally {
       setLoading(false);
     }

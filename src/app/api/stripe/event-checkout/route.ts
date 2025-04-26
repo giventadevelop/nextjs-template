@@ -4,7 +4,10 @@ import { stripe } from "@/lib/stripe";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tickets, eventId, email } = body;
+    const { tickets, eventId, email, userId } = body;
+
+    // Log the received userId
+    console.log('Received userId in checkout:', userId);
 
     // Basic validation
     if (!tickets?.length || !email) {
@@ -27,6 +30,14 @@ export async function POST(request: Request) {
       quantity: ticket.quantity,
     }));
 
+    // Log the metadata we're about to set
+    const metadata = {
+      eventId,
+      ticketDetails: JSON.stringify(tickets),
+      userId: userId || null,
+    };
+    console.log('Setting session metadata:', metadata);
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -35,11 +46,11 @@ export async function POST(request: Request) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event`,
       customer_email: email,
-      metadata: {
-        eventId,
-        ticketDetails: JSON.stringify(tickets),
-      },
+      metadata: metadata,
     });
+
+    // Log the created session
+    console.log('Created session with metadata:', session.metadata);
 
     return new NextResponse(
       JSON.stringify({ url: session.url }),
