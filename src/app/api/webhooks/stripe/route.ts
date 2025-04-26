@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { PrismaClient } from '@prisma/client';
+
 import Stripe from 'stripe';
 
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
@@ -42,7 +42,7 @@ interface UserProfileDTO {
   // Add other fields as needed
 }
 
-const prisma = new PrismaClient();
+
 
 export async function POST(req: Request) {
   try {
