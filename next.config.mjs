@@ -7,13 +7,6 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: true,
-  // output: 'export',
-
-  // Environment variables that should be exposed to the client
-  env: {
-    // Add your public environment variables here
-    // Example: API_URL: process.env.API_URL,
-  },
 
   // Enable image optimization
   images: {
