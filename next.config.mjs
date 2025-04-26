@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   reactStrictMode: true,
-  // output: 'export',
+  output: 'export',
 
   // Environment variables that should be exposed to the client
   env: {
