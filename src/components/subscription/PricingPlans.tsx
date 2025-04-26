@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import type { Subscription } from '@/lib/generated/client';
+import type { UserSubscriptionDTO } from '../../app/pricing/page';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { storeSubscriptionPlans } from '@/config/subscriptions';
@@ -11,7 +11,7 @@ import Link from 'next/link';
 const PRO_PLAN = storeSubscriptionPlans[0];
 
 interface PricingPlansProps {
-  currentSubscription: Subscription | null;
+  currentSubscription: UserSubscriptionDTO | null;
 }
 
 export function PricingPlans({ currentSubscription }: PricingPlansProps) {

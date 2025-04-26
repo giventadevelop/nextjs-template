@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Pagination } from "./Pagination";
 import { useSearchParams } from "next/navigation";
-import { deleteTask } from "@/lib/actions/task";
+
 
 interface Task {
   id: string;
@@ -35,7 +35,18 @@ export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
 
   const handleDelete = async (taskId: string) => {
     if (confirm('Are you sure you want to delete this task?')) {
-      await deleteTask(taskId);
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+      if (!apiBaseUrl) {
+        throw new Error('API base URL not configured');
+      }
+      try {
+        await fetch(`${apiBaseUrl}/api/user-tasks/${taskId}`, {
+          method: 'DELETE',
+        });
+        // Optionally, you may want to refresh the page or update state here
+      } catch (error) {
+        console.error('Error deleting task:', error);
+      }
     }
   };
 

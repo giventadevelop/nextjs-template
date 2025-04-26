@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-import { prisma } from "@/lib/prisma";
+
 import Stripe from "stripe";
 
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
@@ -18,7 +18,7 @@ const getStripe = () => {
 };
 
 export async function POST(req: Request) {
-  try {
+  /* try {
     const { userId } = auth();
     const stripe = getStripe(); // Initialize Stripe only when needed
 
@@ -90,5 +90,5 @@ export async function POST(req: Request) {
       { error: error instanceof Error ? error.message : 'Internal server error' },
       { status: 500 }
     );
-  }
+  } */
 }
