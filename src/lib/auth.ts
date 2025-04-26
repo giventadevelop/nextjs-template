@@ -4,12 +4,17 @@ import type { NextRequest } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 
+// Force Node.js runtime
+export const runtime = 'nodejs';
+
 export async function authenticatedRequest(
   req: NextRequest,
   handler: (userId: string) => Promise<NextResponse>
 ): Promise<NextResponse> {
   try {
-    const { userId } = auth();
+    // Initialize auth at runtime
+    const session = await auth();
+    const userId = session?.userId;
 
     if (!userId) {
       return new NextResponse(
