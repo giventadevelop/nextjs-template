@@ -1,16 +1,23 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set');
-}
+// Force Node.js runtime
+export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-03-31.basil',
-});
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: '2025-03-31.basil',
+  });
+};
 
 export async function POST(request: Request) {
   try {
+    const stripe = getStripe(); // Initialize Stripe only when needed
     const body = await request.json();
     const { email, tickets, eventId } = body;
 

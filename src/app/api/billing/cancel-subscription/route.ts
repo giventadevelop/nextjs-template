@@ -6,13 +6,21 @@ import Stripe from "stripe";
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
 export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
-});
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  });
+};
 
 export async function POST(req: Request) {
   try {
     const { userId } = auth();
+    const stripe = getStripe(); // Initialize Stripe only when needed
 
     if (!userId) {
       return NextResponse.json(
@@ -47,16 +55,20 @@ export async function POST(req: Request) {
       }
 
       // Cancel the subscription in Stripe
-      const canceledSubscription = await stripe.subscriptions.cancel(body.stripeSubscriptionId);
+      const canceledSubscription = await stripe.subscriptions.cancel(
+        body.stripeSubscriptionId
+      );
+
+      const periodEnd = canceledSubscription.current_period_end
+        ? new Date(canceledSubscription.current_period_end * 1000)
+        : null;
 
       // Update the subscription status in our database
       await prisma.subscription.update({
         where: { userId },
         data: {
           status: canceledSubscription.status,
-          stripeCurrentPeriodEnd: canceledSubscription.current_period_end
-            ? new Date(canceledSubscription.current_period_end * 1000)
-            : null,
+          stripeCurrentPeriodEnd: periodEnd,
         },
       });
 
