@@ -1,9 +1,26 @@
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { Webhook } from 'svix';
-import { db } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+
+interface UserProfileDTO {
+  id?: number;
+  userId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  country?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 async function validateRequest(request: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -61,26 +78,30 @@ export async function POST(request: Request) {
   const eventType = evt.type;
   console.log(`Processing Clerk webhook event: ${eventType}`);
 
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!apiBaseUrl) {
+    throw new Error('API base URL not configured');
+  }
+
   try {
     switch (eventType) {
       case 'user.created': {
         const { id, email_addresses, ...attributes } = evt.data;
         console.log('User created:', { id, email: email_addresses[0]?.email_address });
 
-        // Create user profile and subscription with minimal required fields
-        await db.userProfile.create({
-          data: {
-            userId: id,
-            email: email_addresses[0]?.email_address,
-            subscription: {
-              create: {
-                status: 'pending'
-              }
-            }
-          },
+        // Create user profile with minimal required fields
+        const userProfile: UserProfileDTO = {
+          userId: id,
+          email: email_addresses[0]?.email_address,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        await fetch(`${apiBaseUrl}/api/user-profiles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userProfile),
         });
-
-        console.log('Created user profile and subscription records');
+        console.log('Created user profile record');
         break;
       }
 
@@ -88,13 +109,16 @@ export async function POST(request: Request) {
         const { id, email_addresses, ...attributes } = evt.data;
         console.log('User updated:', { id, email: email_addresses[0]?.email_address });
 
-        // Update user profile if needed
-        await db.userProfile.update({
-          where: { userId: id },
-          data: {
-            email: email_addresses[0]?.email_address,
-          },
-        });
+        // Fetch the user profile to get its id
+        const profileRes = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${id}`);
+        if (profileRes.ok) {
+          const userProfile: UserProfileDTO = await profileRes.json();
+          await fetch(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...userProfile, email: email_addresses[0]?.email_address, updatedAt: new Date().toISOString() }),
+          });
+        }
         break;
       }
 
@@ -102,10 +126,14 @@ export async function POST(request: Request) {
         const { id } = evt.data;
         console.log('User deleted:', { id });
 
-        // Delete user profile and related data
-        await db.userProfile.delete({
-          where: { userId: id },
-        });
+        // Fetch the user profile to get its id
+        const profileRes = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${id}`);
+        if (profileRes.ok) {
+          const userProfile: UserProfileDTO = await profileRes.json();
+          await fetch(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
+            method: 'DELETE',
+          });
+        }
         break;
       }
     }
