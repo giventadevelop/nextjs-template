@@ -1,8 +1,23 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import Stripe from "stripe";
+
+// Force Node.js runtime
+export const runtime = 'nodejs';
+
+// Initialize Stripe lazily to prevent build-time errors
+const getStripe = () => {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  if (!secretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not configured');
+  }
+  return new Stripe(secretKey, {
+    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
+  });
+};
 
 export async function POST(request: Request) {
   try {
+    const stripe = getStripe(); // Initialize Stripe only when needed
     const body = await request.json();
     const { tickets, eventId, email, userId } = body;
 
