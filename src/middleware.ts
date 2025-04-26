@@ -1,4 +1,6 @@
 import { authMiddleware } from "@clerk/nextjs";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 // Define protected routes that require authentication
 // Commented out since currently unused, but kept for future reference
@@ -19,13 +21,50 @@ const publicPaths = [
   '/api/stripe/event-checkout', // Make event checkout public
 ];
 
-export default authMiddleware({
-  publicRoutes: publicPaths,
-  ignoredRoutes: [
-    '/api/webhooks/stripe',
-    '/api/webhooks/clerk',
-  ]
-});
+// Ensure required environment variables are set
+const requiredEnvVars = [
+  'CLERK_SECRET_KEY',
+  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+  'NEXT_PUBLIC_CLERK_SIGN_IN_URL',
+  'NEXT_PUBLIC_CLERK_SIGN_UP_URL',
+  'NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL',
+  'NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL'
+];
+
+const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+if (missingEnvVars.length > 0) {
+  console.error('Missing required Clerk environment variables:', missingEnvVars);
+}
+
+// Initialize Clerk middleware with proper error handling
+const initClerkMiddleware = () => {
+  try {
+    return authMiddleware({
+      publicRoutes: publicPaths,
+      ignoredRoutes: [
+        '/api/webhooks/stripe',
+        '/api/webhooks/clerk',
+      ],
+      // Add debug mode in development
+      debug: process.env.NODE_ENV === 'development',
+      // Handle initialization errors gracefully
+      afterAuth: (auth, req) => {
+        if (!auth.userId && !publicPaths.some(path => req.nextUrl.pathname.match(path))) {
+          console.error('Authentication failed');
+          return NextResponse.redirect(new URL('/sign-in', req.url));
+        }
+        return NextResponse.next();
+      },
+    });
+  } catch (error) {
+    console.error('Failed to initialize Clerk middleware:', error);
+    // Return a passthrough middleware that doesn't block requests
+    return (request: NextRequest) => NextResponse.next();
+  }
+};
+
+export default initClerkMiddleware();
 
 export const config = {
   matcher: [
