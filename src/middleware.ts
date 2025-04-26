@@ -21,25 +21,27 @@ const publicPaths = [
   '/api/stripe/event-checkout', // Make event checkout public
 ];
 
-// Ensure required environment variables are set
-const requiredEnvVars = [
-  'CLERK_SECRET_KEY',
-  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
-  'NEXT_PUBLIC_CLERK_SIGN_IN_URL',
-  'NEXT_PUBLIC_CLERK_SIGN_UP_URL',
-  'NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL',
-  'NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL'
-];
-
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0) {
-  console.error('Missing required Clerk environment variables:', missingEnvVars);
-}
-
 // Initialize Clerk middleware with proper error handling
 const initClerkMiddleware = () => {
   try {
+    // Only check env vars in production runtime
+    if (process.env.NODE_ENV === 'production' && process.env.NEXT_PHASE !== 'build') {
+      const requiredEnvVars = [
+        'CLERK_SECRET_KEY',
+        'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+        'NEXT_PUBLIC_CLERK_SIGN_IN_URL',
+        'NEXT_PUBLIC_CLERK_SIGN_UP_URL',
+        'NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL',
+        'NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL'
+      ];
+
+      const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+
+      if (missingEnvVars.length > 0) {
+        console.error('Missing required Clerk environment variables:', missingEnvVars);
+      }
+    }
+
     return authMiddleware({
       publicRoutes: publicPaths,
       ignoredRoutes: [
@@ -50,8 +52,12 @@ const initClerkMiddleware = () => {
       debug: process.env.NODE_ENV === 'development',
       // Handle initialization errors gracefully
       afterAuth: (auth, req) => {
+        // Skip auth check during build
+        if (process.env.NEXT_PHASE === 'build') {
+          return NextResponse.next();
+        }
+
         if (!auth.userId && !publicPaths.some(path => req.nextUrl.pathname.match(path))) {
-          console.error('Authentication failed');
           return NextResponse.redirect(new URL('/sign-in', req.url));
         }
         return NextResponse.next();

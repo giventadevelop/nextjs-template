@@ -30,7 +30,7 @@ interface PageProps {
   searchParams: { message?: string };
 }
 
-interface UserProfileDTO {
+export interface UserProfileDTO {
   id?: string;
   userId: string;
   firstName?: string | null;
@@ -48,7 +48,7 @@ interface UserProfileDTO {
   updatedAt: string;
 }
 
-interface UserSubscriptionDTO {
+export interface UserSubscriptionDTO {
   id?: string;
   userId: string;
   stripeCustomerId: string | null;
