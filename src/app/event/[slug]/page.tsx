@@ -10,7 +10,7 @@ export default function EventPage() {
   async function handleCheckout() {
     try {
       setLoading(true);
-      console.log('Starting checkout request...', {
+      console.log('[EVENT-CHECKOUT] Starting request:', {
         tickets,
         eventId: "kanj-cine-star-2025",
         email: email?.trim(),
@@ -30,22 +30,25 @@ export default function EventPage() {
         })
       });
 
-      // Log the response status
-      console.log('Checkout response status:', response.status);
+      // Log the response status and headers
+      console.log('[EVENT-CHECKOUT] Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
 
       if (!response.ok) {
-        // Try to get error details
         const errorText = await response.text();
-        console.error('Checkout error details:', {
+        console.error('[EVENT-CHECKOUT] Error response:', {
           status: response.status,
           statusText: response.statusText,
           error: errorText
         });
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Checkout failed: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Checkout response:', {
+      console.log('[EVENT-CHECKOUT] Success response:', {
         hasUrl: !!data.url,
         success: !!data.url
       });
@@ -54,9 +57,9 @@ export default function EventPage() {
         window.location.href = data.url;
         return;
       }
-      alert("Failed to create checkout session. Please try again.");
+      throw new Error('No checkout URL received');
     } catch (error) {
-      console.error("Detailed error:", {
+      console.error('[EVENT-CHECKOUT] Error:', {
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
         type: error instanceof Error ? error.constructor.name : 'Unknown'

@@ -6,26 +6,27 @@ export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
   try {
-    console.log('Starting checkout process...');
+    console.log('[STRIPE-CHECKOUT] Starting checkout process...');
 
     const body = await request.json();
-    console.log('Request body:', JSON.stringify({
+    console.log('[STRIPE-CHECKOUT] Request body:', {
       tickets: body.tickets,
       eventId: body.eventId,
       email: body.email,
       hasUserId: !!body.userId
-    }));
+    });
 
     // Log Stripe configuration (DO NOT log actual keys)
-    console.log('Stripe configuration check:', {
+    console.log('[STRIPE-CHECKOUT] Configuration:', {
       hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
       hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
       environment: process.env.NODE_ENV,
-      isLiveMode: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')
+      isLiveMode: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_'),
+      appUrl: process.env.NEXT_PUBLIC_APP_URL
     });
 
     if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('Stripe secret key is not configured');
+      throw new Error('[STRIPE-CHECKOUT] Stripe secret key is not configured');
     }
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -39,6 +40,10 @@ export async function POST(request: Request) {
 
     // Basic validation
     if (!tickets?.length || !email) {
+      console.error('[STRIPE-CHECKOUT] Validation failed:', {
+        hasTickets: !!tickets?.length,
+        hasEmail: !!email
+      });
       return new NextResponse(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400 }
@@ -58,14 +63,16 @@ export async function POST(request: Request) {
       quantity: ticket.quantity,
     }));
 
+    console.log('[STRIPE-CHECKOUT] Line items:', line_items);
+
     // Log the metadata we're about to set
     const metadata = {
       eventId,
       ticketDetails: JSON.stringify(tickets),
       userId: userId || null,
-      transactionId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Add unique transaction ID
+      transactionId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
-    console.log('Setting session metadata:', metadata);
+    console.log('[STRIPE-CHECKOUT] Setting session metadata:', metadata);
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -78,15 +85,18 @@ export async function POST(request: Request) {
       metadata: metadata,
     });
 
-    // Log the created session
-    console.log('Created session with metadata:', session.metadata);
+    console.log('[STRIPE-CHECKOUT] Session created successfully:', {
+      sessionId: session.id,
+      hasUrl: !!session.url
+    });
 
     return new NextResponse(
       JSON.stringify({ url: session.url }),
       { status: 200 }
     );
   } catch (error: unknown) {
-    console.error('Detailed checkout error:', {
+    // Enhanced error logging
+    console.error('[STRIPE-CHECKOUT] Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       type: error instanceof Error ? error.constructor.name : 'Unknown',
       code: (error as any)?.code,
@@ -94,11 +104,15 @@ export async function POST(request: Request) {
         type: (error as any)?.raw?.type,
         code: (error as any)?.raw?.code,
         message: (error as any)?.raw?.message
-      } : null
+      } : null,
+      stack: error instanceof Error ? error.stack : undefined
     });
 
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to create checkout session' }),
+      JSON.stringify({
+        error: 'Failed to create checkout session',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
       { status: 500 }
     );
   }
