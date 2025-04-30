@@ -138,12 +138,8 @@ export default async function PricingPage({ searchParams }: PageProps) {
           stripeSubscriptionId: null,
           stripePriceId: null,
           stripeCurrentPeriodEnd: null,
-          userProfile: {
-            userId,
-            email,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }
+          userProfile: userProfile?.id
+
         };
 
         const response = await fetch(`${apiBaseUrl}/api/user-subscriptions`, {
