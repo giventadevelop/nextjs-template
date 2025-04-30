@@ -4,21 +4,34 @@ import Stripe from "stripe";
 // Force Node.js runtime
 export const runtime = 'nodejs';
 
-// Initialize Stripe lazily to prevent build-time errors
-const getStripe = () => {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is not configured');
-  }
-  return new Stripe(secretKey, {
-    apiVersion: "2023-10-16" as Stripe.LatestApiVersion,
-  });
-};
-
 export async function POST(request: Request) {
   try {
-    const stripe = getStripe(); // Initialize Stripe only when needed
+    console.log('Starting checkout process...');
+
     const body = await request.json();
+    console.log('Request body:', JSON.stringify({
+      tickets: body.tickets,
+      eventId: body.eventId,
+      email: body.email,
+      hasUserId: !!body.userId
+    }));
+
+    // Log Stripe configuration (DO NOT log actual keys)
+    console.log('Stripe configuration check:', {
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      environment: process.env.NODE_ENV,
+      isLiveMode: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_')
+    });
+
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error('Stripe secret key is not configured');
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-03-31.basil' as Stripe.LatestApiVersion,
+    });
+
     const { tickets, eventId, email, userId } = body;
 
     // Log the received userId
@@ -50,6 +63,7 @@ export async function POST(request: Request) {
       eventId,
       ticketDetails: JSON.stringify(tickets),
       userId: userId || null,
+      transactionId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Add unique transaction ID
     };
     console.log('Setting session metadata:', metadata);
 
@@ -71,10 +85,20 @@ export async function POST(request: Request) {
       JSON.stringify({ url: session.url }),
       { status: 200 }
     );
-  } catch (error: any) {
-    console.error('Stripe error:', error);
+  } catch (error: unknown) {
+    console.error('Detailed checkout error:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      type: error instanceof Error ? error.constructor.name : 'Unknown',
+      code: (error as any)?.code,
+      stripeError: (error as any)?.raw ? {
+        type: (error as any)?.raw?.type,
+        code: (error as any)?.raw?.code,
+        message: (error as any)?.raw?.message
+      } : null
+    });
+
     return new NextResponse(
-      JSON.stringify({ error: error.message || "Failed to create checkout session" }),
+      JSON.stringify({ error: 'Failed to create checkout session' }),
       { status: 500 }
     );
   }

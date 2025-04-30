@@ -22,18 +22,14 @@ export default async function SuccessPage({
 
   try {
     // Get session details from Stripe
-    const session = await stripe().checkout.sessions.retrieve(session_id);
+    const session = await stripe().checkout.sessions.retrieve(session_id, {
+      expand: ['line_items']
+    });
 
-    if (!session.metadata?.transactionId) {
-      throw new Error('No transaction ID found in session metadata');
-    }
-
-    // Get transaction details from our API using the transaction ID from metadata
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/ticket-transactions/${session.metadata.transactionId}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch transaction details');
-    }
-    const transaction = await response.json();
+    // Parse the ticket details from metadata
+    const ticketDetails = session.metadata?.ticketDetails
+      ? JSON.parse(session.metadata.ticketDetails)
+      : [];
 
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -72,23 +68,36 @@ export default async function SuccessPage({
                 <h2 className="text-xl font-semibold mb-4">Transaction Details</h2>
                 <div className="space-y-2">
                   <p className="text-gray-600">
-                    <span className="font-medium">Transaction ID:</span> {transaction.id}
+                    <span className="font-medium">Transaction ID:</span> {session.metadata?.transactionId}
                   </p>
                   <p className="text-gray-600">
-                    <span className="font-medium">Event:</span> {transaction.eventId}
+                    <span className="font-medium">Event:</span> {session.metadata?.eventId}
                   </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">Ticket Type:</span> {transaction.ticketType}
-                  </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">Quantity:</span> {transaction.quantity}
-                  </p>
-                  <p className="text-gray-600">
-                    <span className="font-medium">Total Amount:</span> ${transaction.totalAmount.toFixed(2)}
+
+                  {/* Ticket Details */}
+                  <div className="mt-4">
+                    <h3 className="text-lg font-medium mb-2">Tickets</h3>
+                    {ticketDetails.map((ticket: any, index: number) => (
+                      <div key={index} className="bg-gray-50 p-3 rounded mb-2">
+                        <p className="text-gray-600">
+                          <span className="font-medium">Type:</span> {ticket.type}
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium">Quantity:</span> {ticket.quantity}
+                        </p>
+                        <p className="text-gray-600">
+                          <span className="font-medium">Price:</span> ${ticket.price.toFixed(2)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="text-gray-600 mt-4">
+                    <span className="font-medium">Total Amount:</span> ${(session.amount_total || 0) / 100}
                   </p>
                   <p className="text-gray-600">
                     <span className="font-medium">Status:</span>{" "}
-                    <span className="capitalize">{transaction.status}</span>
+                    <span className="capitalize">{session.payment_status}</span>
                   </p>
                 </div>
               </div>
@@ -114,6 +123,9 @@ export default async function SuccessPage({
         <div className="bg-white p-8 rounded-lg shadow-md">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600">Failed to load transaction details.</p>
+          {error instanceof Error && (
+            <p className="text-sm text-gray-500 mt-2">{error.message}</p>
+          )}
         </div>
       </div>
     );
