@@ -6,9 +6,28 @@ import { initStripeConfig } from '@/lib/stripe/init';
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
+  // Skip processing during build phase
+  if (process.env.NEXT_PHASE === 'build') {
+    console.log('[STRIPE-WEBHOOK] Skipping during build phase');
+    return new NextResponse(
+      JSON.stringify({ error: 'Not available during build' }),
+      { status: 503 }
+    );
+  }
+
   try {
+    // Log environment state for debugging
+    console.log('[STRIPE-WEBHOOK] Environment state:', {
+      phase: process.env.NEXT_PHASE,
+      nodeEnv: process.env.NODE_ENV,
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL
+    });
+
     const body = await req.text();
-    const signature = headers().get('stripe-signature') as string | null;
+    const headersList = headers();
+    const signature = headersList.get('stripe-signature');
 
     if (!signature) {
       console.error('[STRIPE-WEBHOOK] Missing stripe-signature header');

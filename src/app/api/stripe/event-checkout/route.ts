@@ -5,6 +5,15 @@ import { initStripeConfig } from "@/lib/stripe/init";
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  // Skip processing during build phase
+  if (process.env.NEXT_PHASE === 'build') {
+    console.log('[STRIPE-CHECKOUT] Skipping during build phase');
+    return new NextResponse(
+      JSON.stringify({ error: 'Not available during build' }),
+      { status: 503 }
+    );
+  }
+
   try {
     console.log('[STRIPE-CHECKOUT] Starting checkout process...');
 
@@ -14,6 +23,15 @@ export async function POST(request: Request) {
       eventId: body.eventId,
       email: body.email,
       hasUserId: !!body.userId
+    });
+
+    // Log environment state for debugging
+    console.log('[STRIPE-CHECKOUT] Environment state:', {
+      phase: process.env.NEXT_PHASE,
+      nodeEnv: process.env.NODE_ENV,
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL
     });
 
     // Initialize Stripe with environment variable checks
