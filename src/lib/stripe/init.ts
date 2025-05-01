@@ -1,10 +1,34 @@
 import Stripe from 'stripe';
+import { env } from '@/lib/env.mjs';
 
 const requiredStripeEnvVars = [
   'STRIPE_SECRET_KEY',
   'STRIPE_WEBHOOK_SECRET',
   'NEXT_PUBLIC_APP_URL'
 ] as const;
+
+// Helper to get environment variables in AWS Lambda context
+const getStripeEnvVar = (key: string): string | undefined => {
+  try {
+    // For AWS Lambda, try process.env with various prefixes
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      // Try AWS Lambda environment variables with different prefixes
+      const prefixes = ['', 'AMPLIFY_', 'AWS_'];
+      for (const prefix of prefixes) {
+        const value = process.env[`${prefix}${key}`];
+        if (value) {
+          return value;
+        }
+      }
+    }
+
+    // Fallback to direct process.env access
+    return process.env[key];
+  } catch (error) {
+    console.error(`[STRIPE] Error getting environment variable ${key}:`, error);
+    return process.env[key];
+  }
+};
 
 export const initStripeConfig = () => {
   try {
@@ -14,46 +38,56 @@ export const initStripeConfig = () => {
       return null;
     }
 
-    // Only check env vars in production runtime
-    if (process.env.NODE_ENV === 'production') {
-      // Log environment state for debugging
-      console.log('[STRIPE] Environment check:', {
-        phase: process.env.NEXT_PHASE,
-        nodeEnv: process.env.NODE_ENV,
-        hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
-        hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-        hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
-        runtime: typeof window === 'undefined' ? 'server' : 'client'
+    // Log AWS Lambda context for debugging
+    if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      console.log('[STRIPE] AWS Lambda context:', {
+        functionName: process.env.AWS_LAMBDA_FUNCTION_NAME,
+        functionVersion: process.env.AWS_LAMBDA_FUNCTION_VERSION,
+        region: process.env.AWS_REGION,
+        runtime: process.env.AWS_EXECUTION_ENV,
       });
-
-      // Check for missing environment variables
-      const missingEnvVars = requiredStripeEnvVars.filter(envVar => !process.env[envVar]);
-
-      if (missingEnvVars.length > 0) {
-        console.error('[STRIPE] Missing required environment variables:', missingEnvVars);
-        throw new Error(
-          `Missing required Stripe environment variables: ${missingEnvVars.join(', ')}`
-        );
-      }
     }
 
-    // Initialize Stripe only if secret key is available
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.warn('[STRIPE] Secret key not found. Stripe functionality will be limited.');
-      return null;
+    // Get required environment variables
+    const secretKey = getStripeEnvVar('STRIPE_SECRET_KEY');
+    const webhookSecret = getStripeEnvVar('STRIPE_WEBHOOK_SECRET');
+    const appUrl = getStripeEnvVar('NEXT_PUBLIC_APP_URL');
+
+    // Log environment state for debugging
+    console.log('[STRIPE] Environment state:', {
+      phase: process.env.NEXT_PHASE,
+      nodeEnv: process.env.NODE_ENV,
+      isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+      hasSecretKey: !!secretKey,
+      hasWebhookSecret: !!webhookSecret,
+      hasAppUrl: !!appUrl,
+      runtime: typeof window === 'undefined' ? 'server' : 'client',
+      // Log some environment variable keys for debugging (DO NOT log values)
+      envKeys: Object.keys(process.env).filter(key =>
+        key.includes('STRIPE') ||
+        key.includes('NEXT_PUBLIC') ||
+        key.includes('AWS_') ||
+        key.includes('AMPLIFY_')
+      )
+    });
+
+    // Validate required environment variables
+    if (!secretKey) {
+      throw new Error('STRIPE_SECRET_KEY is not configured');
     }
 
     // Initialize Stripe with the secret key
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+    return new Stripe(secretKey, {
       apiVersion: '2025-03-31.basil' as Stripe.LatestApiVersion,
     });
-
-    return stripe;
   } catch (error) {
-    console.error('[STRIPE] Failed to initialize:', error);
+    console.error('[STRIPE] Failed to initialize Stripe:', error);
     throw error;
   }
 };
 
 // Export the list of required env vars for use in other parts of the app
 export const REQUIRED_STRIPE_ENV_VARS = requiredStripeEnvVars;
+
+// Export the helper for use in other parts of the app
+export { getStripeEnvVar };

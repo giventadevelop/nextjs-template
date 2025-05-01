@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { initStripeConfig } from '@/lib/stripe/init';
+import { initStripeConfig, getStripeEnvVar } from '@/lib/stripe/init';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -20,14 +20,22 @@ export async function POST(req: Request) {
     console.log('[STRIPE-WEBHOOK] Environment state:', {
       phase: process.env.NEXT_PHASE,
       nodeEnv: process.env.NODE_ENV,
-      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
-      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
-      runtime: typeof window === 'undefined' ? 'server' : 'client'
+      isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+      hasSecretKey: !!getStripeEnvVar('STRIPE_SECRET_KEY'),
+      hasWebhookSecret: !!getStripeEnvVar('STRIPE_WEBHOOK_SECRET'),
+      hasAppUrl: !!getStripeEnvVar('NEXT_PUBLIC_APP_URL'),
+      runtime: typeof window === 'undefined' ? 'server' : 'client',
+      // Log some environment variable keys for debugging (DO NOT log values)
+      envKeys: Object.keys(process.env).filter(key =>
+        key.includes('STRIPE') ||
+        key.includes('NEXT_PUBLIC') ||
+        key.includes('AWS_') ||
+        key.includes('AMPLIFY_')
+      )
     });
 
     const body = await req.text();
-    const headersList = headers();
+    const headersList = await headers();
     const signature = headersList.get('stripe-signature');
 
     if (!signature) {
@@ -41,62 +49,48 @@ export async function POST(req: Request) {
       throw new Error('[STRIPE-WEBHOOK] Failed to initialize Stripe configuration');
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = getStripeEnvVar('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
       throw new Error('[STRIPE-WEBHOOK] Stripe webhook secret is not configured');
     }
 
-    // Verify webhook signature and construct event
-    const event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
+    try {
+      // Verify webhook signature and construct event
+      const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      console.log('[STRIPE-WEBHOOK] Successfully verified webhook signature');
 
-    console.log('[STRIPE-WEBHOOK] Event received:', {
-      type: event.type,
-      id: event.id
-    });
+      // Process the event
+      switch (event.type) {
+        case 'checkout.session.completed':
+          // Handle successful checkout
+          console.log('[STRIPE-WEBHOOK] Processing checkout.session.completed');
+          // Add your checkout completion logic here
+          break;
 
-    // Handle specific event types
-    switch (event.type) {
-      case 'checkout.session.completed':
-        const session = event.data.object;
-        console.log('[STRIPE-WEBHOOK] Checkout completed:', {
-          sessionId: session.id,
-          customerId: session.customer,
-          metadata: session.metadata
-        });
+        case 'payment_intent.succeeded':
+          // Handle successful payment
+          console.log('[STRIPE-WEBHOOK] Processing payment_intent.succeeded');
+          // Add your payment success logic here
+          break;
 
-        // Add your business logic here
-        // For example, create tickets, send confirmation emails, etc.
-        break;
+        default:
+          console.log(`[STRIPE-WEBHOOK] Unhandled event type: ${event.type}`);
+      }
 
-      // Add other event types as needed
-      default:
-        console.log(`[STRIPE-WEBHOOK] Unhandled event type: ${event.type}`);
+      return new NextResponse(JSON.stringify({ received: true }), {
+        status: 200,
+      });
+    } catch (err) {
+      console.error('[STRIPE-WEBHOOK] Error verifying webhook signature:', err);
+      return new NextResponse(
+        JSON.stringify({ error: 'Invalid webhook signature' }),
+        { status: 400 }
+      );
     }
-
-    return new NextResponse(JSON.stringify({ received: true }), {
-      status: 200,
-    });
-  } catch (error: unknown) {
-    console.error('[STRIPE-WEBHOOK] Error:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      type: error instanceof Error ? error.constructor.name : 'Unknown',
-      code: (error as any)?.code,
-      stripeError: (error as any)?.raw ? {
-        type: (error as any)?.raw?.type,
-        code: (error as any)?.raw?.code,
-        message: (error as any)?.raw?.message
-      } : null
-    });
-
+  } catch (error) {
+    console.error('[STRIPE-WEBHOOK] Webhook error:', error);
     return new NextResponse(
-      JSON.stringify({
-        error: 'Webhook handler failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500 }
     );
   }
