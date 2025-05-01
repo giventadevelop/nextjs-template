@@ -1,11 +1,14 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { initStripeConfig, getStripeEnvVar } from '@/lib/stripe/init';
+import getConfig from 'next/config';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
+  const { serverRuntimeConfig } = getConfig() || { serverRuntimeConfig: {} };
+
   // Skip processing during build phase
   if (process.env.NEXT_PHASE === 'build') {
     console.log('[STRIPE-WEBHOOK] Skipping during build phase');
@@ -49,8 +52,13 @@ export async function POST(req: Request) {
       throw new Error('[STRIPE-WEBHOOK] Failed to initialize Stripe configuration');
     }
 
-    const webhookSecret = getStripeEnvVar('STRIPE_WEBHOOK_SECRET');
+    // Get webhook secret from Next.js config or environment variables
+    const webhookSecret = serverRuntimeConfig.STRIPE_WEBHOOK_SECRET || getStripeEnvVar('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
+      console.error('[STRIPE-WEBHOOK] Available config:', {
+        serverConfig: Object.keys(serverRuntimeConfig),
+        envKeys: Object.keys(process.env).filter(k => k.includes('WEBHOOK') || k.includes('AMPLIFY'))
+      });
       throw new Error('[STRIPE-WEBHOOK] Stripe webhook secret is not configured');
     }
 
@@ -63,13 +71,21 @@ export async function POST(req: Request) {
       switch (event.type) {
         case 'checkout.session.completed':
           // Handle successful checkout
-          console.log('[STRIPE-WEBHOOK] Processing checkout.session.completed');
+          console.log('[STRIPE-WEBHOOK] Processing checkout.session.completed:', {
+            eventId: event.data.object.metadata?.eventId,
+            customerId: event.data.object.customer,
+            amount: event.data.object.amount_total,
+          });
           // Add your checkout completion logic here
           break;
 
         case 'payment_intent.succeeded':
           // Handle successful payment
-          console.log('[STRIPE-WEBHOOK] Processing payment_intent.succeeded');
+          console.log('[STRIPE-WEBHOOK] Processing payment_intent.succeeded:', {
+            intentId: event.data.object.id,
+            amount: event.data.object.amount,
+            status: event.data.object.status,
+          });
           // Add your payment success logic here
           break;
 
@@ -87,10 +103,10 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[STRIPE-WEBHOOK] Webhook error:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500 }
     );
   }
