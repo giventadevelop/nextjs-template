@@ -10,23 +10,40 @@ const requiredStripeEnvVars = [
 // Helper to get environment variables in AWS Lambda context
 const getStripeEnvVar = (key: string): string | undefined => {
   try {
-    // For AWS Lambda, try process.env with various prefixes
+    // For AWS Lambda/Amplify, try environment variables with different prefixes
     if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
-      // Try AWS Lambda environment variables with different prefixes
-      const prefixes = ['', 'AMPLIFY_', 'AWS_'];
+      // Define the prefixes to try, in order of preference
+      const prefixes = [
+        'AMPLIFY_',  // Amplify specific prefix
+        'AWS_AMPLIFY_',  // Alternative Amplify prefix
+        '',  // No prefix
+      ];
+
+      // Try each prefix
       for (const prefix of prefixes) {
         const value = process.env[`${prefix}${key}`];
         if (value) {
+          console.log(`[STRIPE-ENV] Found ${key} with prefix: ${prefix}`);
           return value;
         }
       }
+
+      // If not found with prefixes, try the original key
+      const value = process.env[key];
+      if (value) {
+        console.log(`[STRIPE-ENV] Found ${key} without prefix`);
+        return value;
+      }
+
+      console.log(`[STRIPE-ENV] Could not find ${key} with any prefix`);
+      return undefined;
     }
 
-    // Fallback to direct process.env access
+    // Not in Lambda, use regular process.env
     return process.env[key];
   } catch (error) {
-    console.error(`[STRIPE] Error getting environment variable ${key}:`, error);
-    return process.env[key];
+    console.error(`[STRIPE-ENV] Error getting environment variable ${key}:`, error);
+    return undefined;
   }
 };
 
@@ -46,6 +63,15 @@ export const initStripeConfig = () => {
         region: process.env.AWS_REGION,
         runtime: process.env.AWS_EXECUTION_ENV,
       });
+
+      // Log all available environment variables (keys only, not values)
+      console.log('[STRIPE] Available environment variables:',
+        Object.keys(process.env).filter(key =>
+          !key.includes('AWS_SECRET') &&
+          !key.includes('PASSWORD') &&
+          !key.includes('TOKEN')
+        )
+      );
     }
 
     // Get required environment variables
@@ -62,18 +88,11 @@ export const initStripeConfig = () => {
       hasWebhookSecret: !!webhookSecret,
       hasAppUrl: !!appUrl,
       runtime: typeof window === 'undefined' ? 'server' : 'client',
-      // Log some environment variable keys for debugging (DO NOT log values)
-      envKeys: Object.keys(process.env).filter(key =>
-        key.includes('STRIPE') ||
-        key.includes('NEXT_PUBLIC') ||
-        key.includes('AWS_') ||
-        key.includes('AMPLIFY_')
-      )
     });
 
     // Validate required environment variables
     if (!secretKey) {
-      throw new Error('STRIPE_SECRET_KEY is not configured');
+      throw new Error('STRIPE_SECRET_KEY is not configured. Please check AWS Amplify environment variables.');
     }
 
     // Initialize Stripe with the secret key
