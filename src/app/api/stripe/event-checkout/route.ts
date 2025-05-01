@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { initStripeConfig, getStripeEnvVar } from "@/lib/stripe/init";
+import getConfig from 'next/config';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
 
 export async function POST(request: Request) {
+  const { publicRuntimeConfig } = getConfig() || { publicRuntimeConfig: {} };
+
   // Skip processing during build phase
   if (process.env.NEXT_PHASE === 'build') {
     console.log('[STRIPE-CHECKOUT] Skipping during build phase');
@@ -23,24 +26,6 @@ export async function POST(request: Request) {
       eventId: body.eventId,
       email: body.email,
       hasUserId: !!body.userId
-    });
-
-    // Log environment state for debugging
-    console.log('[STRIPE-CHECKOUT] Environment state:', {
-      phase: process.env.NEXT_PHASE,
-      nodeEnv: process.env.NODE_ENV,
-      isLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
-      hasSecretKey: !!getStripeEnvVar('STRIPE_SECRET_KEY'),
-      hasWebhookSecret: !!getStripeEnvVar('STRIPE_WEBHOOK_SECRET'),
-      hasAppUrl: !!getStripeEnvVar('NEXT_PUBLIC_APP_URL'),
-      runtime: typeof window === 'undefined' ? 'server' : 'client',
-      // Log some environment variable keys for debugging (DO NOT log values)
-      envKeys: Object.keys(process.env).filter(key =>
-        key.includes('STRIPE') ||
-        key.includes('NEXT_PUBLIC') ||
-        key.includes('AWS_') ||
-        key.includes('AMPLIFY_')
-      )
     });
 
     // Initialize Stripe with environment variable checks
@@ -73,9 +58,13 @@ export async function POST(request: Request) {
       );
     }
 
-    // Get the app URL for success/cancel URLs
-    const appUrl = getStripeEnvVar('NEXT_PUBLIC_APP_URL');
+    // Get the app URL from Next.js config or environment variables
+    const appUrl = publicRuntimeConfig.NEXT_PUBLIC_APP_URL || getStripeEnvVar('NEXT_PUBLIC_APP_URL', true);
     if (!appUrl) {
+      console.error('[STRIPE-CHECKOUT] Available config:', {
+        publicConfig: Object.keys(publicRuntimeConfig),
+        envKeys: Object.keys(process.env).filter(k => k.includes('URL') || k.includes('AMPLIFY'))
+      });
       throw new Error('[STRIPE-CHECKOUT] App URL is not configured');
     }
 
@@ -93,7 +82,11 @@ export async function POST(request: Request) {
         quantity: ticket.quantity,
       }));
 
-      console.log('[STRIPE-CHECKOUT] Line items:', line_items);
+      console.log('[STRIPE-CHECKOUT] Creating session with:', {
+        lineItems: line_items,
+        successUrl: `${appUrl}/event/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${appUrl}/event`,
+      });
 
       // Create Stripe checkout session
       const session = await stripe.checkout.sessions.create({
@@ -121,10 +114,10 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[STRIPE-CHECKOUT] Checkout error:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: error.message || 'Internal server error' }),
       { status: 500 }
     );
   }
