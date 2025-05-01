@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
+import { initStripeConfig } from "@/lib/stripe/init";
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -16,6 +16,12 @@ export async function POST(request: Request) {
       hasUserId: !!body.userId
     });
 
+    // Initialize Stripe with environment variable checks
+    const stripe = initStripeConfig();
+    if (!stripe) {
+      throw new Error('[STRIPE-CHECKOUT] Failed to initialize Stripe configuration');
+    }
+
     // Log Stripe configuration (DO NOT log actual keys)
     console.log('[STRIPE-CHECKOUT] Configuration:', {
       hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
@@ -23,14 +29,6 @@ export async function POST(request: Request) {
       environment: process.env.NODE_ENV,
       isLiveMode: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_'),
       appUrl: process.env.NEXT_PUBLIC_APP_URL
-    });
-
-    if (!process.env.STRIPE_SECRET_KEY) {
-      throw new Error('[STRIPE-CHECKOUT] Stripe secret key is not configured');
-    }
-
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2025-03-31.basil' as Stripe.LatestApiVersion,
     });
 
     const { tickets, eventId, email, userId } = body;
