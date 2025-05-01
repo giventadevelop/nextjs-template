@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { initStripeConfig } from "@/lib/stripe/init";
+import { initStripeConfig, getStripeEnvVar } from "@/lib/stripe/init";
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -29,9 +29,10 @@ export async function POST(request: Request) {
     console.log('[STRIPE-CHECKOUT] Environment state:', {
       phase: process.env.NEXT_PHASE,
       nodeEnv: process.env.NODE_ENV,
-      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
-      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL
+      hasSecretKey: !!getStripeEnvVar('STRIPE_SECRET_KEY'),
+      hasWebhookSecret: !!getStripeEnvVar('STRIPE_WEBHOOK_SECRET'),
+      hasAppUrl: !!getStripeEnvVar('NEXT_PUBLIC_APP_URL'),
+      runtime: typeof window === 'undefined' ? 'server' : 'client'
     });
 
     // Initialize Stripe with environment variable checks
@@ -39,15 +40,6 @@ export async function POST(request: Request) {
     if (!stripe) {
       throw new Error('[STRIPE-CHECKOUT] Failed to initialize Stripe configuration');
     }
-
-    // Log Stripe configuration (DO NOT log actual keys)
-    console.log('[STRIPE-CHECKOUT] Configuration:', {
-      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
-      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
-      environment: process.env.NODE_ENV,
-      isLiveMode: process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_'),
-      appUrl: process.env.NEXT_PUBLIC_APP_URL
-    });
 
     const { tickets, eventId, email, userId } = body;
 
@@ -90,13 +82,16 @@ export async function POST(request: Request) {
     };
     console.log('[STRIPE-CHECKOUT] Setting session metadata:', metadata);
 
+    // Get app URL using the helper
+    const appUrl = getStripeEnvVar('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: line_items,
       mode: 'payment',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/event`,
+      success_url: `${appUrl}/event/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/event`,
       customer_email: email,
       metadata: metadata,
     });
