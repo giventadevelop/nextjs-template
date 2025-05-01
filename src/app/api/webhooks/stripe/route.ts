@@ -1,6 +1,6 @@
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { initStripeConfig, getStripeEnvVar } from '@/lib/stripe/init';
+import { initStripeConfig } from '@/lib/stripe/init';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -20,9 +20,9 @@ export async function POST(req: Request) {
     console.log('[STRIPE-WEBHOOK] Environment state:', {
       phase: process.env.NEXT_PHASE,
       nodeEnv: process.env.NODE_ENV,
-      hasSecretKey: !!getStripeEnvVar('STRIPE_SECRET_KEY'),
-      hasWebhookSecret: !!getStripeEnvVar('STRIPE_WEBHOOK_SECRET'),
-      hasAppUrl: !!getStripeEnvVar('NEXT_PUBLIC_APP_URL'),
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
       runtime: typeof window === 'undefined' ? 'server' : 'client'
     });
 
@@ -41,8 +41,7 @@ export async function POST(req: Request) {
       throw new Error('[STRIPE-WEBHOOK] Failed to initialize Stripe configuration');
     }
 
-    // Get webhook secret using the helper
-    const webhookSecret = getStripeEnvVar('STRIPE_WEBHOOK_SECRET');
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       throw new Error('[STRIPE-WEBHOOK] Stripe webhook secret is not configured');
     }

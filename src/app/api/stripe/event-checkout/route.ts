@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { initStripeConfig, getStripeEnvVar } from "@/lib/stripe/init";
+import { initStripeConfig } from "@/lib/stripe/init";
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -29,9 +29,9 @@ export async function POST(request: Request) {
     console.log('[STRIPE-CHECKOUT] Environment state:', {
       phase: process.env.NEXT_PHASE,
       nodeEnv: process.env.NODE_ENV,
-      hasSecretKey: !!getStripeEnvVar('STRIPE_SECRET_KEY'),
-      hasWebhookSecret: !!getStripeEnvVar('STRIPE_WEBHOOK_SECRET'),
-      hasAppUrl: !!getStripeEnvVar('NEXT_PUBLIC_APP_URL'),
+      hasSecretKey: !!process.env.STRIPE_SECRET_KEY,
+      hasWebhookSecret: !!process.env.STRIPE_WEBHOOK_SECRET,
+      hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL,
       runtime: typeof window === 'undefined' ? 'server' : 'client'
     });
 
@@ -82,8 +82,8 @@ export async function POST(request: Request) {
     };
     console.log('[STRIPE-CHECKOUT] Setting session metadata:', metadata);
 
-    // Get app URL using the helper
-    const appUrl = getStripeEnvVar('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000';
+    // Get app URL from environment
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
