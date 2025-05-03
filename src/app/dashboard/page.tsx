@@ -107,79 +107,77 @@ async function checkSubscriptionStatus(userId: string, isReturnFromStripe: boole
   return subscription;
 }
 
-export default async function DashboardPage({ searchParams }: PageProps) {
-  try {
-    const session = await auth();
-    const userId = session?.userId;
+export default async function DashboardPage(props: PageProps) {
+  // Await searchParams if it is a Promise (Next.js dynamic API)
+  const searchParams = await Promise.resolve(props.searchParams);
 
-    if (!userId) {
-      redirect('/sign-in');
-    }
+  const session = await auth();
+  const userId = session?.userId;
 
-    // Get search params
-    const success = searchParams?.success;
-    const sessionId = searchParams?.session_id;
-    const isReturnFromStripe = Boolean(success === 'true' || sessionId);
-
-    // Check subscription status with retry logic for Stripe returns
-    const subscription = await checkSubscriptionStatus(userId, isReturnFromStripe);
-
-    // If no subscription or not active/trialing, handle pending state if returning from Stripe
-    let pendingSubscription = false;
-    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
-      if (isReturnFromStripe) {
-        pendingSubscription = true;
-      } else {
-        redirect('/pricing?message=subscription-required');
-      }
-    }
-
-    // Get all tasks for the user
-    let tasks = [];
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-tasks?userId.equals=${userId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store', // Disable caching to always get fresh data
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch tasks: ${response.statusText}`);
-      }
-
-      tasks = await response.json();
-
-      // Sort tasks by createdAt in descending order
-      tasks.sort((a: UserTaskDTO, b: UserTaskDTO) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-      tasks = []; // Fallback to empty array on error
-    }
-
-    // Calculate stats
-    const stats = {
-      total: tasks.length,
-      completed: tasks.filter((task: Task) => task.status === 'completed').length,
-      inProgress: tasks.filter((task: Task) => task.status === 'in_progress').length,
-      pending: tasks.filter((task: Task) => task.status === 'pending').length,
-      highPriority: tasks.filter((task: Task) => task.priority === 'high').length,
-    };
-
-    return (
-      <Suspense fallback={<div>Loading...</div>}>
-        <DashboardContent tasks={tasks} stats={stats} subscription={subscription} pendingSubscription={pendingSubscription} />
-      </Suspense>
-    );
-  } catch (error) {
-    console.error('Error in dashboard page:', error);
-    return <div>Error loading dashboard. Please try again later.</div>;
+  if (!userId) {
+    redirect('/sign-in');
   }
+
+  // Get search params
+  const success = searchParams?.success;
+  const sessionId = searchParams?.session_id;
+  const isReturnFromStripe = Boolean(success === 'true' || sessionId);
+
+  // Check subscription status with retry logic for Stripe returns
+  const subscription = await checkSubscriptionStatus(userId, isReturnFromStripe);
+
+  // If no subscription or not active/trialing, handle pending state if returning from Stripe
+  let pendingSubscription = false;
+  if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+    if (isReturnFromStripe) {
+      pendingSubscription = true;
+    } else {
+      redirect('/pricing?message=subscription-required');
+    }
+  }
+
+  // Get all tasks for the user
+  let tasks = [];
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-tasks?userId.equals=${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store', // Disable caching to always get fresh data
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+    }
+
+    tasks = await response.json();
+
+    // Sort tasks by createdAt in descending order
+    tasks.sort((a: UserTaskDTO, b: UserTaskDTO) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    tasks = []; // Fallback to empty array on error
+  }
+
+  // Calculate stats
+  const stats = {
+    total: tasks.length,
+    completed: tasks.filter((task: Task) => task.status === 'completed').length,
+    inProgress: tasks.filter((task: Task) => task.status === 'in_progress').length,
+    pending: tasks.filter((task: Task) => task.status === 'pending').length,
+    highPriority: tasks.filter((task: Task) => task.priority === 'high').length,
+  };
+
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DashboardContent tasks={tasks} stats={stats} subscription={subscription} pendingSubscription={pendingSubscription} />
+    </Suspense>
+  );
 }

@@ -11,6 +11,10 @@ interface TaskFormProps {
     status: string
     priority: string
     dueDate?: Date | null
+    createdAt: string
+    updatedAt: string
+    userId: string
+    completed: boolean
   }
   mode?: 'create' | 'edit'
 }
@@ -18,16 +22,64 @@ interface TaskFormProps {
 export function TaskForm({ task, mode = 'create' }: TaskFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [dueDateError, setDueDateError] = useState<string | null>(null)
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
+    setDueDateError(null)
 
     try {
       const formData = new FormData(event.currentTarget)
-
-      await Promise.resolve();
-
+      const dueDateValue = formData.get('dueDate') as string
+      const today = new Date()
+      const dueDateObj = dueDateValue ? new Date(dueDateValue) : null
+      if (!dueDateValue) {
+        setDueDateError('Due date is required.')
+        setIsSubmitting(false)
+        return
+      }
+      if (!dueDateObj || dueDateObj <= today) {
+        setDueDateError('Due date must be in the future.')
+        setIsSubmitting(false)
+        return
+      }
+      const dueDateIso = new Date(dueDateValue + 'T00:00:00Z').toISOString();
+      const payload: any = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        status: formData.get('status'),
+        priority: formData.get('priority'),
+        dueDate: dueDateIso,
+      }
+      let response
+      if (mode === 'edit' && task?.id) {
+        response = await fetch('/api/tasks', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: task.id,
+            title: payload.title,
+            description: payload.description,
+            status: payload.status,
+            priority: payload.priority,
+            dueDate: payload.dueDate,
+            createdAt: task.createdAt,
+            updatedAt: new Date().toISOString(),
+            userId: task.userId,
+            completed: typeof task.completed === 'boolean' ? task.completed : payload.status === 'completed',
+          }),
+        })
+      } else {
+        response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+      }
+      if (!response.ok) {
+        throw new Error('Failed to save task')
+      }
       router.push('/dashboard')
     } catch (error) {
       console.error('Failed to save task:', error)
@@ -109,8 +161,10 @@ export function TaskForm({ task, mode = 'create' }: TaskFormProps) {
           id="dueDate"
           name="dueDate"
           defaultValue={task?.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''}
+          required
           className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
+        {dueDateError && <p className="text-red-600 text-sm mt-1">{dueDateError}</p>}
       </div>
 
       <div className="flex justify-end space-x-3">
