@@ -30,17 +30,19 @@ export function DashboardContent({ tasks = [], stats, subscription, pendingSubsc
 
   const handleDelete = async (taskId: string) => {
     if (confirm('Are you sure you want to delete this task?')) {
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-      if (!apiBaseUrl) {
-        throw new Error('API base URL not configured');
-      }
       try {
-        await fetch(`${apiBaseUrl}/api/user-tasks/${taskId}`, {
+        const response = await fetch(`/api/tasks`, {
           method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: taskId }),
         });
-        // Optionally, you may want to refresh the page or update state here
+        if (!response.ok) {
+          throw new Error('Failed to delete task');
+        }
+        window.location.reload();
       } catch (error) {
         console.error('Error deleting task:', error);
+        alert('Failed to delete task. Please try again.');
       }
     }
   };
