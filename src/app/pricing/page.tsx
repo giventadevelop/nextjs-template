@@ -2,6 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs";
 import { headers, cookies } from 'next/headers';
 import { Metadata } from 'next';
 import { PricingPlans } from '@/components/subscription/PricingPlans';
+import { redirect } from 'next/navigation';
 
 
 
@@ -27,7 +28,11 @@ const messages = {
 type MessageType = keyof typeof messages;
 
 interface PageProps {
-  searchParams: { message?: string };
+  searchParams: {
+    message?: string;
+    success?: string;
+    session_id?: string;
+  };
 }
 
 export interface UserProfileDTO {
@@ -69,9 +74,15 @@ export const runtime = 'nodejs';
 
 export default async function PricingPage({ searchParams }: PageProps) {
   try {
-    // Initialize headers and auth at runtime
-    await headers();
-    await cookies(); // Ensure cookies are ready
+    // Initialize headers and cookies properly
+    const headersList = headers();
+    const cookiesList = cookies();
+
+    // Get search params safely - searchParams is already an object, don't await its properties
+    const messageParam = searchParams?.message;
+    const success = searchParams?.success;
+    const sessionId = searchParams?.session_id;
+    const isReturnFromStripe = Boolean(success === 'true' || sessionId);
 
     // Initialize auth at runtime
     const session = await auth();
@@ -88,7 +99,8 @@ export default async function PricingPage({ searchParams }: PageProps) {
     if (!apiBaseUrl) {
       throw new Error('API base URL not configured');
     }
-    // Try to get existing user profile
+
+    // Try to get existing user profile with proper no-store caching
     let userProfile: UserProfileDTO | null = null;
     try {
       const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
@@ -96,6 +108,8 @@ export default async function PricingPage({ searchParams }: PageProps) {
         headers: {
           'Content-Type': 'application/json',
         },
+        cache: isReturnFromStripe ? 'no-store' : 'default',
+        next: { revalidate: 0 } // Ensure fresh data when needed
       });
 
       if (response.ok) {
@@ -106,29 +120,84 @@ export default async function PricingPage({ searchParams }: PageProps) {
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
-    // Get subscription only if user is logged in
-    // Try to get existing subscription
-    let subscription: UserSubscriptionDTO | null = null;
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile?.id}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (response.ok) {
-        const subscriptions: UserSubscriptionDTO[] = await response.json();
-        subscription = subscriptions[0]; // Get the first subscription
-      } else if (response.status !== 404) {
-        throw new Error(`Failed to fetch subscription: ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error('Error fetching subscription:', error);
-      throw new Error('Failed to fetch subscription data');
+    // Redirect to sign-in if no user profile exists
+    if (!userProfile) {
+      redirect('/sign-in');
     }
 
-    // Create subscription if it doesn't exist
+    // Get subscription with improved retry logic
+    let subscription: UserSubscriptionDTO | null = null;
+    const maxRetries = isReturnFromStripe ? 5 : 1; // Increase retries when returning from Stripe
+    const retryDelays = [1000, 2000, 3000, 4000, 5000]; // Progressive delays
+    let attempt = 0;
+    let lastError = null;
+
+    while (attempt < maxRetries) {
+      try {
+        console.log(`Fetching subscription attempt ${attempt + 1}/${maxRetries}`, {
+          isReturnFromStripe,
+          userProfileId: userProfile?.id
+        });
+
+        const response = await fetch(
+          `${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile?.id}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store', // Always bypass cache when checking subscription
+            next: { revalidate: 0 } // Ensure fresh data
+          }
+        );
+
+        if (response.ok) {
+          const subscriptions: UserSubscriptionDTO[] = await response.json();
+          subscription = subscriptions[0];
+
+          // Log subscription state for debugging
+          console.log('Subscription state:', {
+            attempt: attempt + 1,
+            status: subscription?.status,
+            returnFromStripe: isReturnFromStripe,
+            subscriptionId: subscription?.id,
+            currentPeriodEnd: subscription?.stripeCurrentPeriodEnd
+          });
+
+          // If returning from Stripe, verify the subscription is properly updated
+          if (isReturnFromStripe && subscription) {
+            if (subscription.status === 'active' || subscription.status === 'trialing') {
+              console.log('Found active subscription after Stripe return');
+              break;
+            } else {
+              console.log('Subscription not yet active, will retry');
+            }
+          } else {
+            // Not returning from Stripe, use whatever state we found
+            break;
+          }
+        } else if (response.status !== 404) {
+          throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+        }
+
+        // If we should retry, wait before next attempt
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+        }
+
+        attempt++;
+      } catch (error) {
+        console.error(`Error fetching subscription (attempt ${attempt + 1}):`, error);
+        lastError = error;
+        if (attempt < maxRetries - 1) {
+          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
+        }
+        attempt++;
+      }
+    }
+
+    // If we exhausted retries and still don't have a subscription, create one
     if (!subscription) {
       try {
         const newSubscription: UserSubscriptionDTO = {
@@ -138,8 +207,7 @@ export default async function PricingPage({ searchParams }: PageProps) {
           stripeSubscriptionId: null,
           stripePriceId: null,
           stripeCurrentPeriodEnd: null,
-          userProfile: userProfile?.id
-
+          userProfile: userProfile || undefined
         };
 
         const response = await fetch(`${apiBaseUrl}/api/user-subscriptions`, {
@@ -164,21 +232,33 @@ export default async function PricingPage({ searchParams }: PageProps) {
         throw new Error('Failed to create subscription');
       }
     } else if (subscription.stripeCurrentPeriodEnd && typeof subscription.stripeCurrentPeriodEnd === 'string') {
-      // Convert stripeCurrentPeriodEnd to Date if it's a string
       subscription = {
         ...subscription,
         stripeCurrentPeriodEnd: new Date(subscription.stripeCurrentPeriodEnd)
       };
     }
 
-    // Await searchParams access
-    const messageParam = await (async () => searchParams?.message)();
+    // Determine appropriate message based on subscription state
+    let message = messageParam;
+    if (isReturnFromStripe) {
+      if (subscription?.status === 'active' || subscription?.status === 'trialing') {
+        message = undefined; // Clear any error message if subscription is active
+      } else if (attempt >= maxRetries) {
+        message = 'subscription-pending';
+      }
+    }
 
-    // Validate and process message
-    const message = messageParam && Object.keys(messages).includes(messageParam)
-      ? (messageParam as MessageType)
-      : undefined;
-    const messageConfig = message ? messages[message] : null;
+    // Log final subscription state
+    console.log('Final subscription state:', {
+      status: subscription?.status,
+      attempts: attempt,
+      returnFromStripe: isReturnFromStripe,
+      message
+    });
+
+    const messageConfig = message && Object.keys(messages).includes(message)
+      ? messages[message as MessageType]
+      : null;
 
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">

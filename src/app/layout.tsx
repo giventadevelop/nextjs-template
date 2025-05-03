@@ -5,6 +5,7 @@ import TrpcProvider from "@/lib/trpc/Provider";
 import Script from "next/script";
 import { Header } from "@/components/Header";
 import { headers } from "next/headers";
+import { ProfileBootstrapper } from "@/components/ProfileBootstrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +45,7 @@ export default async function RootLayout({
             },
           }}
         >
+          <ProfileBootstrapper />
           <TrpcProvider cookies={cookies}>
             <Header />
             {children}

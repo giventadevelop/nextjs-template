@@ -3,15 +3,8 @@
 import Link from "next/link";
 import { Pagination } from "./Pagination";
 import { useSearchParams } from "next/navigation";
-
-
-interface Task {
-  id: string;
-  title: string;
-  status: string;
-  completed: boolean;
-  priority: string;
-}
+import { Task, UserSubscriptionDTO, UserProfileDTO } from "@/types";
+import React from "react";
 
 interface DashboardContentProps {
   tasks: Task[];
@@ -22,11 +15,13 @@ interface DashboardContentProps {
     pending: number;
     highPriority: number;
   };
+  subscription: UserSubscriptionDTO | null;
+  pendingSubscription?: boolean;
 }
 
 const PAGE_SIZE = 3;
 
-export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
+export function DashboardContent({ tasks = [], stats, subscription, pendingSubscription = false }: DashboardContentProps) {
   const searchParams = useSearchParams();
   const currentPage = searchParams.get("page") ? parseInt(searchParams.get("page")!) : 1;
 
@@ -49,6 +44,45 @@ export function DashboardContent({ tasks = [], stats }: DashboardContentProps) {
       }
     }
   };
+
+  // Polling logic for pending subscription
+  React.useEffect(() => {
+    if (!pendingSubscription) return;
+    let interval: NodeJS.Timeout;
+    const poll = async () => {
+      try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+        if (!apiBaseUrl) return;
+        const res = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/me`, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const sub = Array.isArray(data) ? data[0] : data;
+          if (sub && (sub.status === 'active' || sub.status === 'trialing')) {
+            window.location.reload();
+          }
+        }
+      } catch (e) {
+        // Ignore errors, keep polling
+      }
+    };
+    interval = setInterval(poll, 2000);
+    return () => clearInterval(interval);
+  }, [pendingSubscription]);
+
+  if (pendingSubscription) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mb-4"></div>
+        <h2 className="text-xl font-semibold mb-2">Activating your subscription...</h2>
+        <p className="text-gray-600 mb-4">We're finalizing your subscription. This may take a few seconds. Please wait...</p>
+        <p className="text-gray-400 text-xs">If this takes longer than a minute, please contact support.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 lg:px-8">
