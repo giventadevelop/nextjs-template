@@ -4,17 +4,44 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 import { UserButton } from "@clerk/nextjs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 
 const menuItems = [
   { href: "/event", label: "Event" },
   { href: "/pricing", label: "Pricing" },
 ];
 
+const ORG_NAME = "nextjs-template";
+
 export function Header() {
   const pathname = usePathname();
   const { userId } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isLoaded: userLoaded } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    async function checkAdminInOrg() {
+      if (!userLoaded || !user) {
+        setIsAdmin(false);
+        return;
+      }
+      try {
+        const memberships = await user.getOrganizationMemberships();
+        const targetOrgMembership = memberships.find(
+          (membership: any) => membership.organization.name === ORG_NAME
+        );
+        setIsAdmin(
+          targetOrgMembership?.role === 'org:admin' ||
+          targetOrgMembership?.role === 'admin'
+        );
+      } catch {
+        setIsAdmin(false);
+      }
+    }
+    checkAdminInOrg();
+  }, [user, userLoaded]);
 
   // Skip rendering header on auth pages
   if (pathname?.startsWith("/sign-")) return null;
@@ -92,6 +119,15 @@ export function Header() {
                 >
                   Profile
                 </Link>
+                {/* Admin menu item */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className={`text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${pathname === "/admin" ? "text-gray-900" : ""}`}
+                  >
+                    Admin
+                  </Link>
+                )}
                 <UserButton afterSignOutUrl="/" />
               </>
             )}
@@ -146,6 +182,16 @@ export function Header() {
               >
                 Profile
               </Link>
+              {/* Admin menu item for mobile */}
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  className={`block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium ${pathname === "/admin" ? "text-gray-900 bg-gray-50" : ""}`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
               <div className="px-3 py-2">
                 <UserButton afterSignOutUrl="/" />
               </div>

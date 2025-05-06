@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs";
 import Link from "next/link";
+import { UserRoleDisplay } from "@/components/UserRoleDisplay";
 
 export default async function Page() {
   const { userId } = await auth();
@@ -9,6 +10,8 @@ export default async function Page() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-20">
         <div className="text-center">
+          {/* TEMPORARY: Show user role if signed in */}
+          {userId && <UserRoleDisplay />}
           <h1 className="text-5xl font-bold text-gray-900 mb-6">
             Manage Your Tasks with Ease
           </h1>

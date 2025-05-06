@@ -12,7 +12,14 @@ export default async function SignInPage() {
         <h1 className="text-4xl font-bold text-center text-gray-900">Welcome Back</h1>
         <p className="mt-2 text-center text-gray-600">Sign in to continue</p>
       </div>
-      <SignIn redirectUrl={redirectUrl} />
+      <SignIn
+        redirectUrl={redirectUrl}
+        oauthOptions={{
+          google: {
+            prompt: "select_account"
+          }
+        }}
+      />
     </div>
   );
 }
