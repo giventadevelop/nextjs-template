@@ -71,7 +71,9 @@ const nextConfig = {
     NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL,
     NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL,
 
-    // API JWT credentials
+    // API JWT credentials (try both NEXT_PUBLIC_ and regular env vars for AWS Amplify)
+    API_JWT_USER: process.env.API_JWT_USER,
+    API_JWT_PASS: process.env.API_JWT_PASS,
     NEXT_PUBLIC_API_JWT_USER: process.env.NEXT_PUBLIC_API_JWT_USER,
     NEXT_PUBLIC_API_JWT_PASS: process.env.NEXT_PUBLIC_API_JWT_PASS,
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
