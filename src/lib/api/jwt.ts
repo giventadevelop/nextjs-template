@@ -9,6 +9,13 @@ export async function generateApiJwt() {
   const user = getApiJwtUser();
   const pass = getApiJwtPass();
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  
+  // Debug logging to see what we're getting
+  console.log('[JWT DEBUG] user:', user ? 'SET' : 'UNDEFINED');
+  console.log('[JWT DEBUG] pass:', pass ? 'SET' : 'UNDEFINED');
+  console.log('[JWT DEBUG] API_BASE_URL:', API_BASE_URL ? 'SET' : 'UNDEFINED');
+  console.log('[JWT DEBUG] NODE_ENV:', process.env.NODE_ENV);
+  
   if (!user || !pass || !API_BASE_URL) throw new Error('API JWT credentials or API base URL missing');
 
   const apiUrl = `${API_BASE_URL}/api/authenticate`;
