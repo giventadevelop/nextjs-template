@@ -57,6 +57,23 @@ alwaysApply: true
   - Support both server and client contexts (Next.js config and `process.env`)
   - Example: See `getStripeEnvVar` in [`src/lib/stripe/init.ts`](mdc:src/lib/stripe/init.ts)
 
+- **Next.js Environment Variables in Production (AWS Amplify)**
+  - **CRITICAL**: All environment variables must be declared in the `env` section of [`next.config.mjs`](mdc:next.config.mjs) to be available at runtime in production
+  - Environment variables set in AWS Amplify console are not automatically available unless explicitly declared in Next.js config
+  - ✅ DO: Add new environment variables to both AWS Amplify console AND `next.config.mjs`
+  ```javascript
+  // next.config.mjs
+  env: {
+    // API JWT credentials
+    NEXT_PUBLIC_API_JWT_USER: process.env.NEXT_PUBLIC_API_JWT_USER,
+    NEXT_PUBLIC_API_JWT_PASS: process.env.NEXT_PUBLIC_API_JWT_PASS,
+    // Other variables...
+  }
+  ```
+  - ❌ DON'T: Only set environment variables in AWS Amplify console without declaring them in Next.js config
+  - **Rationale**: Next.js requires explicit declaration in production builds for runtime access, even for `NEXT_PUBLIC_` prefixed variables
+  - **Debugging**: Variables will show as `UNDEFINED` in production logs if not declared in config
+
 - **DTO (Data Transfer Object) Setup and Usage**
   - **Centralize DTO Definitions**
     - Define all DTOs in `src/types/index.ts` (or submodules if the file grows large)

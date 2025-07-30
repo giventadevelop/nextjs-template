@@ -2,30 +2,22 @@
  * Lazily loads API JWT user from environment variables, supporting AMPLIFY_ and unprefixed names.
  */
 export function getApiJwtUser() {
-  const amplifyUser = process.env.AMPLIFY_API_JWT_USER;
-  const apiUser = process.env.API_JWT_USER;
-  const publicUser = process.env.NEXT_PUBLIC_API_JWT_USER;
-  
-  console.log('[ENV DEBUG] AMPLIFY_API_JWT_USER:', amplifyUser ? 'SET' : 'UNDEFINED');
-  console.log('[ENV DEBUG] API_JWT_USER:', apiUser ? 'SET' : 'UNDEFINED');
-  console.log('[ENV DEBUG] NEXT_PUBLIC_API_JWT_USER:', publicUser ? 'SET' : 'UNDEFINED');
-  
-  return amplifyUser || apiUser || publicUser;
+  return (
+    process.env.AMPLIFY_API_JWT_USER ||
+    process.env.API_JWT_USER ||
+    process.env.NEXT_PUBLIC_API_JWT_USER
+  );
 }
 
 /**
  * Lazily loads API JWT password from environment variables, supporting AMPLIFY_ and unprefixed names.
  */
 export function getApiJwtPass() {
-  const amplifyPass = process.env.AMPLIFY_API_JWT_PASS;
-  const apiPass = process.env.API_JWT_PASS;
-  const publicPass = process.env.NEXT_PUBLIC_API_JWT_PASS;
-  
-  console.log('[ENV DEBUG] AMPLIFY_API_JWT_PASS:', amplifyPass ? 'SET' : 'UNDEFINED');
-  console.log('[ENV DEBUG] API_JWT_PASS:', apiPass ? 'SET' : 'UNDEFINED');
-  console.log('[ENV DEBUG] NEXT_PUBLIC_API_JWT_PASS:', publicPass ? 'SET' : 'UNDEFINED');
-  
-  return amplifyPass || apiPass || publicPass;
+  return (
+    process.env.AMPLIFY_API_JWT_PASS ||
+    process.env.API_JWT_PASS ||
+    process.env.NEXT_PUBLIC_API_JWT_PASS
+  );
 }
 
 /**
