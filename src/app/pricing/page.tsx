@@ -1,8 +1,8 @@
 import { auth, currentUser } from "@clerk/nextjs";
-import { headers, cookies } from 'next/headers';
 import { Metadata } from 'next';
 import { PricingPlans } from '@/components/subscription/PricingPlans';
 import { redirect } from 'next/navigation';
+import type { UserProfileDTO, UserSubscriptionDTO } from '@/types';
 
 
 
@@ -35,35 +35,6 @@ interface PageProps {
   };
 }
 
-export interface UserProfileDTO {
-  id?: string;
-  userId: string;
-  firstName?: string | null;
-  lastName?: string | null;
-  email: string;
-  phone?: string | null;
-  addressLine1?: string | null;
-  addressLine2?: string | null;
-  city?: string | null;
-  state?: string | null;
-  zipCode?: string | null;
-  country?: string | null;
-  notes?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface UserSubscriptionDTO {
-  id?: string;
-  userId: string;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
-  stripePriceId: string | null;
-  stripeCurrentPeriodEnd: Date | null;
-  status: string;
-  userProfile?: UserProfileDTO;
-}
-
 export const metadata: Metadata = {
   title: "Pricing - TaskMngr",
   description: "Choose the right plan for your needs",
@@ -72,13 +43,19 @@ export const metadata: Metadata = {
 // Force Node.js runtime
 export const runtime = 'nodejs';
 
-export default async function PricingPage({ searchParams }: PageProps) {
-  try {
-    // Initialize headers and cookies properly
-    const headersList = headers();
-    const cookiesList = cookies();
+function nullToUndefined<T>(value: T | null | undefined): T | undefined {
+  return value === null || value === undefined ? undefined : value;
+}
 
-    // Get search params safely - searchParams is already an object, don't await its properties
+export default async function PricingPage(props: any) {
+  let userProfile: UserProfileDTO | null = null;
+  let subscription: UserSubscriptionDTO | null = null;
+  let userProfileError = false;
+  let subscriptionError = false;
+
+  try {
+    // Await searchParams if it is a Promise (Next.js dynamic API)
+    const searchParams = await Promise.resolve(props.searchParams);
     const messageParam = searchParams?.message;
     const success = searchParams?.success;
     const sessionId = searchParams?.session_id;
@@ -90,127 +67,79 @@ export default async function PricingPage({ searchParams }: PageProps) {
     const clerkUser = await currentUser();
 
     if (!userId || !clerkUser?.emailAddresses?.[0]?.emailAddress) {
-      throw new Error("User information not found - Please update your profile");
-    }
-
-    const email = clerkUser.emailAddresses[0].emailAddress;
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-    if (!apiBaseUrl) {
-      throw new Error('API base URL not configured');
-    }
-
-    // Try to get existing user profile with proper no-store caching
-    let userProfile: UserProfileDTO | null = null;
-    try {
-      const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: isReturnFromStripe ? 'no-store' : 'default',
-        next: { revalidate: 0 } // Ensure fresh data when needed
-      });
-
-      if (response.ok) {
-        userProfile = await response.json();
-      } else if (response.status !== 404) {
-        throw new Error(`Failed to fetch user profile: ${response.statusText}`);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-    }
-
-    // Redirect to sign-in if no user profile exists
-    if (!userProfile) {
+      // Only redirect if not signed in
       redirect('/sign-in');
     }
 
-    // Get subscription with improved retry logic
-    let subscription: UserSubscriptionDTO | null = null;
-    const maxRetries = isReturnFromStripe ? 5 : 1; // Increase retries when returning from Stripe
-    const retryDelays = [1000, 2000, 3000, 4000, 5000]; // Progressive delays
-    let attempt = 0;
-    let lastError = null;
+    const email = clerkUser.emailAddresses[0].emailAddress;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    while (attempt < maxRetries) {
+    if (!baseUrl) {
+      userProfileError = true;
+    } else {
+      // Try to get existing user profile with proper no-store caching
       try {
-        console.log(`Fetching subscription attempt ${attempt + 1}/${maxRetries}`, {
-          isReturnFromStripe,
-          userProfileId: userProfile?.id
+        const response = await fetch(`${baseUrl}/api/proxy/user-profiles/by-user/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: isReturnFromStripe ? 'no-store' : 'default',
+          next: { revalidate: 0 }
         });
+        if (response.ok) {
+          userProfile = await response.json();
+        } else if (response.status !== 404) {
+          userProfileError = true;
+        }
+      } catch (error) {
+        userProfileError = true;
+      }
+    }
 
+    // If userProfile is missing, show error (don't redirect)
+    if (!userProfile || !userProfile.id) {
+      userProfileError = true;
+    }
+
+    // Check for existing subscription for this user profile
+    if (!userProfileError) {
+      try {
         const response = await fetch(
-          `${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile?.id}`,
+          `${baseUrl}/api/proxy/user-subscriptions/by-profile/${userProfile.id}`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
             },
-            cache: 'no-store', // Always bypass cache when checking subscription
-            next: { revalidate: 0 } // Ensure fresh data
+            cache: 'no-store',
+            next: { revalidate: 0 }
           }
         );
-
         if (response.ok) {
           const subscriptions: UserSubscriptionDTO[] = await response.json();
-          subscription = subscriptions[0];
-
-          // Log subscription state for debugging
-          console.log('Subscription state:', {
-            attempt: attempt + 1,
-            status: subscription?.status,
-            returnFromStripe: isReturnFromStripe,
-            subscriptionId: subscription?.id,
-            currentPeriodEnd: subscription?.stripeCurrentPeriodEnd
-          });
-
-          // If returning from Stripe, verify the subscription is properly updated
-          if (isReturnFromStripe && subscription) {
-            if (subscription.status === 'active' || subscription.status === 'trialing') {
-              console.log('Found active subscription after Stripe return');
-              break;
-            } else {
-              console.log('Subscription not yet active, will retry');
-            }
-          } else {
-            // Not returning from Stripe, use whatever state we found
-            break;
-          }
-        } else if (response.status !== 404) {
-          throw new Error(`Failed to fetch subscription: ${response.statusText}`);
+          subscription = Array.isArray(subscriptions) ? subscriptions[0] : subscriptions;
+        } else {
+          subscriptionError = true;
         }
-
-        // If we should retry, wait before next attempt
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
-        }
-
-        attempt++;
       } catch (error) {
-        console.error(`Error fetching subscription (attempt ${attempt + 1}):`, error);
-        lastError = error;
-        if (attempt < maxRetries - 1) {
-          await new Promise(resolve => setTimeout(resolve, retryDelays[attempt]));
-        }
-        attempt++;
+        subscriptionError = true;
       }
     }
 
-    // If we exhausted retries and still don't have a subscription, create one
-    if (!subscription) {
+    // Only POST to create a new subscription if none exists and no errors
+    if (!subscription && !userProfileError && userProfile && !subscriptionError) {
       try {
         const newSubscription: UserSubscriptionDTO = {
-          userId,
           status: 'pending',
-          stripeCustomerId: null,
-          stripeSubscriptionId: null,
-          stripePriceId: null,
-          stripeCurrentPeriodEnd: null,
-          userProfile: userProfile || undefined
+          stripeCustomerId: undefined,
+          stripeSubscriptionId: undefined,
+          stripePriceId: undefined,
+          stripeCurrentPeriodEnd: undefined,
+          userProfile: userProfile!,
         };
 
-        const response = await fetch(`${apiBaseUrl}/api/user-subscriptions`, {
+        const response = await fetch(`${baseUrl}/api/proxy/user-subscriptions`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -219,23 +148,22 @@ export default async function PricingPage({ searchParams }: PageProps) {
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to create subscription: ${response.statusText}`);
+          subscriptionError = true;
+        } else {
+          const responseData = await response.json();
+          subscription = {
+            ...responseData,
+            stripeCustomerId: nullToUndefined(responseData.stripeCustomerId),
+            stripeSubscriptionId: nullToUndefined(responseData.stripeSubscriptionId),
+            stripePriceId: nullToUndefined(responseData.stripePriceId),
+            stripeCurrentPeriodEnd: nullToUndefined(responseData.stripeCurrentPeriodEnd)
+              ? new Date(responseData.stripeCurrentPeriodEnd)
+              : undefined,
+          };
         }
-
-        const responseData = await response.json();
-        subscription = {
-          ...responseData,
-          stripeCurrentPeriodEnd: responseData.stripeCurrentPeriodEnd ? new Date(responseData.stripeCurrentPeriodEnd) : null
-        };
       } catch (error) {
-        console.error('Error creating subscription:', error);
-        throw new Error('Failed to create subscription');
+        subscriptionError = true;
       }
-    } else if (subscription.stripeCurrentPeriodEnd && typeof subscription.stripeCurrentPeriodEnd === 'string') {
-      subscription = {
-        ...subscription,
-        stripeCurrentPeriodEnd: new Date(subscription.stripeCurrentPeriodEnd)
-      };
     }
 
     // Determine appropriate message based on subscription state
@@ -243,18 +171,10 @@ export default async function PricingPage({ searchParams }: PageProps) {
     if (isReturnFromStripe) {
       if (subscription?.status === 'active' || subscription?.status === 'trialing') {
         message = undefined; // Clear any error message if subscription is active
-      } else if (attempt >= maxRetries) {
+      } else {
         message = 'subscription-pending';
       }
     }
-
-    // Log final subscription state
-    console.log('Final subscription state:', {
-      status: subscription?.status,
-      attempts: attempt,
-      returnFromStripe: isReturnFromStripe,
-      message
-    });
 
     const messageConfig = message && Object.keys(messages).includes(message)
       ? messages[message as MessageType]
@@ -263,6 +183,17 @@ export default async function PricingPage({ searchParams }: PageProps) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-20">
         <div className="container mx-auto px-4">
+          {userProfileError ? (
+            <div className="bg-red-50 p-4 rounded-md mb-8">
+              <h2 className="text-red-800">Error loading your profile</h2>
+              <p className="text-red-600">We couldn't load your profile. Please try again later or contact support.</p>
+            </div>
+          ) : subscriptionError ? (
+            <div className="bg-red-50 p-4 rounded-md mb-8">
+              <h2 className="text-red-800">Error loading your subscription</h2>
+              <p className="text-red-600">We couldn't load your subscription. Please try again later.</p>
+            </div>
+          ) : null}
           {messageConfig && (
             <div className={`mb-8 p-4 border rounded-lg text-center ${messageConfig.className}`}>
               <p>{messageConfig.text}</p>
@@ -276,7 +207,10 @@ export default async function PricingPage({ searchParams }: PageProps) {
               Choose the plan that best fits your needs
             </p>
           </div>
-          <PricingPlans currentSubscription={subscription} />
+          {/* Only show PricingPlans if no errors */}
+          {!userProfileError && !subscriptionError && (
+            <PricingPlans currentSubscription={subscription} />
+          )}
         </div>
       </div>
     );

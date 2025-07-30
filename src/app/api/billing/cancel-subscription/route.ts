@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs";
-
 import Stripe from "stripe";
+import { getAppUrl } from '@/lib/env';
 
 // Force Node.js runtime - Edge runtime is not compatible with Prisma
 export const runtime = 'nodejs';
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
     try {
       // Get base URL from environment or request
-      let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
+      let baseUrl = getAppUrl();
       if (!baseUrl) {
         // Extract base URL from the request
         const url = new URL(req.url);
@@ -58,7 +58,7 @@ export async function POST(req: Request) {
       // Get user profile
       let userProfile = null;
       try {
-        const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
+        const response = await fetch(`/api/proxy/user-profiles/by-user/${userId}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       // Get user subscriptions
       let subscription = null;
       try {
-        const response = await fetch(`${apiBaseUrl}/api/user-subscriptions/by-profile/${userProfile.id}`, {
+        const response = await fetch(`/api/proxy/user-subscriptions/by-profile/${userProfile.id}`, {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
         });
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
         stripeCurrentPeriodEnd: periodEnd,
       };
       try {
-        const updateResponse = await fetch(`${apiBaseUrl}/api/user-subscriptions/${subscription.id}`, {
+        const updateResponse = await fetch(`/api/proxy/user-subscriptions/${subscription.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(updatedSubscription),

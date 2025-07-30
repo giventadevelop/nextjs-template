@@ -3,55 +3,22 @@ import { NextResponse } from 'next/server';
 import { redirect } from "next/navigation";
 import { DashboardContent } from "@/components/DashboardContent";
 import { Suspense } from "react";
-import { UserTaskDTO, Task, UserProfileDTO, UserSubscriptionDTO } from "@/types";
+import { UserTaskDTO, UserProfileDTO, UserSubscriptionDTO } from "@/types";
 
 interface PageProps {
   searchParams: {
     success?: string;
     session_id?: string;
+    page?: string;
+    size?: string;
   };
 }
 
-async function getUserProfile(userId: string): Promise<UserProfileDTO | null> {
-  try {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-    if (!apiBaseUrl) {
-      throw new Error('API base URL not configured');
-    }
-
-    const response = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (response.ok) {
-      return await response.json();
-    } else if (response.status !== 404) {
-      throw new Error(`Failed to fetch user profile: ${response.statusText}`);
-    }
-    return null;
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    return null;
-  }
-}
-
-async function checkSubscriptionStatus(userId: string, isReturnFromStripe: boolean = false): Promise<UserSubscriptionDTO | null> {
+async function checkSubscriptionStatus(userProfile: UserProfileDTO, isReturnFromStripe: boolean = false): Promise<UserSubscriptionDTO | null> {
   // If returning from Stripe, try up to 3 times with a 1-second delay
   const maxAttempts = isReturnFromStripe ? 3 : 1;
   const delayMs = 1000; // 1 second
-  const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-  if (!apiBaseUrl) {
-    throw new Error('API base URL not configured');
-  }
-
-  const userProfile = await getUserProfile(userId);
-  if (!userProfile) {
-    return null;
-  }
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   // Check subscription status with more retries if returning from Stripe
   const maxRetries = isReturnFromStripe ? 5 : 1;
@@ -61,7 +28,7 @@ async function checkSubscriptionStatus(userId: string, isReturnFromStripe: boole
   while (attempt < maxRetries) {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-subscriptions/by-profile/${userProfile.id}`,
+        `${baseUrl}/api/proxy/user-subscriptions/by-profile/${userProfile.id}`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -107,77 +74,170 @@ async function checkSubscriptionStatus(userId: string, isReturnFromStripe: boole
   return subscription;
 }
 
-export default async function DashboardPage(props: PageProps) {
-  // Await searchParams if it is a Promise (Next.js dynamic API)
-  const searchParams = await Promise.resolve(props.searchParams);
-
-  const session = await auth();
-  const userId = session?.userId;
-
-  if (!userId) {
-    redirect('/sign-in');
-  }
-
-  // Get search params
-  const success = searchParams?.success;
-  const sessionId = searchParams?.session_id;
-  const isReturnFromStripe = Boolean(success === 'true' || sessionId);
-
-  // Check subscription status with retry logic for Stripe returns
-  const subscription = await checkSubscriptionStatus(userId, isReturnFromStripe);
-
-  // If no subscription or not active/trialing, handle pending state if returning from Stripe
-  let pendingSubscription = false;
-  if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
-    if (isReturnFromStripe) {
-      pendingSubscription = true;
-    } else {
-      redirect('/pricing?message=subscription-required');
-    }
-  }
-
-  // Get all tasks for the user
-  let tasks = [];
+async function getUserProfile(userId: string): Promise<UserProfileDTO | null> {
   try {
-    const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/user-tasks?userId.equals=${userId}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store', // Disable caching to always get fresh data
-      }
-    );
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/proxy/user-profiles/by-user/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch tasks: ${response.statusText}`);
+    if (response.ok) {
+      return await response.json();
+    } else {
+      // Log the error as a warning, but never throw
+      console.warn(`Failed to fetch user profile: ${response.status} ${response.statusText}`);
+      return null;
+    }
+  } catch (error) {
+    console.warn('Error fetching user profile:', error);
+    return null;
+  }
+}
+
+export default async function DashboardPage(props: PageProps) {
+  try {
+    // Await searchParams if it is a Promise (Next.js dynamic API)
+    const searchParams = await Promise.resolve(props.searchParams);
+
+    const session = await auth();
+    const userId = session?.userId;
+
+    if (!userId) {
+      redirect('/sign-in');
     }
 
-    tasks = await response.json();
+    // Get search params
+    const success = searchParams?.success;
+    const sessionId = searchParams?.session_id;
+    const isReturnFromStripe = Boolean(success === 'true' || sessionId);
+    const page = typeof searchParams?.page !== 'undefined' ? Number(searchParams.page) : 0;
+    const size = typeof searchParams?.size !== 'undefined' ? Number(searchParams.size) : 20;
 
-    // Sort tasks by createdAt in descending order
-    tasks.sort((a: UserTaskDTO, b: UserTaskDTO) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    // Get user profile once and use it throughout
+    let userProfileError = false;
+    let userProfile: UserProfileDTO | null = null;
+    try {
+      userProfile = await getUserProfile(userId);
+      if (!userProfile) userProfileError = true;
+    } catch (err) {
+      userProfileError = true;
+    }
+
+    // Check subscription status with retry logic for Stripe returns
+    let subscriptionError = false;
+    let subscription: UserSubscriptionDTO | null = null;
+    if (userProfile && !userProfileError) {
+      try {
+        subscription = await checkSubscriptionStatus(userProfile, isReturnFromStripe);
+      } catch (err) {
+        subscriptionError = true;
+      }
+    }
+
+    // If no subscription or not active/trialing, handle pending state if returning from Stripe
+    let pendingSubscription = false;
+    if (!subscription || (subscription.status !== 'active' && subscription.status !== 'trialing')) {
+      if (isReturnFromStripe) {
+        pendingSubscription = true;
+      } else if (!userProfileError) {
+        redirect('/pricing?message=subscription-required');
+      }
+    }
+
+    // Get all tasks for the user using userProfile.id
+    let tasks = [];
+    let tasksError = false;
+    if (userProfile && !userProfileError) {
+      try {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const response = await fetch(
+          `${baseUrl}/api/proxy/user-tasks?userId.equals=${userProfile.id}&page=${page}&size=${size}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            cache: 'no-store', // Disable caching to always get fresh data
+          }
+        );
+
+        if (response.status === 404) {
+          tasks = []; // No tasks found, not an error
+        } else if (!response.ok) {
+          tasksError = true;
+          tasks = [];
+        } else {
+          tasks = await response.json();
+          // Sort tasks by createdAt in descending order
+          tasks.sort((a: UserTaskDTO, b: UserTaskDTO) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+        }
+      } catch (error) {
+        tasksError = true;
+        tasks = [];
+      }
+    }
+
+    // Calculate stats
+    const stats = {
+      total: tasks.length,
+      completed: tasks.filter((task: UserTaskDTO) => task.status === 'completed').length,
+      inProgress: tasks.filter((task: UserTaskDTO) => task.status === 'in_progress').length,
+      pending: tasks.filter((task: UserTaskDTO) => task.status === 'pending').length,
+      highPriority: tasks.filter((task: UserTaskDTO) => task.priority === 'high').length,
+    };
+
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <DashboardContent
+          tasks={tasks}
+          stats={stats}
+          subscription={subscription}
+          pendingSubscription={pendingSubscription}
+          userProfileId={userProfile?.id}
+          errorBanner={
+            userProfileError ? (
+              <div className="bg-red-50 p-4 rounded-md mb-4">
+                <h2 className="text-red-800">Error loading your profile</h2>
+                <p className="text-red-600">We couldn't load your profile. Please try again later or contact support.</p>
+              </div>
+            ) : subscriptionError ? (
+              <div className="bg-red-50 p-4 rounded-md mb-4">
+                <h2 className="text-red-800">Error loading your subscription</h2>
+                <p className="text-red-600">We couldn't load your subscription. Please try again later.</p>
+              </div>
+            ) : tasksError ? (
+              <div className="bg-red-50 p-4 rounded-md mb-4">
+                <h2 className="text-red-800">Error loading your tasks</h2>
+                <p className="text-red-600">We couldn't load your tasks. Please try again later.</p>
+              </div>
+            ) : null
+          }
+        />
+      </Suspense>
     );
-
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-    tasks = []; // Fallback to empty array on error
+  } catch (err) {
+    // Catch any unhandled error and show a friendly error banner with fallback dashboard
+    return (
+      <Suspense fallback={<div>Loading...</div>}>
+        <DashboardContent
+          tasks={[]}
+          stats={{ total: 0, completed: 0, inProgress: 0, pending: 0, highPriority: 0 }}
+          subscription={null}
+          pendingSubscription={false}
+          userProfileId={undefined}
+          errorBanner={
+            <div className="bg-red-50 p-4 rounded-md mb-4">
+              <h2 className="text-red-800">Error loading your dashboard</h2>
+              <p className="text-red-600">Something went wrong. Please try again later or contact support.</p>
+            </div>
+          }
+        />
+      </Suspense>
+    );
   }
-
-  // Calculate stats
-  const stats = {
-    total: tasks.length,
-    completed: tasks.filter((task: Task) => task.status === 'completed').length,
-    inProgress: tasks.filter((task: Task) => task.status === 'in_progress').length,
-    pending: tasks.filter((task: Task) => task.status === 'pending').length,
-    highPriority: tasks.filter((task: Task) => task.priority === 'high').length,
-  };
-
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <DashboardContent tasks={tasks} stats={stats} subscription={subscription} pendingSubscription={pendingSubscription} />
-    </Suspense>
-  );
 }

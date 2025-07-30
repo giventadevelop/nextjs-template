@@ -8,13 +8,20 @@ import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 
 const menuItems = [
-  { href: "/event", label: "Event" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/", label: "Home" },
+  { href: "/#about-us", label: "About" },
+  { href: "/events", label: "Events" },
+  { href: "/#team-section", label: "Team" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 const ORG_NAME = "nextjs-template";
 
-export function Header() {
+type HeaderProps = {
+  hideMenuItems?: boolean;
+};
+
+export function Header({ hideMenuItems = false }: HeaderProps) {
   const pathname = usePathname();
   const { userId } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -43,24 +50,20 @@ export function Header() {
     checkAdminInOrg();
   }, [user, userLoaded]);
 
-  // Skip rendering header on auth pages
-  if (pathname?.startsWith("/sign-")) return null;
-
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <nav className="mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="relative flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-xl">📋</span>
-            <span className="text-xl font-bold text-gray-900">TaskMngr</span>
-          </Link>
+    <header className="bg-transparent" style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 1000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(5px)' }}>
+      <nav className="mx-auto px-4 sm:px-6 lg:px-8 py-[18px]">
+        <div className="relative flex items-center justify-between h-[58px]">
+          {/* Logo removed as requested */}
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Logo space - removed but keeping structure for spacing */}
+          </div>
 
           {/* Mobile menu button */}
           <div className="flex items-center sm:hidden">
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-yellow-300 hover:bg-gray-800"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <span className="sr-only">Open main menu</span>
@@ -82,8 +85,9 @@ export function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${pathname === item.href ? "text-gray-900" : ""
+                className={`text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-sm font-bold ${pathname === item.href ? "text-yellow-100" : ""
                   }`}
+                style={{ fontSize: 15, transition: 'color 0.3s ease' }}
               >
                 {item.label}
               </Link>
@@ -92,13 +96,13 @@ export function Header() {
               <>
                 <Link
                   href="/sign-in"
-                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                  className="text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-sm font-bold"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/sign-up"
-                  className="bg-[#39E079] text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-[#32c96d]"
+                  className="bg-yellow-400 text-black px-4 py-2 rounded-md text-sm font-bold hover:bg-yellow-300"
                 >
                   Sign Up
                 </Link>
@@ -106,15 +110,8 @@ export function Header() {
             ) : (
               <>
                 <Link
-                  href="/dashboard"
-                  className={`text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${pathname === "/dashboard" ? "text-gray-900" : ""
-                    }`}
-                >
-                  Dashboard
-                </Link>
-                <Link
                   href="/profile"
-                  className={`text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${pathname === "/profile" ? "text-gray-900" : ""
+                  className={`text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-sm font-bold ${pathname === "/profile" ? "text-yellow-100" : ""
                     }`}
                 >
                   Profile
@@ -123,7 +120,7 @@ export function Header() {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className={`text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium ${pathname === "/admin" ? "text-gray-900" : ""}`}
+                    className={`text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-sm font-bold ${pathname === "/admin" ? "text-yellow-100" : ""}`}
                   >
                     Admin
                   </Link>
@@ -140,7 +137,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className={`block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium ${pathname === item.href ? "text-gray-900 bg-gray-50" : ""
+              className={`block text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-base font-bold ${pathname === item.href ? "text-yellow-100 bg-gray-800" : ""
                 }`}
               onClick={() => setIsMenuOpen(false)}
             >
@@ -151,14 +148,14 @@ export function Header() {
             <>
               <Link
                 href="/sign-in"
-                className="block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium"
+                className="block text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-base font-bold"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign In
               </Link>
               <Link
                 href="/sign-up"
-                className="block bg-[#39E079] text-white px-3 py-2 rounded-md text-base font-medium hover:bg-[#32c96d] mt-2"
+                className="block bg-yellow-400 text-black px-3 py-2 rounded-md text-base font-bold hover:bg-yellow-300 mt-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sign Up
@@ -167,16 +164,8 @@ export function Header() {
           ) : (
             <>
               <Link
-                href="/dashboard"
-                className={`block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium ${pathname === "/dashboard" ? "text-gray-900 bg-gray-50" : ""
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
                 href="/profile"
-                className={`block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium ${pathname === "/profile" ? "text-gray-900 bg-gray-50" : ""
+                className={`block text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-base font-bold ${pathname === "/profile" ? "text-yellow-100 bg-gray-800" : ""
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -186,7 +175,7 @@ export function Header() {
               {isAdmin && (
                 <Link
                   href="/admin"
-                  className={`block text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-base font-medium ${pathname === "/admin" ? "text-gray-900 bg-gray-50" : ""}`}
+                  className={`block text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-base font-bold ${pathname === "/admin" ? "text-yellow-100 bg-gray-800" : ""}`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Admin

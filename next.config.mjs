@@ -10,8 +10,14 @@ const nextConfig = {
 
   // Enable image optimization
   images: {
-    domains: [], // Add domains for external images here
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'eventapp-media-bucket.s3.us-east-2.amazonaws.com',
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
+    unoptimized: true,
   },
 
   // Configure environment variables
@@ -28,7 +34,7 @@ const nextConfig = {
   },
 
   // Enable SWC minification for improved performance
-  swcMinify: true,
+  // swcMinify: true,
 
   // Customize webpack config if needed
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {

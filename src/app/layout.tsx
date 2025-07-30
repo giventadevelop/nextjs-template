@@ -4,23 +4,38 @@ import { ClerkProvider } from "@clerk/nextjs";
 import TrpcProvider from "@/lib/trpc/Provider";
 import Script from "next/script";
 import { Header } from "@/components/Header";
-import { headers } from "next/headers";
-import { ProfileBootstrapper } from "@/components/ProfileBootstrapper";
+import { Footer } from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const cookies = headersList.get("cookie") ?? "";
+  // For server components, we can't use usePathname, so we'll handle auth routes differently
+  const isAuthRoute = false; // We'll handle this in the Header component
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
+      <head>
+        <link href="https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+      </head>
+      <body className={inter.className + " flex flex-col min-h-screen"} suppressHydrationWarning>
         <ClerkProvider
+          localization={{
+            signUp: {
+              start: {
+                subtitle: ""
+              }
+            },
+            signIn: {
+              start: {
+                subtitle: ""
+              }
+            }
+          }}
           appearance={{
             layout: {
               socialButtonsPlacement: "bottom",
@@ -45,10 +60,12 @@ export default async function RootLayout({
             },
           }}
         >
-          <ProfileBootstrapper />
-          <TrpcProvider cookies={cookies}>
-            <Header />
-            {children}
+          <TrpcProvider>
+            <Header hideMenuItems={isAuthRoute} />
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+            <Footer />
           </TrpcProvider>
         </ClerkProvider>
         <Script

@@ -1,26 +1,39 @@
 import { headers } from 'next/headers';
 import { WebhookEvent } from '@clerk/nextjs/server';
 import { Webhook } from 'svix';
+import { getTenantId } from '@/lib/env';
+import type { UserProfileDTO } from '@/types';
+import { withTenantId } from '@/lib/withTenantId';
+
+// --- fetchWithJwtRetry helper (copied from user-profiles proxy) ---
+import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
+
+async function fetchWithJwtRetry(apiUrl: string, options: any = {}, debugLabel = '') {
+  let token = await getCachedApiJwt();
+  let response = await fetch(apiUrl, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  console.log(`[${debugLabel}] First attempt:`, apiUrl, response.status);
+  if (response.status === 401) {
+    console.warn(`[${debugLabel}] JWT expired/invalid, regenerating and retrying...`);
+    token = await generateApiJwt();
+    response = await fetch(apiUrl, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(`[${debugLabel}] Second attempt:`, apiUrl, response.status);
+  }
+  return response;
+}
 
 export const dynamic = 'force-dynamic';
-
-interface UserProfileDTO {
-  id?: number;
-  userId: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  phone?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 async function validateRequest(request: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -86,22 +99,62 @@ export async function POST(request: Request) {
   try {
     switch (eventType) {
       case 'user.created': {
-        const { id, email_addresses, ...attributes } = evt.data;
-        console.log('User created:', { id, email: email_addresses[0]?.email_address });
+        const { id, email_addresses, first_name, last_name, image_url, ...attributes } = evt.data;
+        const email = email_addresses[0]?.email_address;
+        console.log('User created:', { id, email });
 
-        // Create user profile with minimal required fields
-        const userProfile: UserProfileDTO = {
+        // 1. Lookup by email
+        const profileRes = await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles?email.equals=${encodeURIComponent(email)}`, { method: 'GET' }, 'webhook-user-created-lookup');
+        let userProfile: UserProfileDTO | null = null;
+        if (profileRes.ok) {
+          const profiles = await profileRes.json();
+          if (Array.isArray(profiles) && profiles.length > 0) {
+            userProfile = profiles[0];
+          }
+        }
+
+        // Prepare DTO fields from Clerk
+        const now = new Date().toISOString();
+        const dtoFields: Partial<UserProfileDTO> = {
           userId: id,
-          email: email_addresses[0]?.email_address,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          email,
+          firstName: first_name,
+          lastName: last_name,
+          profileImageUrl: image_url,
+          userRole: 'MEMBER',
+          userStatus: 'pending',
+          tenantId: getTenantId(),
+          updatedAt: now,
         };
-        await fetch(`${apiBaseUrl}/api/user-profiles`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(userProfile),
-        });
-        console.log('Created user profile record');
+
+        if (userProfile) {
+          // 2. Update existing profile
+          const updatedProfile: UserProfileDTO = {
+            ...userProfile,
+            ...dtoFields,
+            createdAt: userProfile.createdAt || now,
+            updatedAt: now,
+          };
+          await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(withTenantId(updatedProfile)),
+          }, 'webhook-user-created-UPDATE');
+          console.log('Updated existing user profile record');
+        } else {
+          // 3. Create new profile
+          const newProfile: UserProfileDTO = {
+            ...dtoFields,
+            createdAt: now,
+            updatedAt: now,
+          } as UserProfileDTO;
+          await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(withTenantId(newProfile)),
+          }, 'webhook-user-created-CREATE');
+          console.log('Created new user profile record');
+        }
         break;
       }
 
@@ -110,14 +163,14 @@ export async function POST(request: Request) {
         console.log('User updated:', { id, email: email_addresses[0]?.email_address });
 
         // Fetch the user profile to get its id
-        const profileRes = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${id}`);
+        const profileRes = await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles/by-user/${id}`, { method: 'GET' }, 'webhook-user-updated-GET');
         if (profileRes.ok) {
           const userProfile: UserProfileDTO = await profileRes.json();
-          await fetch(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
+          await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...userProfile, email: email_addresses[0]?.email_address, updatedAt: new Date().toISOString() }),
-          });
+            body: JSON.stringify(withTenantId({ ...userProfile, email: email_addresses[0]?.email_address, updatedAt: new Date().toISOString() })),
+          }, 'webhook-user-updated-PUT');
         }
         break;
       }
@@ -127,12 +180,12 @@ export async function POST(request: Request) {
         console.log('User deleted:', { id });
 
         // Fetch the user profile to get its id
-        const profileRes = await fetch(`${apiBaseUrl}/api/user-profiles/by-user/${id}`);
+        const profileRes = await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles/by-user/${id}`, { method: 'GET' }, 'webhook-user-deleted-GET');
         if (profileRes.ok) {
           const userProfile: UserProfileDTO = await profileRes.json();
-          await fetch(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
+          await fetchWithJwtRetry(`${apiBaseUrl}/api/user-profiles/${userProfile.id}`, {
             method: 'DELETE',
-          });
+          }, 'webhook-user-deleted-DELETE');
         }
         break;
       }
