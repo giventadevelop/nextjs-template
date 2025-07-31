@@ -6,39 +6,27 @@ import { getApiJwtUser, getApiJwtPass } from '../env';
  * Adjust payload/secret as per backend requirements.
  */
 export async function generateApiJwt() {
-  // Try AWS Amplify approach - use regular env vars (server-side only)
-  const userAws = process.env.API_JWT_USER;
-  const passAws = process.env.API_JWT_PASS;
-  
-  // Try NEXT_PUBLIC_ approach
-  const userPublic = process.env.NEXT_PUBLIC_API_JWT_USER;
-  const passPublic = process.env.NEXT_PUBLIC_API_JWT_PASS;
-  
-  // Try helper functions
+  // Use helper functions which prioritize AMPLIFY_ prefix
   const userHelper = getApiJwtUser();
   const passHelper = getApiJwtPass();
   
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
   
   // Debug logging to see what we're getting
-  console.log('[JWT DEBUG] AWS style API_JWT_USER:', userAws ? 'SET' : 'UNDEFINED');
-  console.log('[JWT DEBUG] AWS style API_JWT_PASS:', passAws ? 'SET' : 'UNDEFINED');
-  console.log('[JWT DEBUG] Public NEXT_PUBLIC_API_JWT_USER:', userPublic ? 'SET' : 'UNDEFINED');
-  console.log('[JWT DEBUG] Public NEXT_PUBLIC_API_JWT_PASS:', passPublic ? 'SET' : 'UNDEFINED');
   console.log('[JWT DEBUG] Helper getApiJwtUser():', userHelper ? 'SET' : 'UNDEFINED');
   console.log('[JWT DEBUG] Helper getApiJwtPass():', passHelper ? 'SET' : 'UNDEFINED');
   console.log('[JWT DEBUG] API_BASE_URL:', API_BASE_URL ? 'SET' : 'UNDEFINED');
   console.log('[JWT DEBUG] NODE_ENV:', process.env.NODE_ENV);
   
-  // Debug: Show all environment variables that contain 'JWT'
-  console.log('[JWT DEBUG] All JWT-related env vars:');
-  Object.keys(process.env).filter(key => key.includes('JWT')).forEach(key => {
+  // Debug: Show all environment variables that contain 'JWT' or 'AMPLIFY'
+  console.log('[JWT DEBUG] All JWT/AMPLIFY-related env vars:');
+  Object.keys(process.env).filter(key => key.includes('JWT') || key.includes('AMPLIFY')).forEach(key => {
     console.log(`[JWT DEBUG] ${key}:`, process.env[key] ? 'SET' : 'UNDEFINED');
   });
   
-  // Use whichever approach works
-  const finalUser = userAws || userPublic || userHelper;
-  const finalPass = passAws || passPublic || passHelper;
+  // Use helper functions which have proper priority order
+  const finalUser = userHelper;
+  const finalPass = passHelper;
   
   if (!finalUser || !finalPass || !API_BASE_URL) {
     console.log('[JWT DEBUG] Missing values - user:', finalUser, 'pass:', finalPass, 'URL:', API_BASE_URL);

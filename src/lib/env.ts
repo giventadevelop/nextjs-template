@@ -1,5 +1,5 @@
 /**
- * Lazily loads API JWT user from environment variables, supporting AMPLIFY_ and unprefixed names.
+ * Lazily loads API JWT user from environment variables, prioritizing AMPLIFY_ prefix for AWS Amplify.
  */
 export function getApiJwtUser() {
   return (
@@ -10,7 +10,7 @@ export function getApiJwtUser() {
 }
 
 /**
- * Lazily loads API JWT password from environment variables, supporting AMPLIFY_ and unprefixed names.
+ * Lazily loads API JWT password from environment variables, prioritizing AMPLIFY_ prefix for AWS Amplify.
  */
 export function getApiJwtPass() {
   return (
