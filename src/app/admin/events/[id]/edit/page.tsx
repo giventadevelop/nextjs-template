@@ -46,7 +46,7 @@ export default function EditEventPage() {
   if (!event) return <div className="p-8">Loading event details...</div>;
 
   return (
-    <div className="min-h-screen p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen p-8 max-w-3xl mx-auto" style={{ paddingTop: '118px' }}>
       {/* Dashboard Card with Grid Buttons */}
       <div className="flex justify-center mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl">

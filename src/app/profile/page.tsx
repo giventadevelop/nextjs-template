@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   const userProfile = await fetchUserProfileServer(userId);
 
   return (
-    <div className="min-h-screen p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen p-8 max-w-3xl mx-auto" style={{ paddingTop: '118px' }}>
       <div className="space-y-8 py-8">
         <div className="flex items-center justify-between">
           <div>

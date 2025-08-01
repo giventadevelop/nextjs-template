@@ -31,7 +31,7 @@ export default async function TicketTypeListPage({ params }: Props) {
   const ticketTypes = await fetchTicketTypesForTicketListPage(eventId);
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-8">
+    <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '118px' }}>
       {/* Title Section */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Manage Ticket Types</h1>

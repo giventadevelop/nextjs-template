@@ -344,7 +344,7 @@ export default function Page() {
       </div>
 
       {/* Main content container - ui_style_guide.mdc compliant */}
-      <div className="max-w-5xl mx-auto px-8 py-0" style={{ marginTop: '-40px' }}>
+      <div className="max-w-5xl mx-auto px-8 py-0" style={{ marginTop: '60px' }}>
         {/* WHAT WE DO SECTION - two columns on desktop, stacked on mobile */}
         <section className="what-we-do bg-white py-8">
           <div className="container mx-auto px-4">

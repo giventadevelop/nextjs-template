@@ -72,12 +72,20 @@ export async function createTicketTypeServer(eventId: string, formData: EventTic
 
 export async function updateTicketTypeServer(ticketTypeId: number, eventId: string, formData: Partial<EventTicketTypeFormDTO>) {
   try {
+    // First fetch the existing ticket type to get the createdAt timestamp
+    const existingTicketType = await fetchTicketTypeByIdServer(ticketTypeId);
+    if (!existingTicketType) {
+      return { success: false, error: 'Ticket type not found' };
+    }
+
     const payload = withTenantId({
+      id: ticketTypeId,
       ...formData,
       event: { id: parseInt(eventId) },
       price: Number(formData.price),
       availableQuantity: Number(formData.availableQuantity),
       serviceFee: formData.isServiceFeeIncluded && formData.serviceFee ? Number(formData.serviceFee) : 0,
+      createdAt: existingTicketType.createdAt, // Preserve existing createdAt
       updatedAt: new Date().toISOString(),
     });
 

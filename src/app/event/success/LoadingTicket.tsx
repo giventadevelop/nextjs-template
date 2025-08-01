@@ -80,7 +80,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
     <div className="min-h-screen bg-gray-100 flex flex-col">
 
       {/* HERO SECTION - Full width bleeding to edges */}
-      <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '400px', overflow: 'hidden', width: '100%' }}>
+      <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '450px', overflow: 'hidden', width: '100%' }}>
         <Image
           src={heroImageUrl || "/images/default_placeholder_hero_image.jpeg"}
           alt="Event Hero"
@@ -114,7 +114,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
           .hero-section {
             min-height: 10vh;
             background-color: transparent !important; /* Remove coral background */
-            padding-top: 40px; /* Top padding to prevent header cut-off */
+            padding-top: 120px; /* Increased padding to ensure proper spacing from header */
             margin-left: calc(-50vw + 50%) !important;
             margin-right: calc(-50vw + 50%) !important;
             width: 100vw !important;
@@ -129,7 +129,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
 
           @media (max-width: 767px) {
             .hero-section {
-              padding-top: 50px !important; /* Extra mobile top padding */
+              padding-top: 130px !important; /* Increased mobile padding for better spacing */
               margin-top: 0 !important;
               min-height: 5vh !important;
               background-color: transparent !important; /* Remove coral background on mobile */
@@ -143,7 +143,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
       }} />
 
       {/* Loading content - flex-grow to push footer down */}
-      <div className="flex-grow flex flex-col items-center justify-center min-h-[200px] p-6 animate-pulse" style={{ marginTop: '80px' }}>
+      <div className="flex-grow flex flex-col items-center justify-center min-h-[200px] p-6 animate-pulse" style={{ marginTop: '150px', paddingTop: '60px' }}>
         <Image
           src="/images/selling-tickets-vector-loading-image.jpg"
           alt="Ticket Loading"

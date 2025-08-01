@@ -105,7 +105,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-8 py-8">
+    <div className="max-w-5xl mx-auto px-8 py-8" style={{ paddingTop: '118px' }}>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Admin Event Management</h1>
       <div className="flex justify-center mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">

@@ -47,8 +47,8 @@ export default function TicketingPage() {
           sessionStorage.setItem('eventLocation', eventData.location || '');
         }
 
-        // Fetch ticket types for this event
-        const ticketRes = await fetch(`/api/proxy/event-ticket-types?eventId.equals=${eventId}`);
+        // Fetch ticket types for this event (only active ones)
+        const ticketRes = await fetch(`/api/proxy/event-ticket-types?eventId.equals=${eventId}&isActive.equals=true`);
         const ticketData = await ticketRes.json();
         setTicketTypes(Array.isArray(ticketData) ? ticketData : []);
 
