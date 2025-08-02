@@ -20,24 +20,24 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
       const fetchHeroImage = async () => {
         try {
           console.log('LoadingTicket: Fetching hero image for session:', sessionId);
-          
+
           // First, try to get eventId from Stripe session
           const stripeResponse = await fetch('/api/stripe/get-session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId })
           });
-          
+
           if (stripeResponse.ok) {
             const stripeData = await stripeResponse.json();
             const eventId = stripeData.metadata?.eventId;
             console.log('LoadingTicket: Got eventId from Stripe:', eventId);
-            
+
             if (eventId) {
               // Fetch hero image like tickets page does
               const eventIdNum = parseInt(eventId);
               let imageUrl = null;
-              
+
               // Try flyer first
               const flyerRes = await fetch(`/api/proxy/event-medias?eventId.equals=${eventIdNum}&eventFlyer.equals=true`, { cache: 'no-store' });
               if (flyerRes.ok) {
@@ -46,7 +46,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
                   imageUrl = flyerData[0].fileUrl;
                 }
               }
-              
+
               // Try featured image if no flyer
               if (!imageUrl) {
                 const featuredRes = await fetch(`/api/proxy/event-medias?eventId.equals=${eventIdNum}&isFeaturedImage.equals=true`, { cache: 'no-store' });
@@ -57,7 +57,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
                   }
                 }
               }
-              
+
               if (imageUrl) {
                 setHeroImageUrl(imageUrl);
                 console.log('LoadingTicket: Successfully fetched hero image URL:', imageUrl);
@@ -78,6 +78,9 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
+
+      {/* SPACER DIV - Creates space between header and hero */}
+      <div style={{ height: '80px', width: '100%' }}></div>
 
       {/* HERO SECTION - Full width bleeding to edges */}
       <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '450px', overflow: 'hidden', width: '100%' }}>
@@ -114,7 +117,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
           .hero-section {
             min-height: 10vh;
             background-color: transparent !important; /* Remove coral background */
-            padding-top: 120px; /* Increased padding to ensure proper spacing from header */
+            padding-top: 0; /* Remove padding since we have spacer div */
             margin-left: calc(-50vw + 50%) !important;
             margin-right: calc(-50vw + 50%) !important;
             width: 100vw !important;
@@ -129,7 +132,7 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
 
           @media (max-width: 767px) {
             .hero-section {
-              padding-top: 130px !important; /* Increased mobile padding for better spacing */
+              padding-top: 0 !important; /* Remove padding since we have spacer div */
               margin-top: 0 !important;
               min-height: 5vh !important;
               background-color: transparent !important; /* Remove coral background on mobile */

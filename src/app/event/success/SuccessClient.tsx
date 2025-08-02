@@ -189,6 +189,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   return (
     <div className="min-h-screen bg-gray-100">
 
+      {/* SPACER DIV - Creates space between header and hero */}
+      <div style={{ height: '80px', width: '100%' }}></div>
+
       {/* HERO SECTION - Full width bleeding to edges */}
       <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '400px', overflow: 'hidden', width: '100%' }}>
         <Image
@@ -221,7 +224,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           .hero-section {
             min-height: 10vh;
             background-color: transparent !important; /* Remove coral background */
-            padding-top: 94px; /* Top padding to prevent header cut-off */
+            padding-top: 0; /* Remove padding since we have spacer div */
             margin-left: calc(-50vw + 50%) !important;
             margin-right: calc(-50vw + 50%) !important;
             width: 100vw !important;
@@ -236,7 +239,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
 
           @media (max-width: 767px) {
             .hero-section {
-              padding-top: 100px !important; /* Extra mobile top padding */
+              padding-top: 0 !important; /* Remove padding since we have spacer div */
               margin-top: 0 !important;
               min-height: 5vh !important;
               background-color: transparent !important; /* Remove coral background on mobile */

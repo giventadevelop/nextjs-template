@@ -197,8 +197,14 @@ export async function createStripeCheckoutSession(
     quantity: item.quantity,
   }));
 
+  // Determine payment methods based on environment
+  const isProduction = process.env.NODE_ENV === 'production';
+  const paymentMethods: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = isProduction
+    ? ['card', 'link', 'cashapp'] // Add more options for production
+    : ['card', 'link']; // Keep it simple for local development
+
   const sessionParams: Stripe.Checkout.SessionCreateParams = {
-    payment_method_types: ['card'],
+    payment_method_types: paymentMethods,
     line_items,
     customer_email: upsertedUser.email,
     mode: 'payment',

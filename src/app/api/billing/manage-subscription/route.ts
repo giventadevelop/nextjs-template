@@ -196,10 +196,16 @@ export async function POST(req: Request) {
           }
           url = session.url;
         } else {
+          // Determine payment methods based on environment
+          const isProduction = process.env.NODE_ENV === 'production';
+          const paymentMethods: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = isProduction
+            ? ['card', 'link', 'cashapp'] // Add more options for production
+            : ['card', 'link']; // Keep it simple for local development
+
           const session = await stripe.checkout.sessions.create({
             success_url: `${baseUrl}/dashboard`,
             cancel_url: `${baseUrl}/dashboard`,
-            payment_method_types: ['card'],
+            payment_method_types: paymentMethods,
             mode: 'subscription',
             billing_address_collection: 'auto',
             customer: customerId,
