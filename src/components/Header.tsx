@@ -15,7 +15,7 @@ const menuItems = [
   { href: "/#contact", label: "Contact" },
 ];
 
-const ORG_NAME = "nextjs-template";
+const ORG_NAME = "Adwiise";
 
 type HeaderProps = {
   hideMenuItems?: boolean;
@@ -54,13 +54,26 @@ export function Header({ hideMenuItems = false }: HeaderProps) {
     <header className="bg-transparent" style={{ position: 'fixed', top: 0, left: 0, width: '100%', zIndex: 1000, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(5px)' }}>
       <nav className="mx-auto px-4 sm:px-6 lg:px-8 py-[18px]">
         <div className="relative flex items-center justify-between h-[58px]">
-          {/* Logo removed as requested */}
+          {/* Logo - only show on pages other than home */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Logo space - removed but keeping structure for spacing */}
+            {pathname !== "/" && (
+              <Link href="/" className="flex items-center">
+                <img
+                  src="/images/mcefee_logo_black_border_transparent.png"
+                  alt="MCEFEE Logo"
+                  style={{
+                    height: '58px',
+                    width: 'auto',
+                    minWidth: '120px',
+                    opacity: 0.9
+                  }}
+                />
+              </Link>
+            )}
           </div>
 
           {/* Mobile menu button */}
-          <div className="flex items-center sm:hidden">
+          <div className="flex items-center md:hidden">
             <button
               type="button"
               className="inline-flex items-center justify-center p-2 rounded-md text-white hover:text-yellow-300 hover:bg-gray-800"
@@ -80,7 +93,7 @@ export function Header({ hideMenuItems = false }: HeaderProps) {
           </div>
 
           {/* Desktop menu */}
-          <div className="hidden sm:flex sm:items-center sm:space-x-4 md:space-x-6 lg:space-x-8">
+          <div className="hidden md:flex md:items-center md:space-x-4 lg:space-x-6 xl:space-x-8">
             {menuItems.map((item) => (
               <Link
                 key={item.href}
@@ -132,7 +145,7 @@ export function Header({ hideMenuItems = false }: HeaderProps) {
         </div>
 
         {/* Mobile menu */}
-        <div className={`${isMenuOpen ? 'block' : 'hidden'} sm:hidden pt-2 pb-3 space-y-1`}>
+        <div className={`${isMenuOpen ? 'block' : 'hidden'} md:hidden pt-2 pb-3 space-y-1`}>
           {menuItems.map((item) => (
             <Link
               key={item.href}

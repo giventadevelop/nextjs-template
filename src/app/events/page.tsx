@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import type { EventWithMedia, EventDetailsDTO } from "@/types";
+import { formatInTimeZone } from 'date-fns-tz';
+// import { formatInTimeZone } from 'date-fns-tz';
 
 const EVENTS_PAGE_SIZE = 10;
 
@@ -87,116 +89,347 @@ export default function EventsPage() {
     return `${year}${month}${day}T${String(h).padStart(2, '0')}${minute}00`;
   }
 
+  // Helper to format time with AM/PM
+  function formatTime(time: string): string {
+    if (!time) return '';
+    // Accepts 'HH:mm' or 'hh:mm AM/PM' and returns 'hh:mm AM/PM'
+    if (time.match(/AM|PM/i)) return time;
+    const [hourStr, minute] = time.split(':');
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour === 0) hour = 12;
+    return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
+  }
+
+  // Helper to format date
+  function formatDate(dateString: string, timezone: string = 'America/New_York'): string {
+    if (!dateString) return '';
+    // Use formatInTimeZone to display the date in the event's timezone
+    return formatInTimeZone(dateString, timezone, 'EEEE, MMMM d, yyyy');
+  }
+
   return (
-    <div>
-      {/* Hero Section (copied from home page) */}
-      <section className="hero-section relative w-full bg-transparent pb-0" style={{ height: '180px' }}>
-        {/* Side Image */}
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: '250px',
-            minWidth: '120px',
-            height: '100%',
-            zIndex: 1,
-          }}
-          className="w-[120px] md:w-[250px] min-w-[80px] h-full"
-        >
-          {/* Overlay logo at top left of side image */}
-          <Image
-            src="/images/side_images/malayalees_us_logo.avif"
-            alt="Malayalees US Logo"
-            width={80}
-            height={80}
-            style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              background: 'rgba(255,255,255,0.7)',
-              borderRadius: '50%',
-              boxShadow: '0 8px 64px 16px rgba(80,80,80,0.22)',
-              zIndex: 2,
-            }}
-            className="md:w-[120px] md:h-[120px] w-[80px] h-[80px]"
-            priority
-          />
-          <Image
-            src="/images/side_images/pooram_side_image_two_images_blur_1.png"
-            alt="Kerala Sea Coast"
-            width={250}
-            height={400}
-            className="h-full object-cover rounded-l-lg shadow-2xl"
-            style={{
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: '60% center',
-              display: 'block',
-              boxShadow: '0 0 96px 32px rgba(80,80,80,0.22)',
-            }}
-            priority
-          />
-        </div>
-        {/* Hero Image fills the rest */}
-        <div
-          className="absolute hero-image-container"
-          style={{
-            left: 265,
-            top: 4,
-            right: 4,
-            bottom: 4,
-            zIndex: 2,
-          }}
-        >
-          <div className="w-full h-full relative">
-            {/* Blurred background image for width fill */}
-            <Image
-              src={heroImageUrl}
-              alt="Hero blurred background"
-              fill
-              className="object-cover w-full h-full blur-lg scale-105"
-              style={{
-                zIndex: 0,
-                filter: 'blur(24px) brightness(1.1)',
-                objectPosition: 'center',
-              }}
-              aria-hidden="true"
-              priority
-            />
-            {/* Main hero image, fully visible */}
-            <Image
-              src={heroImageUrl}
-              alt="Event Hero"
-              fill
-              className="object-cover w-full h-full"
-              style={{
-                objectFit: 'cover',
-                objectPosition: 'center',
-                zIndex: 1,
-                background: 'linear-gradient(to bottom, #f8fafc 0%, #fff 100%)',
-              }}
-              priority
-            />
-            {/* Fade overlays for all four borders */}
-            <div className="pointer-events-none absolute left-0 top-0 w-full h-8" style={{ background: 'linear-gradient(to bottom, rgba(248,250,252,1) 0%, rgba(248,250,252,0) 100%)', zIndex: 20 }} />
-            <div className="pointer-events-none absolute left-0 bottom-0 w-full h-8" style={{ background: 'linear-gradient(to top, rgba(248,250,252,1) 0%, rgba(248,250,252,0) 100%)', zIndex: 20 }} />
-            <div className="pointer-events-none absolute left-0 top-0 h-full w-8" style={{ background: 'linear-gradient(to right, rgba(248,250,252,1) 0%, rgba(248,250,252,0) 100%)', zIndex: 20 }} />
-            <div className="pointer-events-none absolute right-0 top-0 h-full w-8" style={{ background: 'linear-gradient(to left, rgba(248,250,252,1) 0%, rgba(248,250,252,0) 100%)', zIndex: 20 }} />
-          </div>
-        </div>
-        <style jsx global>{`
-          @media (max-width: 768px) {
-            .hero-section .hero-image-container {
-              left: 120px !important;
+    <div className="w-full overflow-x-hidden">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Mobile-specific hero adjustments */
+          @media (max-width: 767px) {
+            .hero-section {
+              min-height: 180px !important;
+              height: 180px !important;
+              padding-top: 80px !important;
+              background-color: #000 !important;
+              margin: 0 !important;
+              padding: 80px 0 0 0 !important;
+            }
+                      /* Prevent horizontal overflow */
+          body {
+            overflow-x: hidden !important;
+          }
+          /* Prevent image cutoff */
+          .event-image-container {
+            overflow: hidden !important;
+            max-width: 100% !important;
+            padding: 0 10px !important;
+          }
+          .event-image-container img {
+            max-width: 100% !important;
+            height: auto !important;
+            object-fit: contain !important;
+          }
+            /* Ensure content fits mobile viewport */
+            .container {
+              max-width: 100vw !important;
+              padding-left: 15px !important;
+              padding-right: 15px !important;
+            }
+            /* Ensure mobile text doesn't duplicate */
+            .hero-title {
+              display: none !important;
+            }
+            /* Ensure mobile text stays within hero bounds */
+            .hero-section h1 {
+              margin-bottom: 0 !important;
+              padding-bottom: 0 !important;
+            }
+            /* Mobile feature box spacing - increased significantly */
+            .feature-boxes-container {
+              margin-top: 180px !important;
+            }
+            /* Ensure mobile hero has solid black background */
+            .flex.md\\:hidden {
+              background-color: #000 !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              border: none !important;
+              outline: none !important;
+            }
+            /* Force all mobile hero elements to have black background */
+            .flex.md\\:hidden * {
+              background-color: #000 !important;
+            }
+            /* Ensure no white spaces in mobile hero */
+            .flex.md\\:hidden img {
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            .flex.md\\:hidden div {
+              margin: 0 !important;
+              padding: 0 !important;
+              border: none !important;
+            }
+            .flex.md\\:hidden h1 {
+              margin: 0 !important;
+              padding: 0 !important;
+              background-color: #000 !important;
             }
           }
-        `}</style>
+          /* Desktop-specific adjustments */
+          @media (min-width: 768px) {
+            .hero-section {
+              min-height: 320px !important;
+              height: 320px !important;
+              padding-top: 100px !important;
+            }
+            .feature-boxes-container {
+              margin-top: 120px !important;
+            }
+            /* Ensure desktop doesn't show mobile elements */
+            .flex.md\\:hidden {
+              display: none !important;
+            }
+          }
+        `
+      }} />
+      <section className="hero-section events-hero-section" style={{
+        height: '320px',
+        minHeight: '320px',
+        position: 'relative',
+        overflow: 'visible',
+        backgroundColor: '#000',
+        marginBottom: 0,
+        paddingBottom: 0,
+        paddingTop: '100px',
+        marginTop: 0
+      }}>
+        {/* Desktop Layout */}
+        <div className="hidden md:flex hero-content" style={{
+          position: 'relative',
+          zIndex: 3,
+          padding: '0 20px',
+          maxWidth: 1200,
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          height: '100%',
+          minHeight: 200,
+          gap: '40px',
+          paddingTop: '50px',
+          paddingBottom: '70px'
+        }}>
+          <img src="/images/mcefee_logo_black_border_transparent.png" className="hero-mcafee-logo" alt="MCEFEE Logo" style={{ width: 240, height: 'auto', opacity: 0.6, marginLeft: -200 }} />
+          <h1 className="hero-title" style={{
+            fontSize: 26,
+            lineHeight: 1.4,
+            color: 'white',
+            maxWidth: 450,
+            fontFamily: 'Sora, sans-serif',
+            marginLeft: -20,
+            marginRight: 40,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            <span>Connecting Cultures,</span>
+            <span>Empowering Generations –</span>
+            <span style={{ color: '#ffce59', fontSize: 26 }}>Celebrating Malayali Roots in the USA</span>
+          </h1>
+        </div>
+        {/* Mobile Layout */}
+        <div className="flex md:hidden" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px 0px',
+          minHeight: '160px',
+          backgroundColor: '#000',
+          position: 'relative',
+          zIndex: 3,
+          width: '100%',
+          maxWidth: '100vw',
+          height: '100%',
+          margin: '0px',
+          border: 'none',
+          outline: 'none'
+        }}>
+          {/* Mobile Logo */}
+          <img src="/images/mcefee_logo_black_border_transparent.png" alt="MCEFEE Logo" style={{
+            width: '200px',
+            height: 'auto',
+            opacity: 0.9,
+            display: 'block',
+            margin: '20px auto 10px auto',
+            padding: '0px'
+          }} />
+
+          {/* Mobile Main Text - Single instance only */}
+          <div style={{
+            backgroundColor: '#000',
+            padding: '0px',
+            margin: '0px',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            <h1 style={{
+              fontSize: '18px',
+              lineHeight: 1.3,
+              color: 'white',
+              maxWidth: '300px',
+              fontFamily: 'Sora, sans-serif',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '3px',
+              textAlign: 'center',
+              margin: '0px auto',
+              padding: '0px',
+              fontWeight: '500',
+              backgroundColor: '#000',
+              justifyContent: 'center',
+              alignItems: 'center'
+            }}>
+              <span>Connecting Cultures,</span>
+              <span>Empowering Generations –</span>
+              <span style={{ color: '#ffce59', fontSize: '18px', fontWeight: '600' }}>Celebrating Malayali Roots in the USA</span>
+            </h1>
+          </div>
+        </div>
+        {/* Desktop Background */}
+        <div className="hidden md:block hero-background" style={{
+          position: 'absolute',
+          top: '25%',
+          right: '10px',
+          left: 'auto',
+          width: '30%',
+          height: '75%',
+          backgroundImage: "url('/images/kathakali_with_back_light_hero_ai.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.8,
+          filter: 'blur(0.5px)',
+          WebkitMaskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0.7) 65%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%)',
+          maskImage: 'radial-gradient(ellipse at center, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 35%, rgba(0,0,0,0.9) 50%, rgba(0,0,0,0.7) 65%, rgba(0,0,0,0.3) 85%, rgba(0,0,0,0) 100%)',
+          zIndex: 2,
+          pointerEvents: 'none',
+        }}>
+          {/* Top gradient overlay */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '15%',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.1) 100%)',
+            zIndex: 1,
+            filter: 'blur(1px)'
+          }}></div>
+          {/* Bottom gradient overlay */}
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '15%',
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.1) 100%)',
+            zIndex: 1,
+            filter: 'blur(1px)'
+          }}></div>
+          {/* Left gradient overlay - enhanced for better fade */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '20%',
+            height: '100%',
+            background: 'linear-gradient(90deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.1) 80%, rgba(0,0,0,0) 100%)',
+            zIndex: 1,
+            filter: 'blur(1px)'
+          }}></div>
+
+          {/* Additional left fade gradient for smoother transition */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '35%',
+            height: '100%',
+            background: 'linear-gradient(90deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.1) 60%, rgba(0,0,0,0.05) 80%, rgba(0,0,0,0) 100%)',
+            zIndex: 1,
+            filter: 'blur(1.5px)'
+          }}></div>
+          {/* Right gradient overlay */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '25%',
+            height: '100%',
+            background: 'linear-gradient(270deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.1) 100%)',
+            zIndex: 1,
+            filter: 'blur(1px)'
+          }}></div>
+          {/* Corner gradient overlays for smoother blending */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '20%',
+            height: '20%',
+            background: 'radial-gradient(ellipse at top left, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.2) 50%, rgba(0,0,0,0) 100%)',
+            zIndex: 2
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '30%',
+            height: '30%',
+            background: 'radial-gradient(ellipse at top right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)',
+            zIndex: 2
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            width: '30%',
+            height: '30%',
+            background: 'radial-gradient(ellipse at bottom left, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)',
+            zIndex: 2
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '30%',
+            height: '30%',
+            background: 'radial-gradient(ellipse at bottom right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%)',
+            zIndex: 2
+          }}></div>
+        </div>
+        {/* Hero overlay removed to match events page brightness */}
       </section>
 
+      {/* Mobile Spacer Div - Creates space between hero and events list on mobile only */}
+      <div className="block md:hidden" style={{ height: '150px', width: '100%', backgroundColor: 'transparent' }}></div>
+
       {/* Event List */}
-      <div className="max-w-5xl mx-auto p-6">
+      <div className="max-w-5xl mx-auto p-6" style={{ paddingTop: '60px' }}>
         <h1 className="text-3xl font-bold mb-6 text-center">All Events</h1>
         {loading ? (
           <div className="flex justify-center items-center min-h-[200px]">
@@ -212,75 +445,97 @@ export default function EventsPage() {
           </div>
         ) : (
           <>
-            <div className="w-full overflow-x-auto">
-              <table className="w-full border text-sm bg-white rounded shadow-md">
-                <thead>
-                  <tr className="bg-blue-100 font-bold border-b-2 border-blue-300">
-                    <th className="p-2 border w-40">Flyer</th>
-                    <th className="p-2 border">Event Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {events.map((event) => (
-                    <tr
-                      key={event.id}
-                      className="border-b border-gray-300 hover:bg-yellow-50 transition cursor-pointer"
-                      onClick={() => router.push(`/events/${event.id}`)}
-                    >
-                      <td className="p-2 border align-top w-40">
+            <div className="w-full space-y-6">
+              {events.map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-white rounded-lg shadow-lg border-4 border-blue-200 hover:border-blue-400 transition-all duration-300 cursor-pointer overflow-hidden"
+                  onClick={() => router.push(`/events/${event.id}`)}
+                >
+                  <div className="p-6">
+                    {/* Image Section - Full Width on Top */}
+                    <div className="w-full mb-6">
+                      <div className="event-image-container w-full flex justify-center">
                         {event.thumbnailUrl ? (
                           <Image
                             src={event.thumbnailUrl}
                             alt={event.title}
-                            width={160}
-                            height={120}
-                            className="rounded shadow object-cover w-40 h-28 bg-white"
+                            width={600}
+                            height={400}
+                            className="rounded-lg shadow-md object-contain w-full max-w-2xl h-80 bg-white"
+                            style={{
+                              objectFit: 'contain',
+                              maxWidth: '100%',
+                              height: 'auto',
+                              padding: '10px'
+                            }}
                           />
                         ) : (
-                          <div className="w-40 h-28 bg-gray-200 flex items-center justify-center rounded">
+                          <div className="w-full max-w-2xl h-80 bg-gray-200 flex items-center justify-center rounded-lg">
                             <span className="text-gray-400">No image</span>
                           </div>
                         )}
-                      </td>
-                      <td className="p-2 border align-top">
-                        <h2 className="text-xl font-semibold mb-1">
-                          <span className="text-blue-700 hover:underline">
-                            {event.title}
+                      </div>
+                    </div>
+
+                    {/* Details Section - Full Width Below Image */}
+                    <div className="w-full">
+                      <h2 className="text-2xl font-bold mb-3 text-blue-700 hover:underline">
+                        {event.title}
+                      </h2>
+                      {event.caption && (
+                        <div className="text-lg text-gray-600 mb-4">{event.caption}</div>
+                      )}
+
+                      {/* Date and Time with Emoji Icons */}
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <span className="text-xl">📅</span>
+                          <span className="font-semibold">
+                            {formatDate(event.startDate, event.timezone)}
                           </span>
-                        </h2>
-                        <div className="text-gray-600 mb-1">{event.caption}</div>
-                        <div className="mb-1">
-                          <span className="font-semibold">Date:</span> {event.startDate} <span className="ml-4 font-semibold">Time:</span> {event.startTime} - {event.endTime}
                         </div>
-                        <div className="mb-1">
-                          <span className="font-semibold">Location:</span> {event.location}
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <span className="text-xl">🕐</span>
+                          <span className="font-semibold">
+                            {formatTime(event.startTime)} - {formatTime(event.endTime)} (EDT)
+                          </span>
                         </div>
-                        <div className="mb-1 text-sm text-gray-700">{event.description}</div>
-                        {(() => {
-                          const today = new Date();
-                          const eventDate = event.startDate ? new Date(event.startDate) : null;
-                          const isUpcoming = eventDate && eventDate >= today;
-                          if (!isUpcoming) return null;
-                          const start = toGoogleCalendarDate(event.startDate, event.startTime);
-                          const end = toGoogleCalendarDate(event.endDate, event.endTime);
-                          const text = encodeURIComponent(event.title);
-                          const details = encodeURIComponent(event.description || '');
-                          const location = encodeURIComponent(event.location || '');
-                          const calendarLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}&location=${location}`;
-                          return (
-                            <div className="flex flex-col items-center mt-3">
-                              <a href={calendarLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center group">
-                                <img src="/images/icons8-calendar.gif" alt="Calendar" className="w-7 h-7 rounded shadow mx-auto" />
-                                <span className="text-xs text-blue-700 font-semibold mt-1">Add to Calendar</span>
-                              </a>
-                            </div>
-                          );
-                        })()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        {event.location && (
+                          <div className="flex items-center gap-2 text-gray-700">
+                            <span className="text-xl">📍</span>
+                            <span className="font-semibold">{event.location}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-sm text-gray-700 leading-relaxed mb-4">{event.description}</div>
+
+                      {/* Calendar Link with Better Icon */}
+                      {(() => {
+                        const today = new Date();
+                        const eventDate = event.startDate ? new Date(event.startDate) : null;
+                        const isUpcoming = eventDate && eventDate >= today;
+                        if (!isUpcoming) return null;
+                        const start = toGoogleCalendarDate(event.startDate, event.startTime);
+                        const end = toGoogleCalendarDate(event.endDate, event.endTime);
+                        const text = encodeURIComponent(event.title);
+                        const details = encodeURIComponent(event.description || '');
+                        const location = encodeURIComponent(event.location || '');
+                        const calendarLink = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}&location=${location}`;
+                        return (
+                          <div className="flex justify-start mt-4">
+                            <a href={calendarLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 bg-blue-50 hover:bg-blue-100 text-blue-700 px-6 py-3 rounded-lg transition-colors">
+                              <span className="text-2xl">📅</span>
+                              <span className="text-base font-semibold">Add to Calendar</span>
+                            </a>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             {/* Pagination controls */}
             <div className="flex justify-between items-center mt-6">

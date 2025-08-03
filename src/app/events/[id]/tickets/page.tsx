@@ -283,63 +283,62 @@ export default function TicketingPage() {
       <style dangerouslySetInnerHTML={{
         __html: `
           .hero-image {
-            width: 100%;
-            height: auto; /* Let image dictate height */
-            object-fit: cover; /* Cover full width, may crop height */
+            width: 90%;
+            max-width: 1200px;
+            height: auto;
+            object-fit: contain;
             object-position: center;
             display: block;
-            margin: 0;
-            padding: 0; /* Remove padding to bleed to edges */
+            margin: 0 auto;
+            padding: 40px 20px;
+            border-radius: 12px;
           }
 
           .hero-section {
-            min-height: 10vh;
-            background-color: transparent !important; /* Remove coral background */
-            padding-top: 40px; /* Top padding to prevent header cut-off */
+            min-height: 15vh;
+            background-color: transparent !important;
+            padding: 60px 20px 40px 20px;
             margin-left: calc(-50vw + 50%) !important;
             margin-right: calc(-50vw + 50%) !important;
             width: 100vw !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           @media (max-width: 768px) {
             .hero-image {
-              height: auto; /* Let image dictate height on mobile */
-              padding: 25px 0 0 0; /* Increased top padding for mobile */
+              width: 95%;
+              max-width: 600px;
+              height: auto;
+              padding: 30px 15px;
+              border-radius: 8px;
             }
           }
 
           @media (max-width: 767px) {
             .hero-section {
-              padding-top: 50px !important; /* Extra mobile top padding */
+              padding: 105px 15px 30px 15px !important;
               margin-top: 0 !important;
-              min-height: 5vh !important;
-              background-color: transparent !important; /* Remove coral background on mobile */
+              min-height: 10vh !important;
+              background-color: transparent !important;
               margin-left: calc(-50vw + 50%) !important;
               margin-right: calc(-50vw + 50%) !important;
               width: 100vw !important;
-            }
-
-            .mobile-logo {
-              top: 120px !important;
             }
           }
         `
       }} />
 
 
-      {/* HERO SECTION - Full width bleeding to edges */}
-      <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '400px', overflow: 'hidden', width: '100%' }}>
+      {/* HERO SECTION - Centered with proper padding */}
+      <section className="hero-section" style={{ position: 'relative', marginTop: '0', backgroundColor: 'transparent', minHeight: '400px', overflow: 'hidden', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <img
           src={heroImageUrl || defaultHeroImageUrl}
           alt="Event Hero"
           className="hero-image"
-          style={{ margin: '0', padding: '0', display: 'block', width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ margin: '0 auto', padding: '40px 20px', display: 'block', width: '90%', maxWidth: '1200px', height: 'auto', objectFit: 'contain', borderRadius: '12px' }}
         />
-        {/* Responsive logo positioned as overlay on hero image */}
-        <div className="absolute top-1/2 left-4 z-50 mobile-logo" style={{ transform: 'translateY(-50%)' }}>
-          <img src="/images/mcefee_logo_black_border_transparent.png" alt="MCEFEE Logo" style={{ width: '140px', height: 'auto', maxWidth: '30vw' }} className="block md:hidden" />
-          <img src="/images/mcefee_logo_black_border_transparent.png" alt="MCEFEE Logo" style={{ width: '180px', height: 'auto', maxWidth: '15vw' }} className="hidden md:block" />
-        </div>
         <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
       </section>
       <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -351,25 +350,29 @@ export default function TicketingPage() {
           {event.caption && (
             <div className="text-lg text-teal-700 font-semibold mb-2">{event.caption}</div>
           )}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-gray-600 mb-4">
-            <div className="flex items-center gap-2">
-              <FaCalendarAlt />
-              <span>{formatInTimeZone(event.startDate, event.timezone || 'America/New_York', 'EEEE, MMMM d, yyyy')}</span>
+          <div className="space-y-3 mb-4">
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="text-xl">📅</span>
+              <span className="font-semibold">
+                {formatInTimeZone(event.startDate, event.timezone || 'America/New_York', 'EEEE, MMMM d, yyyy')}
+              </span>
             </div>
-            <div className="flex items-center gap-2">
-              <FaClock />
-              <span>{formatTime(event.startTime)}{event.endTime ? ` - ${formatTime(event.endTime)}` : ''} {'('}{formatInTimeZone(event.startDate, event.timezone || 'America/New_York', 'zzz')}{')'}</span>
+            <div className="flex items-center gap-2 text-gray-700">
+              <span className="text-xl">🕐</span>
+              <span className="font-semibold">
+                {formatTime(event.startTime)}{event.endTime ? ` - ${formatTime(event.endTime)}` : ''} ({formatInTimeZone(event.startDate, event.timezone || 'America/New_York', 'zzz')})
+              </span>
             </div>
             {event.location && (
-              <div className="flex items-center gap-2">
-                <FaMapPin />
-                <span>{event.location}</span>
+              <div className="flex items-center gap-2 text-gray-700">
+                <span className="text-xl">📍</span>
+                <span className="font-semibold">{event.location}</span>
               </div>
             )}
             {event.venueName && (
-              <div className="flex items-center gap-2">
-                <FaMapMarkerAlt />
-                <span>{event.venueName}</span>
+              <div className="flex items-center gap-2 text-gray-700">
+                <span className="text-xl">🏢</span>
+                <span className="font-semibold">{event.venueName}</span>
               </div>
             )}
           </div>

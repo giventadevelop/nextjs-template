@@ -82,13 +82,24 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
       {/* SPACER DIV - Creates space between header and hero */}
       <div style={{ height: '80px', width: '100%' }}></div>
 
-      {/* HERO SECTION - Full width bleeding to edges */}
-      <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '450px', overflow: 'hidden', width: '100%' }}>
+      {/* HERO SECTION - Centered with proper padding */}
+      <section className="hero-section" style={{ position: 'relative', marginTop: '0', backgroundColor: 'transparent', minHeight: '450px', overflow: 'hidden', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Image
           src={heroImageUrl || "/images/default_placeholder_hero_image.jpeg"}
           alt="Event Hero"
-          fill
-          className="hero-image object-cover"
+          width={1200}
+          height={400}
+          className="hero-image object-contain"
+          style={{
+            margin: '0 auto',
+            padding: '40px 20px',
+            display: 'block',
+            width: '90%',
+            maxWidth: '1200px',
+            height: 'auto',
+            objectFit: 'contain',
+            borderRadius: '12px'
+          }}
           onLoad={() => {
             console.log('Hero image loaded successfully');
             setIsLoaded(true);
@@ -105,42 +116,49 @@ export default function LoadingTicket({ sessionId }: LoadingTicketProps) {
       <style dangerouslySetInnerHTML={{
         __html: `
           .hero-image {
-            width: 100%;
-            height: auto; /* Let image dictate height */
-            object-fit: cover; /* Cover full width, may crop height */
+            width: 90%;
+            max-width: 1200px;
+            height: auto;
+            object-fit: contain;
             object-position: center;
             display: block;
-            margin: 0;
-            padding: 0; /* Remove padding to bleed to edges */
+            margin: 0 auto;
+            padding: 40px 20px;
+            border-radius: 12px;
           }
 
           .hero-section {
-            min-height: 10vh;
-            background-color: transparent !important; /* Remove coral background */
-            padding-top: 0; /* Remove padding since we have spacer div */
+            min-height: 15vh;
+            background-color: transparent !important;
+            padding: 60px 20px 40px 20px;
             margin-left: calc(-50vw + 50%) !important;
             margin-right: calc(-50vw + 50%) !important;
             width: 100vw !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
 
           @media (max-width: 768px) {
             .hero-image {
-              height: auto; /* Let image dictate height on mobile */
-              padding: 0; /* Remove padding to bleed to edges on mobile */
+              width: 95%;
+              max-width: 600px;
+              height: auto;
+              padding: 30px 15px;
+              border-radius: 8px;
             }
           }
 
           @media (max-width: 767px) {
             .hero-section {
-              padding-top: 0 !important; /* Remove padding since we have spacer div */
+              padding: 105px 15px 30px 15px !important;
               margin-top: 0 !important;
-              min-height: 5vh !important;
-              background-color: transparent !important; /* Remove coral background on mobile */
+              min-height: 10vh !important;
+              background-color: transparent !important;
               margin-left: calc(-50vw + 50%) !important;
               margin-right: calc(-50vw + 50%) !important;
               width: 100vw !important;
             }
-
           }
         `
       }} />

@@ -267,10 +267,17 @@ export function EventList({
                   <span className={`px-2 py-1 rounded text-xs font-bold ${isActive ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800'}`}>{isActive ? 'Yes' : 'No'}</span>
                 </td>
                 <td className="p-2 border text-center align-middle">
-                  <button className="flex flex-col items-center text-blue-600 hover:text-blue-800 focus:outline-none" onClick={() => onEdit(event)}>
+                  <a
+                    href={`/admin/events/${event.id}/edit`}
+                    className="flex flex-col items-center text-blue-600 hover:text-blue-800 focus:outline-none inline-block w-full h-full"
+                    onClick={(e) => {
+                      // Allow default behavior (navigation) but also call onEdit for backward compatibility
+                      onEdit(event);
+                    }}
+                  >
                     <FaEdit className="w-7 h-7" />
                     <span className="text-[10px] text-gray-600 mt-1 block font-bold">Edit/View,<br />Event Details</span>
-                  </button>
+                  </a>
                 </td>
                 <td className="p-2 border text-center align-middle">
                   <button className="flex flex-col items-center text-red-600 hover:text-red-800 focus:outline-none" onClick={() => onCancel(event)}>

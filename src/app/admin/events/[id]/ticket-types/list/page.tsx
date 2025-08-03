@@ -7,9 +7,7 @@ import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt, FaPercent } 
 import { fetchEventDetailsForTicketListPage, fetchTicketTypesForTicketListPage } from './ApiServerActions';
 
 interface Props {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }> | { id: string };
 }
 
 export default async function TicketTypeListPage({ params }: Props) {
@@ -18,7 +16,8 @@ export default async function TicketTypeListPage({ params }: Props) {
     redirect('/sign-in');
   }
 
-  const eventId = parseInt(params.id);
+  const resolvedParams = typeof params.then === 'function' ? await params : params;
+  const eventId = parseInt(resolvedParams.id);
   if (isNaN(eventId)) {
     redirect('/admin/events');
   }

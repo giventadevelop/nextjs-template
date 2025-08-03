@@ -9,6 +9,18 @@ import Link from 'next/link';
 import { useRouter, useParams } from "next/navigation";
 import { Modal } from "@/components/Modal";
 import { getTenantId } from '@/lib/env';
+import { formatInTimeZone } from 'date-fns-tz';
+
+// Helper function for timezone-aware date formatting
+function formatDateInTimezone(dateString: string, timezone: string = 'America/New_York'): string {
+  if (!dateString) return 'N/A';
+  try {
+    return formatInTimeZone(dateString, timezone, 'EEEE, MMMM d, yyyy');
+  } catch {
+    // Fallback to simple date formatting if timezone parsing fails
+    return new Date(dateString).toLocaleDateString();
+  }
+}
 
 // Tooltip component (reuse from MediaClientPage)
 function MediaDetailsTooltip({ media, anchorRect, onClose, onTooltipMouseEnter, onTooltipMouseLeave, tooltipType }: { media: EventMediaDTO | null, anchorRect: DOMRect | null, onClose: () => void, onTooltipMouseEnter: () => void, onTooltipMouseLeave: () => void, tooltipType: 'officialDocs' | 'uploadedMedia' | null }) {
@@ -77,7 +89,7 @@ function MediaDetailsTooltip({ media, anchorRect, onClose, onTooltipMouseEnter, 
               <td style={{ textAlign: 'left', width: 'auto' }}>{
                 typeof value === 'boolean' ? (value ? 'Yes' : 'No') :
                   value instanceof Date ? value.toLocaleString() :
-                    (key.toLowerCase().includes('date') || key.toLowerCase().includes('at')) && value ? new Date(value).toLocaleString() :
+                    (key.toLowerCase().includes('date') || key.toLowerCase().includes('at')) && value ? formatDateInTimezone(value, 'America/New_York') :
                       value === null || value === undefined || value === '' ? <span className="text-gray-400 italic">(empty)</span> : String(value)
               }</td>
             </tr>
@@ -97,8 +109,8 @@ function EventDetailsTable({ event }: { event: EventDetailsDTO | null }) {
   const details = [
     { label: 'Event ID', value: event.id },
     { label: 'Title', value: event.title },
-    { label: 'Start Date', value: event.startDate ? new Date(event.startDate).toLocaleDateString() : 'N/A' },
-    { label: 'End Date', value: event.endDate ? new Date(event.endDate).toLocaleDateString() : 'N/A' },
+    { label: 'Start Date', value: formatDateInTimezone(event.startDate, event.timezone) },
+    { label: 'End Date', value: formatDateInTimezone(event.endDate, event.timezone) },
     { label: 'Start Time', value: event.startTime || 'N/A' },
     { label: 'End Time', value: event.endTime || 'N/A' },
     { label: 'Description', value: event.description },
@@ -348,7 +360,7 @@ export default function EventMediaListPage() {
         if (!eventId) return;
         setLoading(true);
         try {
-          const details = await fetchEventDetailsServer(eventId);
+          const details = await fetchEventDetailsServer(parseInt(eventId, 10));
           setEventDetails(details);
 
           const mediaResponse = await fetchMediaFilteredServer(eventId, page, pageSize, searchTerm, eventFlyerOnly);
@@ -457,7 +469,7 @@ export default function EventMediaListPage() {
   const endItem = Math.min((page + 1) * pageSize, totalCount);
 
   return (
-    <div className="w-[80%] mx-auto py-8">
+    <div className="w-[80%] mx-auto py-8" style={{ paddingTop: '118px' }}>
       <div className="mb-8">
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 justify-items-center mx-auto max-w-6xl">

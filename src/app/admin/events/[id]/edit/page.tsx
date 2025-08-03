@@ -79,7 +79,7 @@ export default function EditEventPage() {
           </div>
         </div>
       </div>
-      <h1 className="text-2xl font-bold mb-4">Edit Event</h1>
+      <h1 className="text-2xl font-bold mb-4">Edit Event - ID: {eventId}</h1>
       {error && <div className="bg-red-50 text-red-500 p-3 rounded mb-4">{error}</div>}
       <div className="border rounded p-4 bg-white shadow-sm min-h-[200px]">
         <EventForm event={event} eventTypes={eventTypes} onSubmit={handleSubmit} loading={loading} />
