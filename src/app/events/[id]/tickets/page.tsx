@@ -450,19 +450,21 @@ export default function TicketingPage() {
               {/* Discount Code Section */}
               {availableDiscounts.length > 0 && (
                 <div className="mb-6">
-                  <label htmlFor="discountCode" className="block text-sm font-medium text-gray-700 mb-1">Discount Code</label>
-                  <div className="flex items-center gap-2">
+                  <label htmlFor="discountCode" className="block text-sm font-medium text-gray-700 mb-2">
+                    Discount Code
+                  </label>
+                  <div className="space-y-3">
                     <input
                       type="text"
                       id="discountCode"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value)}
-                      placeholder="Enter code"
-                      className="mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+                      placeholder="Enter discount code"
+                      className="w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
                     />
                     <button
                       onClick={handleApplyDiscount}
-                      className="bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 font-semibold flex items-center gap-2"
+                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 font-semibold flex items-center justify-center gap-2"
                     >
                       <FaTags />
                       Apply
