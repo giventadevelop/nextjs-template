@@ -1,5 +1,5 @@
 "use server";
-import { getTenantId } from "@/lib/env";
+import { getTenantId, getAppUrl } from "@/lib/env";
 import { fetchWithJwtRetry } from "@/lib/proxyHandler";
 import { withTenantId } from "@/lib/withTenantId";
 import { DiscountCodeDTO } from "@/types";

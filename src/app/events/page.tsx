@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { EventWithMedia, EventDetailsDTO } from "@/types";
 import { formatInTimeZone } from 'date-fns-tz';
+import LocationDisplay from '@/components/LocationDisplay';
 // import { formatInTimeZone } from 'date-fns-tz';
 
 const EVENTS_PAGE_SIZE = 10;
@@ -503,8 +504,7 @@ export default function EventsPage() {
                         </div>
                         {event.location && (
                           <div className="flex items-center gap-2 text-gray-700">
-                            <span className="text-xl">📍</span>
-                            <span className="font-semibold">{event.location}</span>
+                            <LocationDisplay location={event.location} />
                           </div>
                         )}
                       </div>

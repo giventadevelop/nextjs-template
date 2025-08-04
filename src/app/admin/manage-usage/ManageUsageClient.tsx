@@ -538,7 +538,7 @@ export default function ManageUsageClient({ adminProfile }: { adminProfile: User
             {bulkLoading ? 'Uploading...' : 'Bulk Upload User List'}
           </button>
           <input type="file" ref={fileInputRef} onChange={handleBulkUpload} className="hidden" accept=".xlsx" />
-          <a href={`/api/proxy/user-profiles/download?tenantId.equals=${getTenantId()}`} download="users_template.xlsx" className="h-10 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+          <a href="https://eventapp-media-bucket.s3.us-east-2.amazonaws.com/media/users_profile_list_bulk_upload_template/users_profile_list_bulk_upload_template.xlsx" download="users_profile_list_bulk_upload_template.xlsx" className="h-10 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
             <FaDownload />
             Download Bulk Upload Template File
           </a>

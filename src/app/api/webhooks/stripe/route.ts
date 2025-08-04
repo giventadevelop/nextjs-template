@@ -128,14 +128,16 @@ async function handleChargeFeeUpdate(charge: Stripe.Charge) {
         typeof transaction.platformFeeAmount === 'number' &&
         typeof feeAmount === 'number'
       ) {
-        finalAmount = Number((transaction.totalAmount - (transaction.platformFeeAmount + feeAmount)).toFixed(2));
+        // Don't recalculate finalAmount - it should be the actual amount from Stripe
+        // The backend should preserve the original finalAmount from the transaction
+        console.log(`[STRIPE-WEBHOOK] Preserving original finalAmount for transaction ${transaction.id}`);
       } else {
         console.warn(`[STRIPE-WEBHOOK] Missing fields for finalAmount calculation on transaction ${transaction.id}`);
       }
       const patchPayload = {
         id: transaction.id,
         stripeFeeAmount: feeAmount,
-        ...(finalAmount !== undefined ? { finalAmount } : {}),
+        // Don't override finalAmount - preserve the original amount from Stripe
       };
       const patchRes = await fetch(`${API_BASE_URL}/api/event-ticket-transactions/${transaction.id}`, {
         method: 'PATCH',
@@ -150,7 +152,7 @@ async function handleChargeFeeUpdate(charge: Stripe.Charge) {
         console.error(`[STRIPE-WEBHOOK] Failed to PATCH transaction ${transaction.id}:`, errorText);
         allPatched = false;
       } else {
-        console.log(`[STRIPE-WEBHOOK] Successfully updated stripeFeeAmount${finalAmount !== undefined ? ' and finalAmount' : ''} for transaction ${transaction.id}`);
+        console.log(`[STRIPE-WEBHOOK] Successfully updated stripeFeeAmount for transaction ${transaction.id}`);
       }
     }
     if (allPatched) {
@@ -246,65 +248,77 @@ export async function POST(req: NextRequest) {
         // NEW: Handle cart-based event ticket checkout
         if (session.mode === 'payment' && session.metadata?.cart) {
           const { userId, cart: cartJson, discountCodeId } = session.metadata;
-          if (!userId) {
-            console.error('[STRIPE-WEBHOOK] No userId in metadata for cart checkout');
-            break;
-          }
 
-          try {
-            const userProfile = await fetchUserProfileServer(userId);
-            if (!userProfile) {
-              console.error(`[STRIPE-WEBHOOK] User profile not found for userId: ${userId}`);
-              break;
-            }
+          // Handle both authenticated and guest checkouts
+          if (userId) {
+            // Authenticated user checkout
+            try {
+              const userProfile = await fetchUserProfileServer(userId);
+              if (!userProfile) {
+                console.error(`[STRIPE-WEBHOOK] User profile not found for userId: ${userId}`);
+                break;
+              }
 
-            const cart = JSON.parse(cartJson);
-            const now = new Date().toISOString();
-            const firstTicket = cart.length > 0 ? cart[0].ticketType : null;
-            const eventId = firstTicket?.eventId;
+              const cart = JSON.parse(cartJson);
+              const now = new Date().toISOString();
+              const firstTicket = cart.length > 0 ? cart[0].ticketType : null;
+              const eventId = firstTicket?.eventId;
 
-            if (!eventId) {
-              console.error('[STRIPE-WEBHOOK] Could not determine eventId from cart.');
-              break;
-            }
+              if (!eventId) {
+                console.error('[STRIPE-WEBHOOK] Could not determine eventId from cart.');
+                break;
+              }
 
-            const transaction: Omit<EventTicketTransactionDTO, 'id'> = {
-              email: userProfile.email || '',
-              firstName: userProfile.firstName || '',
-              lastName: userProfile.lastName || '',
-              quantity: cart.reduce((sum: number, item: any) => sum + item.quantity, 0),
-              pricePerUnit: 0, // Not ideal, but backend may not need it if total is present
-              totalAmount: session.amount_total ? session.amount_total / 100 : 0,
-              finalAmount: session.amount_total ? session.amount_total / 100 : 0,
-              status: 'COMPLETED',
-              purchaseDate: now,
-              discountAmount: session.total_details?.amount_discount ? session.total_details.amount_discount / 100 : 0,
-              discountCodeId: discountCodeId ? parseInt(discountCodeId) : undefined,
-              createdAt: now,
-              updatedAt: now,
-              eventId: eventId,
-              // ticketType is ambiguous with multiple items, can be omitted if backend allows
-              user: userProfile,
-            };
+              const transaction: Omit<EventTicketTransactionDTO, 'id'> = {
+                email: userProfile.email || '',
+                firstName: userProfile.firstName || '',
+                lastName: userProfile.lastName || '',
+                quantity: cart.reduce((sum: number, item: any) => sum + item.quantity, 0),
+                pricePerUnit: 0, // Will be calculated by backend
+                totalAmount: session.amount_subtotal ? session.amount_subtotal / 100 : 0, // Original amount before discount
+                finalAmount: session.amount_total ? session.amount_total / 100 : 0, // Final amount after discount - BACKEND MUST PRESERVE THIS
+                status: 'COMPLETED',
+                purchaseDate: now,
+                discountAmount: session.total_details?.amount_discount ? session.total_details.amount_discount / 100 : 0,
+                discountCodeId: discountCodeId ? parseInt(discountCodeId) : undefined,
+                createdAt: now,
+                updatedAt: now,
+                eventId: eventId,
+                // ticketType is ambiguous with multiple items, can be omitted if backend allows
+                user: userProfile,
+              };
 
-            const createdTransaction = await createEventTicketTransactionServer(transaction);
-            console.log('[STRIPE-WEBHOOK] Successfully created transaction:', createdTransaction.id);
+              console.log('[STRIPE-WEBHOOK] Creating transaction with finalAmount:', transaction.finalAmount);
+              console.log('[STRIPE-WEBHOOK] NOTE: Backend may recalculate finalAmount. If this happens, the backend needs to be updated to preserve the Stripe finalAmount.');
+              const createdTransaction = await createEventTicketTransactionServer(transaction);
+              console.log('[STRIPE-WEBHOOK] Successfully created transaction:', createdTransaction.id);
+              console.log('[STRIPE-WEBHOOK] Transaction finalAmount after creation:', createdTransaction.finalAmount);
 
-            // Step 2: Update inventory for each ticket type in the cart
-            for (const item of cart) {
-              if (item.ticketType && item.ticketType.id) {
-                try {
-                  await updateTicketTypeInventoryServer(item.ticketType.id, item.quantity);
-                  console.log(`[STRIPE-WEBHOOK] Updated inventory for ticket type ${item.ticketType.id} by ${item.quantity}`);
-                } catch (invError) {
-                  console.error(`[STRIPE-WEBHOOK] Failed to update inventory for ticket type ${item.ticketType.id}:`, invError);
-                  // Continue to next item even if one fails
+              // If the backend overrode our finalAmount, log a warning
+              if (createdTransaction.finalAmount !== transaction.finalAmount) {
+                console.warn('[STRIPE-WEBHOOK] WARNING: Backend overrode finalAmount from', transaction.finalAmount, 'to', createdTransaction.finalAmount);
+                console.warn('[STRIPE-WEBHOOK] This indicates the backend is recalculating finalAmount instead of preserving the Stripe amount.');
+              }
+
+              // Step 2: Update inventory for each ticket type in the cart
+              for (const item of cart) {
+                if (item.ticketType && item.ticketType.id) {
+                  try {
+                    await updateTicketTypeInventoryServer(item.ticketType.id, item.quantity);
+                    console.log(`[STRIPE-WEBHOOK] Updated inventory for ticket type ${item.ticketType.id} by ${item.quantity}`);
+                  } catch (invError) {
+                    console.error(`[STRIPE-WEBHOOK] Failed to update inventory for ticket type ${item.ticketType.id}:`, invError);
+                    // Continue to next item even if one fails
+                  }
                 }
               }
-            }
 
-          } catch (error) {
-            console.error('[STRIPE-WEBHOOK] Error processing cart-based checkout:', error);
+            } catch (error) {
+              console.error('[STRIPE-WEBHOOK] Error processing authenticated cart-based checkout:', error);
+            }
+          } else {
+            // Guest checkout - let the success page handle it
+            console.log('[STRIPE-WEBHOOK] Guest checkout detected, transaction will be created by success page');
           }
 
           break; // Exit after handling

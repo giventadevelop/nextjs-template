@@ -49,7 +49,14 @@ export default function Page() {
             }
             /* Mobile feature box spacing - increased significantly */
             .feature-boxes-container {
-              margin-top: 180px !important;
+              margin-top: 110px !important;
+            }
+            /* Mobile feature box spacing */
+            .feature-box-left {
+              margin-bottom: 20px !important;
+            }
+            .feature-box-right {
+              margin-bottom: 0 !important;
             }
             /* Ensure mobile hero has solid black background */
             .flex.md\\:hidden {
@@ -87,11 +94,20 @@ export default function Page() {
               padding-top: 100px !important;
             }
             .feature-boxes-container {
-              margin-top: 120px !important;
+              margin-top: 55px !important;
             }
             /* Ensure desktop doesn't show mobile elements */
             .flex.md\\:hidden {
               display: none !important;
+            }
+            /* Desktop feature box height */
+            .feature-box-left {
+              height: 1200px !important;
+              margin-bottom: 0 !important;
+            }
+            .feature-box-right {
+              height: 1200px !important;
+              margin-bottom: 0 !important;
             }
           }
         `
@@ -320,24 +336,47 @@ export default function Page() {
       </section>
 
       {/* MOBILE SPACER DIV - Creates space between hero and feature boxes on mobile only */}
-      <div className="block md:hidden" style={{ height: '120px', width: '100%', backgroundColor: 'transparent' }}></div>
+      <div className="block md:hidden" style={{ height: '60px', width: '100%', backgroundColor: 'transparent' }}></div>
 
       {/* FEATURE BOXES SECTION - two columns on desktop, stacked on mobile */}
-      <div className="feature-boxes-container w-full" style={{ marginTop: '120px', margin: '0', padding: '0', maxWidth: '100vw', overflow: 'hidden' }}>
-        <div className="flex flex-col md:flex-row gap-4 md:gap-0" style={{ margin: '0', padding: '0', maxWidth: '100%' }}>
+      <div className="feature-boxes-container w-full" style={{ marginTop: '60px', margin: '0', padding: '0', maxWidth: '100vw', overflow: 'hidden' }}>
+        <div className="flex flex-col md:flex-row gap-8 md:gap-0" style={{ margin: '0', padding: '0', maxWidth: '100%' }}>
           {/* LEFT FEATURE BOX - three images stacked vertically */}
-          <div className="flex-1 rounded-xl p-1" style={{ justifyContent: 'flex-start', alignItems: 'stretch', maxWidth: '100%' }}>
-            <div style={{ gap: '0px', padding: '0px', justifyContent: 'flex-start', display: 'flex', flexDirection: 'column', maxWidth: '100%' }}>
+          <div className="flex-1 rounded-xl p-0 feature-box-left" style={{
+            justifyContent: 'flex-start',
+            alignItems: 'stretch',
+            maxWidth: '100%',
+            height: 'auto', // Auto height for mobile, fixed for desktop
+            display: 'flex',
+            flexDirection: 'column',
+            marginBottom: '20px' // Add bottom margin for mobile spacing
+          }}>
+            <div style={{
+              gap: '12px',
+              padding: '0px',
+              justifyContent: 'space-between',
+              display: 'flex',
+              flexDirection: 'column',
+              maxWidth: '100%',
+              height: '100%'
+            }}>
               {/* First image - Buy Tickets Click Here */}
-              <Link href="/events/1/tickets" style={{ height: 'auto', flex: 1, display: 'block', maxWidth: '100%' }}>
+              <Link href="/events/1/tickets" style={{
+                height: 'auto',
+                flex: '0 0 auto',
+                display: 'block',
+                maxWidth: '100%',
+                margin: '0',
+                padding: '0'
+              }}>
                 <img
                   src="/images/buy_tickets_click_here_red.webp"
                   alt="Buy Tickets"
                   style={{
                     width: '100%',
                     height: 'auto',
-                    minHeight: '120px',
-                    maxHeight: '180px',
+                    minHeight: '200px',
+                    maxHeight: '250px',
                     objectFit: 'contain',
                     objectPosition: 'center',
                     margin: 0,
@@ -351,13 +390,20 @@ export default function Page() {
               </Link>
 
               {/* Second image - Buy Tickets Sep 15 Parsippany */}
-              <Link href="/events/1/tickets" style={{ height: 'auto', flex: 1, display: 'block', maxWidth: '100%' }}>
+              <Link href="/events/1/tickets" style={{
+                height: 'auto',
+                flex: '0 0 auto',
+                display: 'block',
+                maxWidth: '100%',
+                margin: '0',
+                padding: '0'
+              }}>
                 <img
                   src="/images/spark_kerala_event_2025/event_1/khnj_onam_2025_1920px.jpg"
                   alt="Buy Tickets Sep 2 Houston"
                   style={{
                     width: '100%',
-                    height: '100%',
+                    height: 'auto',
                     objectFit: 'contain',
                     objectPosition: 'center',
                     margin: 0,
@@ -370,13 +416,20 @@ export default function Page() {
               </Link>
 
               {/* Third image - Buy Tickets Sep 21 Knanaya */}
-              <Link href="/events/2/tickets" style={{ height: 'auto', flex: 1, display: 'block', marginTop: '10px', maxWidth: '100%' }}>
+              <Link href="/events/2/tickets" style={{
+                height: 'auto',
+                flex: '0 0 auto',
+                display: 'block',
+                maxWidth: '100%',
+                margin: '0',
+                padding: '0'
+              }}>
                 <img
                   src="/images/spark_kerala_event_2025.jpeg"
                   alt="Buy Tickets spark_kerala_event_2025"
                   style={{
                     width: '100%',
-                    height: '100%',
+                    height: 'auto',
                     objectFit: 'contain',
                     objectPosition: 'center',
                     margin: 0,
@@ -389,13 +442,20 @@ export default function Page() {
               </Link>
 
               {/* Fourth image - Buy Tickets Sep 21 Knanaya 450 */}
-              <Link href="/events/3/tickets" style={{ height: 'auto', flex: 1, display: 'block', marginTop: '10px', maxWidth: '100%' }}>
+              <Link href="/events/3/tickets" style={{
+                height: 'auto',
+                flex: '0 0 auto',
+                display: 'block',
+                maxWidth: '100%',
+                margin: '0',
+                padding: '0'
+              }}>
                 <img
-                  src="/images/spark_kerala_event_2025/event_3/buy_tickets_sep_21_knanaya_450.png"
+                  src="/images/spark_kerala_event_2025/event_3/buy_tickets_sep_21_ikcc_ny_450.jpeg"
                   alt="Buy Tickets Sep 21 Knanaya 450"
                   style={{
                     width: '100%',
-                    height: '100%',
+                    height: 'auto',
                     objectFit: 'contain',
                     objectPosition: 'center',
                     margin: 0,
@@ -410,14 +470,21 @@ export default function Page() {
           </div>
 
           {/* RIGHT FEATURE BOX - single large image */}
-          <div className="flex-1 rounded-xl p-1" style={{ marginTop: '-60px', alignItems: 'flex-start', maxWidth: '100%' }}>
+          <div className="flex-1 rounded-xl p-0 feature-box-right" style={{
+            marginTop: '0',
+            alignItems: 'stretch',
+            maxWidth: '100%',
+            height: 'auto', // Auto height for mobile, fixed for desktop
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
             <img
               src="/images/spark_kerala_event_2025_1_2.jpeg"
               alt="Spark Kerala Event 2025"
               style={{
                 width: '100%',
                 height: '100%',
-                objectFit: 'contain',
+                objectFit: 'cover',
                 objectPosition: 'center',
                 margin: 0,
                 padding: '0px',

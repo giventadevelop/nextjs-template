@@ -37,7 +37,7 @@ async function fetchTickets(eventId: string, searchParams: SearchParams) {
   const pageSize = parseInt(searchParams.pageSize || PAGE_SIZE.toString(), 10);
   const query: Record<string, any> = {
     'eventId.equals': eventId,
-    _sort: 'purchaseDate,desc',
+    _sort: 'createdAt,desc', // Use createdAt for proper sorting
     page,
     size: pageSize,
   };
@@ -45,12 +45,27 @@ async function fetchTickets(eventId: string, searchParams: SearchParams) {
   if (searchParams.transactionId) query['id.equals'] = searchParams.transactionId;
   if (searchParams.name) query['firstName.contains'] = searchParams.name;
   const qs = buildQueryString(query);
+  console.log('Fetching tickets with query:', qs);
   const res = await fetch(`${baseUrl}/api/proxy/event-ticket-transactions?${qs}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch tickets');
   const rows = await res.json();
+  // Debug: Log purchase dates to verify sorting
+  console.log('Purchase dates from response:', rows.map((row: any) => ({
+    id: row.id,
+    purchaseDate: row.purchaseDate,
+    createdAt: row.createdAt
+  })));
+
+  // Fallback: Sort by purchaseDate descending if backend sorting doesn't work
+  const sortedRows = Array.isArray(rows) ? rows.sort((a: any, b: any) => {
+    const dateA = new Date(a.purchaseDate || a.createdAt || 0);
+    const dateB = new Date(b.purchaseDate || b.createdAt || 0);
+    return dateB.getTime() - dateA.getTime(); // Descending order
+  }) : [];
+
   // Read total count from x-total-count header
   const totalCount = parseInt(res.headers.get('x-total-count') || '0', 10);
-  return { rows, totalCount };
+  return { rows: sortedRows, totalCount };
 }
 
 async function fetchStatistics(eventId: string): Promise<EventTicketTransactionStatisticsDTO | null> {
@@ -197,7 +212,6 @@ export default async function TicketListPage({ params, searchParams }: { params:
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Email</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Quantity</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Total</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Purchase Date</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-300">Status</th>
             </tr>
           </thead>

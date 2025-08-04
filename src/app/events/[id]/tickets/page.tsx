@@ -3,9 +3,10 @@
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { FaTags, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaMapPin } from 'react-icons/fa';
+import { FaTags, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaMapPin, FaTicketAlt, FaUser, FaEnvelope, FaMoneyBillWave, FaReceipt } from 'react-icons/fa';
 import { Modal } from '@/components/Modal';
 import { formatInTimeZone } from 'date-fns-tz';
+import LocationDisplay from '@/components/LocationDisplay';
 
 export default function TicketingPage() {
   const params = useParams();
@@ -278,69 +279,93 @@ export default function TicketingPage() {
 
   // --- HERO SECTION (prompt-compliant) ---
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
+    <div className="min-h-screen bg-gray-100 flex flex-col" style={{ overflowX: 'hidden' }}>
+      {/* HERO SECTION - Full width bleeding to header */}
+      <section className="hero-section" style={{
+        position: 'relative',
+        marginTop: '0',
+        backgroundColor: 'transparent',
+        minHeight: '400px',
+        overflow: 'hidden',
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '80px 0 0 0'
+      }}>
+        <img
+          src={heroImageUrl || defaultHeroImageUrl}
+          alt="Event Hero"
+          className="hero-image"
+          style={{
+            margin: '0 auto',
+            padding: '0',
+            display: 'block',
+            width: '100%',
+            maxWidth: '100%',
+            height: 'auto',
+            objectFit: 'cover',
+            borderRadius: '0'
+          }}
+        />
+        <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
+      </section>
+
       {/* Responsive Hero Image CSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
           .hero-image {
-            width: 90%;
-            max-width: 1200px;
+            width: 100%;
+            max-width: 100%;
             height: auto;
-            object-fit: contain;
+            object-fit: cover;
             object-position: center;
             display: block;
             margin: 0 auto;
-            padding: 40px 20px;
-            border-radius: 12px;
+            padding: 0;
+            border-radius: 0;
           }
 
           .hero-section {
             min-height: 15vh;
             background-color: transparent !important;
-            padding: 60px 20px 40px 20px;
-            margin-left: calc(-50vw + 50%) !important;
-            margin-right: calc(-50vw + 50%) !important;
-            width: 100vw !important;
+            padding: 80px 0 0 0 !important;
+            width: 100% !important;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
           }
 
           @media (max-width: 768px) {
             .hero-image {
-              width: 95%;
-              max-width: 600px;
+              width: 100%;
+              max-width: 100%;
               height: auto;
-              padding: 30px 15px;
-              border-radius: 8px;
+              padding: 0;
+              border-radius: 0;
+            }
+
+            .hero-section {
+              padding: 95px 0 15px 0 !important;
+              min-height: 12vh !important;
             }
           }
 
-          @media (max-width: 767px) {
+          @media (max-width: 480px) {
+            .hero-image {
+              width: 100%;
+              padding: 0;
+              border-radius: 0;
+            }
+
             .hero-section {
-              padding: 105px 15px 30px 15px !important;
-              margin-top: 0 !important;
+              padding: 90px 0 10px 0 !important;
               min-height: 10vh !important;
-              background-color: transparent !important;
-              margin-left: calc(-50vw + 50%) !important;
-              margin-right: calc(-50vw + 50%) !important;
-              width: 100vw !important;
             }
           }
         `
       }} />
-
-
-      {/* HERO SECTION - Centered with proper padding */}
-      <section className="hero-section" style={{ position: 'relative', marginTop: '0', backgroundColor: 'transparent', minHeight: '400px', overflow: 'hidden', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <img
-          src={heroImageUrl || defaultHeroImageUrl}
-          alt="Event Hero"
-          className="hero-image"
-          style={{ margin: '0 auto', padding: '40px 20px', display: 'block', width: '90%', maxWidth: '1200px', height: 'auto', objectFit: 'contain', borderRadius: '12px' }}
-        />
-        <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
-      </section>
       <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Event Details Card */}
         <div className="bg-teal-50 rounded-xl shadow-lg p-6 md:p-8 mb-8">
@@ -365,8 +390,7 @@ export default function TicketingPage() {
             </div>
             {event.location && (
               <div className="flex items-center gap-2 text-gray-700">
-                <span className="text-xl">📍</span>
-                <span className="font-semibold">{event.location}</span>
+                <LocationDisplay location={event.location} />
               </div>
             )}
             {event.venueName && (

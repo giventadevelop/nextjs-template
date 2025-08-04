@@ -26,7 +26,8 @@ export default function VideoSection() {
   return (
     <div className="w-full py-4" style={{
       marginTop: '20px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      minHeight: '300px' // Reduced by 100px from previous 400px
     }}>
       <div className="max-w-2xl mx-auto px-4 md:px-6">
         <div className="text-center mb-4">
@@ -76,25 +77,6 @@ export default function VideoSection() {
 
             {/* Video iframe container (hidden initially) */}
             <div id="video-container" className="w-full h-full"></div>
-          </div>
-
-          {/* Additional Info - Much Smaller */}
-          <div className="mt-4 text-center">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg shadow-md px-3 py-2">
-              <div className="flex items-center gap-1">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-                </svg>
-                <span className="text-xs font-medium text-white">Watch Video</span>
-              </div>
-              <div className="w-px h-2 bg-white/30"></div>
-              <div className="flex items-center gap-1">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                </svg>
-                <span className="text-xs font-medium text-white">Call us today!</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

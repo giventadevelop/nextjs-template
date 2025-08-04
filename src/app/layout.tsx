@@ -5,8 +5,19 @@ import TrpcProvider from "@/lib/trpc/Provider";
 import Script from "next/script";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import type { Metadata } from 'next';
 
 const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: 'MCEFEE - Event Management Platform',
+  description: 'Professional event management and ticketing platform',
+  icons: {
+    icon: '/images/adwiise_logo_fav_ico.ico',
+    shortcut: '/images/adwiise_logo_fav_ico.ico',
+    apple: '/images/adwiise_logo_fav_ico.ico',
+  },
+};
 
 export default function RootLayout({
   children,
@@ -21,6 +32,8 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css?family=Epilogue:300,400,500,600,700|Sora:400,500,600,700&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+        <link rel="icon" type="image/x-icon" href="/images/adwiise_logo_fav_ico.ico" />
+        <link rel="shortcut icon" type="image/x-icon" href="/images/adwiise_logo_fav_ico.ico" />
       </head>
       <body className={inter.className + " flex flex-col min-h-screen"} suppressHydrationWarning>
         <ClerkProvider

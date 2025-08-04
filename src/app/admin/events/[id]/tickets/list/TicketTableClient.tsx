@@ -2,9 +2,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import type { EventTicketTransactionDTO } from '@/types';
-import { FaEnvelope, FaMoneyBillWave, FaCheckCircle, FaTimes, FaChevronDown, FaPaperPlane } from 'react-icons/fa';
+import { FaEnvelope, FaMoneyBillWave, FaCheckCircle, FaTimes, FaChevronDown, FaPaperPlane, FaTicketAlt } from 'react-icons/fa';
 import { refundTicketTransactionServer } from './ApiServerActions';
 import { Modal } from '@/components/Modal';
+import TicketDetailsModal from './TicketDetailsModal';
 
 function TicketDetailsTooltip({ ticket, anchorRect, onClose }: { ticket: EventTicketTransactionDTO, anchorRect: DOMRect | null, onClose: () => void }) {
   if (!anchorRect) return null;
@@ -179,6 +180,10 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
   const [refundShowSuccess, setRefundShowSuccess] = useState(false);
   const [refundLocalError, setRefundLocalError] = useState<string | null>(null);
 
+  // Ticket details modal state
+  const [ticketDetailsModalOpen, setTicketDetailsModalOpen] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<EventTicketTransactionDTO | null>(null);
+
   const handleMouseEnter = (ticket: EventTicketTransactionDTO, e: React.MouseEvent) => {
     setPopoverTicket(ticket);
     setPopoverAnchor((e.currentTarget as HTMLElement).getBoundingClientRect());
@@ -186,7 +191,7 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
   const handleClose = () => setPopoverTicket(null);
 
   async function handleSendEmail(ticket: EventTicketTransactionDTO) {
-    setSendingEmailId(ticket.id);
+    setSendingEmailId(ticket.id || null);
     setEmailSentId(null);
     setEmailErrorId(null);
     try {
@@ -202,12 +207,12 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
           },
         });
       if (res.ok) {
-        setEmailSentId(typeof ticket.id === 'number' ? ticket.id : -1);
+        setEmailSentId(ticket.id || null);
       } else {
-        setEmailErrorId(typeof ticket.id === 'number' ? ticket.id : -1);
+        setEmailErrorId(ticket.id || null);
       }
     } catch (err) {
-      setEmailErrorId(typeof ticket.id === 'number' ? ticket.id : -1);
+      setEmailErrorId(ticket.id || null);
     } finally {
       setSendingEmailId(null);
     }
@@ -255,6 +260,16 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
     }
   };
 
+  const handleTicketDetails = (ticket: EventTicketTransactionDTO) => {
+    setSelectedTicket(ticket);
+    setTicketDetailsModalOpen(true);
+  };
+
+  const handleTicketDetailsClose = () => {
+    setTicketDetailsModalOpen(false);
+    setSelectedTicket(null);
+  };
+
   return (
     <>
       {rows.length === 0 ? (
@@ -297,6 +312,12 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
                     <FaMoneyBillWave className="text-base" /> Refund
                   </button>
                 )}
+                <button
+                  className="bg-teal-100 border border-teal-500 text-teal-600 hover:bg-teal-50 px-3 py-1.5 rounded-lg flex items-center gap-2 font-semibold w-full mt-2 transition-all shadow-sm"
+                  onClick={() => handleTicketDetails(ticket)}
+                >
+                  <FaTicketAlt className="text-base" /> Ticket
+                </button>
               </div>
             </td>
             <td className="px-4 py-2 border-r border-gray-200">{ticket.quantity}</td>
@@ -325,6 +346,11 @@ export default function TicketTableClient({ rows }: { rows: EventTicketTransacti
         onSelectReason={handleRefundSelectReason}
         localError={refundLocalError}
         showSuccess={refundShowSuccess}
+      />
+      <TicketDetailsModal
+        open={ticketDetailsModalOpen}
+        onClose={handleTicketDetailsClose}
+        transaction={selectedTicket}
       />
     </>
   );

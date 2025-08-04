@@ -4,9 +4,10 @@ import LoadingTicket from "./LoadingTicket";
 import Image from "next/image";
 import {
   FaCheckCircle, FaTicketAlt, FaCalendarAlt, FaUser, FaEnvelope,
-  FaMoneyBillWave, FaInfoCircle, FaReceipt, FaMapPin, FaClock
+  FaMoneyBillWave, FaInfoCircle, FaReceipt, FaMapPin, FaClock, FaTags
 } from "react-icons/fa";
 import { formatInTimeZone } from "date-fns-tz";
+import LocationDisplay from '@/components/LocationDisplay';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SuccessClientProps {
@@ -187,24 +188,29 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
 
       {/* SPACER DIV - Creates space between header and hero */}
       <div style={{ height: '80px', width: '100%' }}></div>
 
       {/* HERO SECTION - Full width bleeding to edges */}
-      <section className="hero-section" style={{ position: 'relative', marginTop: '0', paddingTop: '0', padding: '0', margin: '0', backgroundColor: 'transparent', height: '400px', overflow: 'hidden', width: '100%' }}>
+      <section className="hero-section" style={{
+        position: 'relative',
+        marginTop: '0',
+        paddingTop: '0',
+        padding: '0',
+        margin: '0',
+        backgroundColor: 'transparent',
+        height: '400px',
+        overflow: 'hidden',
+        width: '100%'
+      }}>
         <Image
           src={fetchedHeroImageUrl || "/images/default_placeholder_hero_image.jpeg"}
           alt="Event Hero"
           fill
           className="hero-image object-cover"
         />
-        {/* Responsive logo positioned as overlay on hero image */}
-        <div className="absolute top-1/2 left-4 z-50 mobile-logo" style={{ transform: 'translateY(-50%)' }}>
-          <img src="/images/mcefee_logo_black_border_transparent.png" alt="MCEFEE Logo" style={{ width: '140px', height: 'auto', maxWidth: '30vw' }} className="block md:hidden" />
-          <img src="/images/mcefee_logo_black_border_transparent.png" alt="MCEFEE Logo" style={{ width: '180px', height: 'auto', maxWidth: '15vw' }} className="hidden md:block" />
-        </div>
         <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
       </section>
 
@@ -225,9 +231,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             min-height: 10vh;
             background-color: transparent !important; /* Remove coral background */
             padding-top: 0; /* Remove padding since we have spacer div */
-            margin-left: calc(-50vw + 50%) !important;
-            margin-right: calc(-50vw + 50%) !important;
-            width: 100vw !important;
+            width: 100% !important;
+            overflow: hidden;
           }
 
           @media (max-width: 768px) {
@@ -243,13 +248,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               margin-top: 0 !important;
               min-height: 5vh !important;
               background-color: transparent !important; /* Remove coral background on mobile */
-              margin-left: calc(-50vw + 50%) !important;
-              margin-right: calc(-50vw + 50%) !important;
-              width: 100vw !important;
-            }
-
-            .mobile-logo {
-              top: 120px !important;
+              width: 100% !important;
             }
           }
         `
@@ -310,8 +309,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             </div>
             {eventDetails.location && (
               <div className="flex items-center gap-2">
-                <FaMapPin />
-                <span>{eventDetails.location}</span>
+                <LocationDisplay location={eventDetails.location} />
               </div>
             )}
           </div>
@@ -374,8 +372,33 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             </div>
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaMoneyBillWave /> Amount Paid</label>
-              <p className="text-lg text-gray-800 font-medium">${(transaction.totalAmount ?? 0).toFixed(2)}</p>
+              <p className="text-lg text-gray-800 font-medium">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</p>
             </div>
+            {transaction.discountAmount && transaction.discountAmount > 0 && (
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaTags /> Discount Applied</label>
+                <p className="text-lg text-green-600 font-medium">-${transaction.discountAmount.toFixed(2)}</p>
+              </div>
+            )}
+            {transaction.discountAmount && transaction.discountAmount > 0 && (
+              <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Price Breakdown</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Original Amount:</span>
+                    <span className="text-gray-800">${(transaction.totalAmount ?? 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Discount:</span>
+                    <span className="text-green-600">-${transaction.discountAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-1">
+                    <span className="text-gray-800 font-semibold">Final Amount:</span>
+                    <span className="text-gray-800 font-semibold">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
