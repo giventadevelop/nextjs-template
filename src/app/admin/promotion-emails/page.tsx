@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { PromotionEmailRequestDTO } from "@/types";
 import { sendPromotionEmailServer } from "./serverActions";
 import DOMPurify from "dompurify";
+import Link from 'next/link';
+import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt, FaPercent, FaHome } from 'react-icons/fa';
 
 function cleanHtmlInput(input: string) {
   let clean = DOMPurify.sanitize(input, {
@@ -50,7 +52,25 @@ export default function PromotionEmailPage() {
     }
   };
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+    <div className="max-w-6xl mx-auto px-4 pt-32 pb-8">
+      {/* Responsive Button Group */}
+      <div className="w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-1 sm:gap-2 mb-8 justify-items-stretch max-w-[280px] sm:max-w-2xl sm:mx-auto">
+          <Link href="/admin" className="flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-lg shadow-sm hover:shadow-md p-1.5 sm:p-3 text-xs transition-all duration-200 min-h-[60px] sm:min-h-[80px]">
+            <FaHome className="text-xs sm:text-base mb-0.5 sm:mb-1" />
+            <span className="font-medium text-center leading-tight text-[8px] sm:text-xs">Admin Home</span>
+          </Link>
+          <Link href="/admin/manage-usage" className="flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg shadow-sm hover:shadow-md p-1.5 sm:p-3 text-xs transition-all duration-200 min-h-[60px] sm:min-h-[80px]">
+            <FaUsers className="text-xs sm:text-base mb-0.5 sm:mb-1" />
+            <span className="font-medium text-center leading-tight text-[8px] sm:text-xs">Manage Usage<br />[Users]</span>
+          </Link>
+          <Link href="/admin" className="flex flex-col items-center justify-center bg-green-50 hover:bg-green-100 text-green-800 rounded-lg shadow-sm hover:shadow-md p-1.5 sm:p-3 text-xs transition-all duration-200 min-h-[60px] sm:min-h-[80px]">
+            <FaCalendarAlt className="text-xs sm:text-base mb-0.5 sm:mb-1" />
+            <span className="font-medium text-center leading-tight text-[8px] sm:text-xs">Manage Events</span>
+          </Link>
+        </div>
+      </div>
+
       <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
         <h1 className="text-xl sm:text-2xl font-bold mb-4">Send Promotion Email</h1>
         <form onSubmit={e => handleSubmit(e, false)} className="space-y-4 sm:space-y-6">

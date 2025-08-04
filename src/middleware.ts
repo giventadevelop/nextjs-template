@@ -40,7 +40,8 @@ export default authMiddleware({
   ignoredRoutes: [
     "/api/webhooks/(.*)",
     "/api/proxy/(.*)",
-    "/api/stripe/(.*)",
+    "/api/stripe/event-checkout",
+    "/api/stripe/get-session",
     "/api/payment/(.*)",
     "/api/checkout/(.*)",
     "/api/billing/(.*)"

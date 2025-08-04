@@ -10,6 +10,39 @@ import LocationDisplay from '@/components/LocationDisplay';
 
 const EVENTS_PAGE_SIZE = 10;
 
+// Component for handling long descriptions with expand/collapse
+function DescriptionDisplay({ description }: { description: string }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const maxLength = 200; // characters
+  
+  if (description.length <= maxLength) {
+    return (
+      <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+        {description}
+      </div>
+    );
+  }
+  
+  const truncatedText = description.substring(0, maxLength).trim();
+  
+  return (
+    <div className="text-sm text-gray-700 leading-relaxed">
+      <div className="whitespace-pre-wrap">
+        {isExpanded ? description : `${truncatedText}...`}
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsExpanded(!isExpanded);
+        }}
+        className="mt-2 text-blue-600 hover:text-blue-800 font-medium text-sm underline"
+      >
+        {isExpanded ? 'Show less' : 'Read more'}
+      </button>
+    </div>
+  );
+}
+
 export default function EventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<EventWithMedia[]>([]);
@@ -450,8 +483,7 @@ export default function EventsPage() {
               {events.map((event) => (
                 <div
                   key={event.id}
-                  className="bg-white rounded-lg shadow-lg border-4 border-blue-200 hover:border-blue-400 transition-all duration-300 cursor-pointer overflow-hidden"
-                  onClick={() => router.push(`/events/${event.id}`)}
+                  className="bg-white rounded-lg shadow-lg border-4 border-blue-200 transition-all duration-300 overflow-hidden"
                 >
                   <div className="p-6">
                     {/* Image Section - Full Width on Top */}
@@ -481,7 +513,7 @@ export default function EventsPage() {
 
                     {/* Details Section - Full Width Below Image */}
                     <div className="w-full">
-                      <h2 className="text-2xl font-bold mb-3 text-blue-700 hover:underline">
+                      <h2 className="text-2xl font-bold mb-3 text-blue-700">
                         {event.title}
                       </h2>
                       {event.caption && (
@@ -509,7 +541,12 @@ export default function EventsPage() {
                         )}
                       </div>
 
-                      <div className="text-sm text-gray-700 leading-relaxed mb-4">{event.description}</div>
+                      {/* Description with expand/collapse for long text */}
+                      {event.description && (
+                        <div className="mb-4">
+                          <DescriptionDisplay description={event.description} />
+                        </div>
+                      )}
 
                       {/* Calendar Link with Better Icon */}
                       {(() => {

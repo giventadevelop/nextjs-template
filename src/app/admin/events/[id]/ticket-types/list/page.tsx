@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import TicketTypeListClient from './TicketTypeListClient';
 import type { EventDetailsDTO, EventTicketTypeDTO } from '@/types';
 import Link from 'next/link';
-import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt, FaPercent } from 'react-icons/fa';
+import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt, FaPercent, FaHome } from 'react-icons/fa';
 import { fetchEventDetailsForTicketListPage, fetchTicketTypesForTicketListPage } from './ApiServerActions';
 
 interface Props {
@@ -42,6 +42,13 @@ export default async function TicketTypeListPage({ params }: Props) {
       {/* Button Group */}
       <div className="w-full overflow-x-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6 justify-items-center mx-auto max-w-6xl">
+          <Link
+            href="/admin"
+            className="w-full max-w-xs flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-lg shadow-sm hover:shadow-md p-3 sm:p-4 text-xs sm:text-sm transition-all duration-200"
+          >
+            <FaHome className="text-lg sm:text-xl mb-2" />
+            <span className="font-semibold text-center leading-tight">Admin Home</span>
+          </Link>
           <Link
             href="/admin/manage-usage"
             className="w-full max-w-xs flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg shadow-sm hover:shadow-md p-3 sm:p-4 text-xs sm:text-sm transition-all duration-200"

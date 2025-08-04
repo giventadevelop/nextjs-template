@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { EventForm } from '@/components/EventForm';
 import type { EventDetailsDTO, EventTypeDetailsDTO } from '@/types';
 import Link from 'next/link';
-import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt } from 'react-icons/fa';
+import { FaUsers, FaPhotoVideo, FaCalendarAlt, FaTags, FaTicketAlt, FaHome } from 'react-icons/fa';
 
 export default function EditEventPage() {
   const router = useRouter();
@@ -51,6 +51,10 @@ export default function EditEventPage() {
       <div className="flex justify-center mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-3xl">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <Link href="/admin" className="flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg shadow-sm px-4 py-4 transition font-semibold text-sm">
+              <FaHome className="mb-2 text-2xl" />
+              <span>Admin Home</span>
+            </Link>
             <Link href="/admin/manage-usage" className="flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg shadow-sm px-4 py-4 transition font-semibold text-sm">
               <FaUsers className="mb-2 text-2xl" />
               <span>Manage Usage</span>

@@ -1,7 +1,7 @@
 "use client";
 import React, { useRef, useState, useEffect, useCallback, useTransition } from "react";
 import { EventMediaDTO, EventDetailsDTO } from "@/types";
-import { FaEdit, FaTrashAlt, FaUsers, FaPhotoVideo, FaCalendarAlt, FaSave, FaTimes, FaChevronLeft, FaChevronRight, FaTicketAlt, FaUpload, FaBan, FaTags } from 'react-icons/fa';
+import { FaEdit, FaTrashAlt, FaUsers, FaPhotoVideo, FaCalendarAlt, FaSave, FaTimes, FaChevronLeft, FaChevronRight, FaTicketAlt, FaUpload, FaBan, FaTags, FaHome } from 'react-icons/fa';
 import { deleteMediaServer, editMediaServer, fetchMediaFilteredServer } from '../ApiServerActions';
 import { fetchEventDetailsServer } from '@/app/admin/ApiServerActions';
 import { createPortal } from "react-dom";
@@ -473,6 +473,10 @@ export default function EventMediaListPage() {
       <div className="mb-8">
         <div className="bg-white rounded-lg shadow-md p-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 justify-items-center mx-auto max-w-6xl">
+            <Link href="/admin" className="w-full max-w-xs flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 text-gray-800 rounded-lg shadow-sm hover:shadow-md p-3 sm:p-4 text-xs sm:text-sm transition-all duration-200">
+              <FaHome className="text-lg sm:text-xl mb-2" />
+              <span className="font-semibold text-center leading-tight">Admin Home</span>
+            </Link>
             <Link href="/admin/manage-usage" className="w-full max-w-xs flex flex-col items-center justify-center bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-lg shadow-sm hover:shadow-md p-3 sm:p-4 text-xs sm:text-sm transition-all duration-200">
               <FaUsers className="text-lg sm:text-xl mb-2" />
               <span className="font-semibold text-center leading-tight">Manage Users [Usage]</span>
