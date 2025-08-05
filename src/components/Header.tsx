@@ -15,6 +15,23 @@ const menuItems = [
   { href: "/#contact", label: "Contact" },
 ];
 
+// Function to handle smooth scrolling with offset for fixed header
+const handleSmoothScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  if (href.startsWith('/#')) {
+    e.preventDefault();
+    const targetId = href.substring(2);
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      const headerHeight = 80; // Approximate header height
+      const targetPosition = targetElement.offsetTop - headerHeight - 20; // Extra 20px for breathing room
+      window.scrollTo({
+        top: targetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
+};
+
 const ORG_NAME = "Adwiise";
 
 type HeaderProps = {
@@ -101,6 +118,7 @@ export function Header({ hideMenuItems = false }: HeaderProps) {
                 className={`text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-sm font-bold ${pathname === item.href ? "text-yellow-100" : ""
                   }`}
                 style={{ fontSize: 15, transition: 'color 0.3s ease' }}
+                onClick={(e) => handleSmoothScroll(e, item.href)}
               >
                 {item.label}
               </Link>
@@ -152,7 +170,10 @@ export function Header({ hideMenuItems = false }: HeaderProps) {
               href={item.href}
               className={`block text-yellow-300 hover:text-yellow-100 px-3 py-2 rounded-md text-base font-bold ${pathname === item.href ? "text-yellow-100 bg-gray-800" : ""
                 }`}
-              onClick={() => setIsMenuOpen(false)}
+              onClick={(e) => {
+                setIsMenuOpen(false);
+                handleSmoothScroll(e, item.href);
+              }}
             >
               {item.label}
             </Link>
