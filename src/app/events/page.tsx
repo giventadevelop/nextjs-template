@@ -14,7 +14,7 @@ const EVENTS_PAGE_SIZE = 10;
 function DescriptionDisplay({ description }: { description: string }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const maxLength = 200; // characters
-  
+
   if (description.length <= maxLength) {
     return (
       <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
@@ -22,9 +22,9 @@ function DescriptionDisplay({ description }: { description: string }) {
       </div>
     );
   }
-  
+
   const truncatedText = description.substring(0, maxLength).trim();
-  
+
   return (
     <div className="text-sm text-gray-700 leading-relaxed">
       <div className="whitespace-pre-wrap">
@@ -511,11 +511,79 @@ export default function EventsPage() {
                       </div>
                     </div>
 
-                    {/* Details Section - Full Width Below Image */}
+                    {/* Details Section - Two Column Layout */}
                     <div className="w-full">
-                      <h2 className="text-2xl font-bold mb-3 text-blue-700">
-                        {event.title}
-                      </h2>
+                      {/* Mobile Layout - Stacked */}
+                      <div className="block sm:hidden">
+                        <h2 className="text-2xl font-bold text-blue-700 mb-3">
+                          {event.title}
+                        </h2>
+                        {/* Buy Tickets Link for Mobile */}
+                        {(() => {
+                          const today = new Date();
+                          const eventDate = event.startDate ? new Date(event.startDate) : null;
+                          const isUpcoming = eventDate && eventDate >= today;
+
+                          if (!isUpcoming) return null;
+
+                          return (
+                            <div className="mb-4 flex justify-center">
+                              <Link
+                                href={`/events/${event.id}/tickets`}
+                                className="transition-transform hover:scale-105"
+                              >
+                                <img
+                                  src="/images/buy_tickets_click_here_red.webp"
+                                  alt="Buy Tickets"
+                                  className="object-contain"
+                                  style={{
+                                    width: '200px',
+                                    height: '70px'
+                                  }}
+                                />
+                              </Link>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Desktop Layout - Two Columns */}
+                      <div className="hidden sm:grid sm:grid-cols-2 sm:gap-8 sm:items-start">
+                        {/* Left Column - Event Details */}
+                        <div>
+                          <h2 className="text-2xl font-bold text-blue-700 mb-3">
+                            {event.title}
+                          </h2>
+                        </div>
+
+                        {/* Right Column - Buy Tickets Button */}
+                        <div className="flex justify-center">
+                          {(() => {
+                            const today = new Date();
+                            const eventDate = event.startDate ? new Date(event.startDate) : null;
+                            const isUpcoming = eventDate && eventDate >= today;
+
+                            if (!isUpcoming) return null;
+
+                            return (
+                              <Link
+                                href={`/events/${event.id}/tickets`}
+                                className="transition-transform hover:scale-105"
+                              >
+                                <img
+                                  src="/images/buy_tickets_click_here_red.webp"
+                                  alt="Buy Tickets"
+                                  className="object-contain"
+                                  style={{
+                                    width: '200px',
+                                    height: '70px'
+                                  }}
+                                />
+                              </Link>
+                            );
+                          })()}
+                        </div>
+                      </div>
                       {event.caption && (
                         <div className="text-lg text-gray-600 mb-4">{event.caption}</div>
                       )}

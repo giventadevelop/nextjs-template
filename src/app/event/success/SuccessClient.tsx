@@ -190,65 +190,88 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
 
-      {/* SPACER DIV - Creates space between header and hero */}
-      <div style={{ height: '80px', width: '100%' }}></div>
-
-      {/* HERO SECTION - Full width bleeding to edges */}
+      {/* HERO SECTION - Full width bleeding to header */}
       <section className="hero-section" style={{
         position: 'relative',
         marginTop: '0',
-        paddingTop: '0',
-        padding: '0',
-        margin: '0',
         backgroundColor: 'transparent',
-        height: '400px',
+        minHeight: '400px',
         overflow: 'hidden',
-        width: '100%'
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '80px 0 0 0'
       }}>
-        <Image
+        <img
           src={fetchedHeroImageUrl || "/images/default_placeholder_hero_image.jpeg"}
           alt="Event Hero"
-          fill
-          className="hero-image object-cover"
+          className="hero-image"
+          style={{
+            margin: '0 auto',
+            padding: '0',
+            display: 'block',
+            width: '100%',
+            maxWidth: '100%',
+            height: 'auto',
+            objectFit: 'cover',
+            borderRadius: '0'
+          }}
         />
         <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
       </section>
 
-      {/* CSS Styles for hero section */}
+      {/* Responsive Hero Image CSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
           .hero-image {
             width: 100%;
-            height: auto; /* Let image dictate height */
-            object-fit: cover; /* Cover full width, may crop height */
+            max-width: 100%;
+            height: auto;
+            object-fit: cover;
             object-position: center;
             display: block;
-            margin: 0;
-            padding: 0; /* Remove padding to bleed to edges */
+            margin: 0 auto;
+            padding: 0;
+            border-radius: 0;
           }
 
           .hero-section {
-            min-height: 10vh;
-            background-color: transparent !important; /* Remove coral background */
-            padding-top: 0; /* Remove padding since we have spacer div */
+            min-height: 15vh;
+            background-color: transparent !important;
+            padding: 80px 0 0 0 !important;
             width: 100% !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
           }
 
           @media (max-width: 768px) {
             .hero-image {
-              height: auto; /* Let image dictate height on mobile */
-              padding: 0; /* Remove padding to bleed to edges on mobile */
+              width: 100%;
+              max-width: 100%;
+              height: auto;
+              padding: 0;
+              border-radius: 0;
+            }
+
+            .hero-section {
+              padding: 80px 0 0 0 !important;
+              min-height: 12vh !important;
             }
           }
 
-          @media (max-width: 767px) {
+          @media (max-width: 480px) {
+            .hero-image {
+              width: 100%;
+              padding: 0;
+              border-radius: 0;
+            }
+
             .hero-section {
-              padding-top: 0 !important; /* Remove padding since we have spacer div */
-              margin-top: 0 !important;
-              min-height: 5vh !important;
-              background-color: transparent !important; /* Remove coral background on mobile */
-              width: 100% !important;
+              padding: 80px 0 0 0 !important;
+              min-height: 10vh !important;
             }
           }
         `
