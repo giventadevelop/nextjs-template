@@ -200,6 +200,13 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* Anchor scroll offset for fixed header on home sections */
+#about-us,
+#team-section,
+#contact {
+  scroll-margin-top: 100px;
+}
+
 /* Responsive tweaks */
 @media (max-width: 768px) {
   .hero-title {
