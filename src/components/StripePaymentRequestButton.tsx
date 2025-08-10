@@ -27,6 +27,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   const [ready, setReady] = useState(false);
   const [eligible, setEligible] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (!stripe || !enabled) return;
@@ -48,7 +49,15 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         return;
       }
       pr.on('paymentmethod', async (ev) => {
+        if (processing) {
+          try { ev.complete('success'); } catch {}
+          return;
+        }
+        setProcessing(true);
         try {
+          // For Apple Pay on Safari: immediately complete the sheet to avoid staying open
+          try { ev.complete('success'); } catch {}
+
           // Create PI once with idempotency; no pre-creation elsewhere
           const res = await fetch('/api/stripe/payment-intent', {
             method: 'POST',
@@ -56,8 +65,8 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             body: JSON.stringify({ cart, eventId, email, discountCodeId }),
           });
           if (!res.ok) {
-            ev.complete('fail');
             alert('Unable to start payment. Please try again.');
+            setProcessing(false);
             return;
           }
           const data = await res.json();
@@ -67,14 +76,15 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             receipt_email: ev.payerEmail || email,
           });
           if (error) {
-            ev.complete('fail');
+            alert(error.message || 'Payment failed. Please try another method.');
+            setProcessing(false);
           } else {
-            ev.complete('success');
             const piId = paymentIntent?.id;
             window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
           }
-        } catch {
-          ev.complete('fail');
+        } catch (e: any) {
+          alert(e?.message || 'Payment failed. Please try again.');
+          setProcessing(false);
         }
       });
       setPaymentRequest(pr);
