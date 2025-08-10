@@ -106,8 +106,11 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       setLoading(true);
       setError(null);
       try {
-        // 1. Try to GET the transaction by session_id (idempotency)
-        const getRes = await fetch(`/api/event/success/process?session_id=${session_id}`);
+        const url = new URL(window.location.href);
+        const pi = url.searchParams.get('pi');
+        // 1. Try to GET the transaction by session_id or pi (idempotency)
+        const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
+        const getRes = await fetch(`/api/event/success/process?${qs}`);
         if (getRes.ok) {
           const data = await getRes.json();
           if (data.transaction) {
@@ -119,17 +122,19 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             return;
           }
         }
-        // 2. If not found, POST to create it
-        const postRes = await fetch("/api/event/success/process", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id }),
-        });
-        if (!postRes.ok) throw new Error(await postRes.text());
-        const postData = await postRes.json();
-        if (!cancelled) {
-          setResult(postData);
-          // Hero image is handled by HydrationSafeHeroImage component
+        // 2. If not found and session_id exists, POST to create it (Checkout session only)
+        if (session_id) {
+          const postRes = await fetch("/api/event/success/process", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id }),
+          });
+          if (!postRes.ok) throw new Error(await postRes.text());
+          const postData = await postRes.json();
+          if (!cancelled) {
+            setResult(postData);
+            // Hero image is handled by HydrationSafeHeroImage component
+          }
         }
       } catch (err: any) {
         if (!cancelled) setError(err?.message || "Unknown error");
