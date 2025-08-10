@@ -218,6 +218,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventHeroImageUrl');
     localStorage.removeItem('eventId');
   }
+  if (!transaction && !readyToShowNotFound) {
+    return <LoadingTicket sessionId={session_id} />;
+  }
   if (!transaction && readyToShowNotFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
@@ -244,7 +247,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       </div>
     );
   }
-  const displayName = transaction.firstName || '';
+  const displayName = transaction?.firstName || '';
   let qrError: string | null = null;
   // If qrCodeData is an error object, handle it
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
