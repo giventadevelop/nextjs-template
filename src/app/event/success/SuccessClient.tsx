@@ -112,9 +112,16 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         const pi = url.searchParams.get('pi');
         // 1. Try to GET the transaction by session_id or pi (idempotency)
         const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
+        console.log('[QR Debug] Fetching success data with URL:', `/api/event/success/process?${qs}`);
         const getRes = await fetch(`/api/event/success/process?${qs}`);
+        console.log('[QR Debug] Initial fetch response:', { status: getRes.status, ok: getRes.ok });
         if (getRes.ok) {
           const data = await getRes.json();
+          console.log('[QR Debug] Success data received:', { 
+            hasTransaction: !!data.transaction, 
+            hasQrCode: !!data.qrCodeData,
+            qrCodeData: data.qrCodeData 
+          });
           if (data.transaction) {
             if (!cancelled) {
               setResult(data);
@@ -185,6 +192,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         const res = await fetch(`/api/event/success/process?${qs}`);
         if (res.ok) {
           const data = await res.json();
+          console.log('[QR Debug] QR poll response:', { hasQrCode: !!data?.qrCodeData, qrData: data?.qrCodeData });
           if (data?.qrCodeData) {
             if (!cancelled) setResult((prev: any) => ({ ...(prev || {}), ...data }));
             break;
