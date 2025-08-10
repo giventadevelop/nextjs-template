@@ -31,69 +31,63 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   useEffect(() => {
     if (!stripe || !enabled) return;
 
-    (async () => {
-      try {
-        // Create PR only when enabled to avoid manifest warnings/errors before validation
-        const pr = stripe.paymentRequest({
-          country: 'US',
-          currency: 'usd',
-          total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 },
-          requestPayerEmail: true,
-        });
+    // Create PR only once per enable window
+    const pr = stripe.paymentRequest({
+      country: 'US',
+      currency: 'usd',
+      total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 },
+      requestPayerEmail: true,
+    });
 
-        const result = await pr.canMakePayment();
-        console.log('[PRB] canMakePayment()', result);
-        if (!result) {
-          setPaymentRequest(null);
-          setReady(false);
-          setEligible(false);
-          return;
-        }
-
-        pr.on('paymentmethod', async (ev) => {
-          try {
-            let secret = clientSecret;
-            if (!secret) {
-              const res = await fetch('/api/stripe/payment-intent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-              });
-              if (!res.ok) {
-                ev.complete('fail');
-                alert('Unable to start payment. Please try again.');
-                return;
-              }
-              const data = await res.json();
-              secret = data.clientSecret;
-              setClientSecret(secret || null);
-            }
-            const { error, paymentIntent } = await stripe.confirmCardPayment(secret as string, {
-              payment_method: ev.paymentMethod.id,
-              receipt_email: ev.payerEmail || email,
-            });
-            if (error) {
-              ev.complete('fail');
-            } else {
-              ev.complete('success');
-              const piId = paymentIntent?.id;
-              window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
-            }
-          } catch {
-            ev.complete('fail');
-          }
-        });
-
-        setPaymentRequest(pr);
-        setReady(true);
-        setEligible(true);
-      } catch (e) {
+    pr.canMakePayment().then((result) => {
+      console.log('[PRB] canMakePayment()', result);
+      if (!result) {
         setPaymentRequest(null);
         setReady(false);
         setEligible(false);
+        return;
       }
-    })();
-  }, [stripe, enabled, amountCents, cart, eventId, email, discountCodeId, clientSecret]);
+      pr.on('paymentmethod', async (ev) => {
+        try {
+          // Create PI once with idempotency; no pre-creation elsewhere
+          const res = await fetch('/api/stripe/payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+          });
+          if (!res.ok) {
+            ev.complete('fail');
+            alert('Unable to start payment. Please try again.');
+            return;
+          }
+          const data = await res.json();
+          const secret = data.clientSecret as string;
+          const { error, paymentIntent } = await stripe.confirmCardPayment(secret, {
+            payment_method: ev.paymentMethod.id,
+            receipt_email: ev.payerEmail || email,
+          });
+          if (error) {
+            ev.complete('fail');
+          } else {
+            ev.complete('success');
+            const piId = paymentIntent?.id;
+            window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
+          }
+        } catch {
+          ev.complete('fail');
+        }
+      });
+      setPaymentRequest(pr);
+      setReady(true);
+      setEligible(true);
+    }).catch(() => {
+      setPaymentRequest(null);
+      setReady(false);
+      setEligible(false);
+    });
+
+    // No cleanup needed; PR button will be recreated when enabled changes
+  }, [stripe, enabled]);
 
   // Update total and pre-create client secret when eligible
   useEffect(() => {

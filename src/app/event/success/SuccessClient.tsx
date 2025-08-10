@@ -29,6 +29,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [readyToShowNotFound, setReadyToShowNotFound] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -105,6 +106,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     async function fetchData() {
       setLoading(true);
       setError(null);
+      setReadyToShowNotFound(false);
       try {
         const url = new URL(window.location.href);
         const pi = url.searchParams.get('pi');
@@ -139,6 +141,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               }
             }
           }
+          // Exhausted polling without a transaction
+          setReadyToShowNotFound(true);
         }
         // 2b. If not found and session_id exists, POST to create it (Checkout session only)
         if (session_id) {
@@ -154,6 +158,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             // Hero image is handled by HydrationSafeHeroImage component
           }
         }
+        // If we reach here without a transaction, mark ready to show not found
+        setReadyToShowNotFound(true);
       } catch (err: any) {
         if (!cancelled) setError(err?.message || "Unknown error");
       } finally {
@@ -187,7 +193,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventHeroImageUrl');
     localStorage.removeItem('eventId');
   }
-  if (!transaction) {
+  if (!transaction && readyToShowNotFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
         <FaInfoCircle className="text-4xl text-red-500 mb-4" />
