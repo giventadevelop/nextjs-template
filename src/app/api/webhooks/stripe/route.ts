@@ -114,8 +114,75 @@ async function handleChargeFeeUpdate(charge: Stripe.Charge) {
       }
     }
     if (!found) {
-      console.warn(`[STRIPE-WEBHOOK] No ticket transaction found for paymentIntentId: ${paymentIntentId} after ${maxRetries} retries.`);
-      return new NextResponse('No ticket transaction found after retries', { status: 200 });
+      console.warn(`[STRIPE-WEBHOOK] No ticket transaction found for paymentIntentId: ${paymentIntentId} after ${maxRetries} retries. Attempting create from PI metadata...`);
+      try {
+        const pi = await stripe.paymentIntents.retrieve(paymentIntentId as string);
+        const md = (pi.metadata || {}) as any;
+        const cartJson = md.cart;
+        const eventIdRaw = md.eventId;
+        const discountCodeId = md.discountCodeId ? Number(md.discountCodeId) : undefined;
+        const email = (pi.receipt_email as string) || '';
+        if (cartJson && eventIdRaw) {
+          const cart = JSON.parse(cartJson);
+          const now = new Date().toISOString();
+          const totalQuantity = Array.isArray(cart) ? cart.reduce((s: number, it: any) => s + (it.quantity || 0), 0) : 0;
+          const amountTotal = typeof pi.amount_received === 'number' ? pi.amount_received / 100 : (typeof pi.amount === 'number' ? pi.amount / 100 : 0);
+          const txPayload: Omit<EventTicketTransactionDTO, 'id'> = {
+            email,
+            firstName: '',
+            lastName: '',
+            phone: '',
+            quantity: totalQuantity,
+            pricePerUnit: 0,
+            totalAmount: amountTotal,
+            taxAmount: undefined,
+            platformFeeAmount: undefined,
+            discountCodeId,
+            discountAmount: undefined,
+            finalAmount: amountTotal,
+            status: 'COMPLETED',
+            paymentMethod: 'wallet',
+            paymentReference: paymentIntentId as string,
+            purchaseDate: now as any,
+            confirmationSentAt: undefined as any,
+            refundAmount: undefined as any,
+            refundDate: undefined as any,
+            refundReason: undefined as any,
+            stripeCheckoutSessionId: undefined as any,
+            stripePaymentIntentId: paymentIntentId as string,
+            stripeCustomerId: (pi.customer as string) || undefined,
+            stripePaymentStatus: pi.status,
+            stripeCustomerEmail: email,
+            stripePaymentCurrency: (pi.currency || 'usd') as any,
+            stripeAmountDiscount: undefined as any,
+            stripeAmountTax: undefined as any,
+            stripeFeeAmount: undefined as any,
+            eventId: Number(eventIdRaw) as any,
+            userId: undefined as any,
+            createdAt: now as any,
+            updatedAt: now as any,
+          };
+          const created = await createEventTicketTransactionServer(txPayload);
+          console.log('[STRIPE-WEBHOOK] Created missing PI transaction:', created?.id);
+          // Update inventory
+          if (Array.isArray(cart)) {
+            for (const item of cart) {
+              if (item.ticketType && item.ticketType.id) {
+                try { await updateTicketTypeInventoryServer(item.ticketType.id, item.quantity); } catch {}
+              }
+            }
+          }
+          // Continue with fee patch on the newly created transaction
+          txnData = [created];
+          found = true;
+        } else {
+          console.warn('[STRIPE-WEBHOOK] Cannot create PI-based transaction: missing cart or eventId metadata');
+          return new NextResponse('Missing metadata to create transaction', { status: 200 });
+        }
+      } catch (createErr) {
+        console.error('[STRIPE-WEBHOOK] Failed to create PI-based transaction after retries:', createErr);
+        return new NextResponse('Failed to create transaction', { status: 200 });
+      }
     }
     // PATCH all matching transactions
     let allPatched = true;
