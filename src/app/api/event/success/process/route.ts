@@ -108,10 +108,24 @@ export async function GET(req: NextRequest) {
     if (!session_id && !pi) {
       return NextResponse.json({ error: 'Missing session_id or pi' }, { status: 400 });
     }
-    // Only look up, do not create — for PaymentIntent path, the webhook should create the transaction; here we just read
-    const result = session_id ? await processStripeSessionServer(session_id) : null;
-    const transaction = result?.transaction;
-    const userProfile = result?.userProfile;
+    // Only look up, do not create — for PaymentIntent path, read from backend by paymentIntentId
+    let result = null as any;
+    if (session_id) {
+      result = await processStripeSessionServer(session_id);
+    }
+    let transaction = result?.transaction as any;
+    let userProfile = result?.userProfile as any;
+    if (!transaction && pi) {
+      // Find transaction by paymentIntentId via proxy
+      const params = new URLSearchParams({ 'stripePaymentIntentId.equals': pi });
+      const txRes = await fetch(`${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`, { cache: 'no-store' });
+      if (txRes.ok) {
+        const arr = await txRes.json();
+        if (Array.isArray(arr) && arr.length > 0) {
+          transaction = arr[0];
+        }
+      }
+    }
     if (!transaction) {
       return NextResponse.json({ transaction: null }, { status: 200 });
     }
