@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processStripeSessionServer, fetchTransactionQrCode } from '@/app/event/success/ApiServerActions';
 import { fetchEventDetailsByIdServer } from '@/app/admin/events/[id]/media/ApiServerActions';
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+import { getAppUrl } from '@/lib/env';
 
 async function fetchTransactionItemsByTransactionId(transactionId: number) {
-  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
+  const res = await fetch(`${getAppUrl()}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function fetchTicketTypeById(ticketTypeId: number) {
-  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
+  const res = await fetch(`${getAppUrl()}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
 }
@@ -20,7 +19,7 @@ async function getHeroImageUrl(eventId: number) {
   const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
   let imageUrl: string | null = null;
   try {
-    const flyerRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
+    const flyerRes = await fetch(`${getAppUrl()}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
     if (flyerRes.ok) {
       const flyerData = await flyerRes.json();
       if (Array.isArray(flyerData) && flyerData.length > 0 && flyerData[0].fileUrl) {
@@ -28,7 +27,7 @@ async function getHeroImageUrl(eventId: number) {
       }
     }
     if (!imageUrl) {
-      const featuredRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true`, { cache: 'no-store' });
+      const featuredRes = await fetch(`${getAppUrl()}/api/proxy/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true`, { cache: 'no-store' });
       if (featuredRes.ok) {
         const featuredData = await featuredRes.json();
         if (Array.isArray(featuredData) && featuredData.length > 0 && featuredData[0].fileUrl) {
@@ -118,7 +117,7 @@ export async function GET(req: NextRequest) {
     if (!transaction && pi) {
       // Find transaction by paymentIntentId via proxy
       const params = new URLSearchParams({ 'stripePaymentIntentId.equals': pi });
-      const txRes = await fetch(`${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`, { cache: 'no-store' });
+      const txRes = await fetch(`${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`, { cache: 'no-store' });
       if (txRes.ok) {
         const arr = await txRes.json();
         if (Array.isArray(arr) && arr.length > 0) {

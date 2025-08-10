@@ -12,10 +12,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { Suspense } from 'react';
 import LoadingTicketFallback from './LoadingTicketFallback';
 import SuccessClient from './SuccessClient';
-import { getTenantId } from '@/lib/env';
+import { getTenantId, getAppUrl } from '@/lib/env';
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // Function to check if transaction already exists on server side
 async function checkTransactionExistsServer(sessionId: string): Promise<{ exists: boolean; transaction?: any }> {
@@ -27,7 +25,7 @@ async function checkTransactionExistsServer(sessionId: string): Promise<{ exists
     });
 
     const response = await fetchWithJwtRetry(
-      `${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`,
+      `${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`,
       { cache: 'no-store' }
     );
 
@@ -55,7 +53,7 @@ async function checkTransactionExistsServer(sessionId: string): Promise<{ exists
 async function getHeroImageUrl(eventId: number): Promise<string> {
   const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
   let imageUrl: string | null = null;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   try {
     const flyerRes = await fetch(`${baseUrl}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
     if (flyerRes.ok) {
@@ -80,14 +78,14 @@ async function getHeroImageUrl(eventId: number): Promise<string> {
 }
 
 async function fetchTransactionItemsByTransactionId(transactionId: number) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   const res = await fetch(`${baseUrl}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function fetchTicketTypeById(ticketTypeId: number) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   const res = await fetch(`${baseUrl}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
