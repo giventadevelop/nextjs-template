@@ -126,9 +126,12 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     console.log(`Transaction already exists for session ${session_id}, redirecting to homepage`);
     console.log(`This could be due to: page refresh, back button, or duplicate access`);
     console.log(`Transaction ID: ${transaction?.id}, Status: ${transaction?.status}`);
-
-    // Redirect to homepage with a query parameter to indicate why
-    redirect('/?payment=already-processed');
+    // Keep user on success page after first load; only redirect on explicit refresh
+    // Detect a refresh via a special query flag
+    const refreshed = (resolvedParams as any)?.ref === '1';
+    if (refreshed) {
+      redirect('/?payment=already-processed');
+    }
   }
 
   return <SuccessClient session_id={session_id || ''} />;
