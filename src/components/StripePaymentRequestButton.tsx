@@ -28,6 +28,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   const [eligible, setEligible] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [canMakePaymentResult, setCanMakePaymentResult] = useState<any>(null);
 
   useEffect(() => {
     if (!stripe || !enabled) return;
@@ -48,42 +49,54 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         setEligible(false);
         return;
       }
+      setCanMakePaymentResult(result);
       pr.on('paymentmethod', async (ev) => {
         if (processing) {
-          try { ev.complete('fail'); } catch {}
+          try { ev.complete('fail'); } catch { }
           return;
         }
         setProcessing(true);
         try {
-          // Create PI once with idempotency; no pre-creation elsewhere
-          const res = await fetch('/api/stripe/payment-intent', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-          });
-          if (!res.ok) {
-            try { ev.complete('fail'); } catch {}
-            alert('Unable to start payment. Please try again.');
-            setProcessing(false);
-            return;
+          const isApplePay = !!(canMakePaymentResult && (canMakePaymentResult.applePay || (canMakePaymentResult as any).apple_pay));
+          // For Apple Pay on iOS/Safari: immediately complete to prevent sheet timeout
+          if (isApplePay) {
+            try { ev.complete('success'); } catch { }
           }
-          const data = await res.json();
-          const secret = data.clientSecret as string;
+
+          // Use prefetched clientSecret if available to reduce latency
+          let secret = clientSecret;
+          if (!secret) {
+            const res = await fetch('/api/stripe/payment-intent', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+            });
+            if (!res.ok) {
+              if (!isApplePay) { try { ev.complete('fail'); } catch { } }
+              alert('Unable to start payment. Please try again.');
+              setProcessing(false);
+              return;
+            }
+            const data = await res.json();
+            secret = data.clientSecret as string;
+            if (secret) setClientSecret(secret);
+          }
           const { error, paymentIntent } = await stripe.confirmCardPayment(secret, {
             payment_method: ev.paymentMethod.id,
             receipt_email: ev.payerEmail || email,
           });
           if (error) {
-            try { ev.complete('fail'); } catch {}
+            if (!isApplePay) { try { ev.complete('fail'); } catch { } }
             alert(error.message || 'Payment failed. Please try another method.');
             setProcessing(false);
           } else {
-            try { ev.complete('success'); } catch {}
+            if (!isApplePay) { try { ev.complete('success'); } catch { } }
             const piId = paymentIntent?.id;
             window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
           }
         } catch (e: any) {
-          try { ev.complete('fail'); } catch {}
+          const isApplePay = !!(canMakePaymentResult && (canMakePaymentResult.applePay || (canMakePaymentResult as any).apple_pay));
+          if (!isApplePay) { try { ev.complete('fail'); } catch { } }
           alert(e?.message || 'Payment failed. Please try again.');
           setProcessing(false);
         }
