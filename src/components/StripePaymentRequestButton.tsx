@@ -50,14 +50,11 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
       }
       pr.on('paymentmethod', async (ev) => {
         if (processing) {
-          try { ev.complete('success'); } catch {}
+          try { ev.complete('fail'); } catch {}
           return;
         }
         setProcessing(true);
         try {
-          // For Apple Pay on Safari: immediately complete the sheet to avoid staying open
-          try { ev.complete('success'); } catch {}
-
           // Create PI once with idempotency; no pre-creation elsewhere
           const res = await fetch('/api/stripe/payment-intent', {
             method: 'POST',
@@ -65,6 +62,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             body: JSON.stringify({ cart, eventId, email, discountCodeId }),
           });
           if (!res.ok) {
+            try { ev.complete('fail'); } catch {}
             alert('Unable to start payment. Please try again.');
             setProcessing(false);
             return;
@@ -76,13 +74,16 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             receipt_email: ev.payerEmail || email,
           });
           if (error) {
+            try { ev.complete('fail'); } catch {}
             alert(error.message || 'Payment failed. Please try another method.');
             setProcessing(false);
           } else {
+            try { ev.complete('success'); } catch {}
             const piId = paymentIntent?.id;
             window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
           }
         } catch (e: any) {
+          try { ev.complete('fail'); } catch {}
           alert(e?.message || 'Payment failed. Please try again.');
           setProcessing(false);
         }
