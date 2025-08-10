@@ -122,7 +122,23 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             return;
           }
         }
-        // 2. If not found and session_id exists, POST to create it (Checkout session only)
+        // 2a. If PI path: poll a few times to allow webhook to create
+        if (pi && !session_id) {
+          for (let i = 0; i < 8; i++) {
+            if (cancelled) break;
+            await new Promise(res => setTimeout(res, 1000));
+            const pollRes = await fetch(`/api/event/success/process?pi=${encodeURIComponent(pi)}`);
+            if (pollRes.ok) {
+              const data = await pollRes.json();
+              if (data.transaction) {
+                if (!cancelled) setResult(data);
+                setLoading(false);
+                return;
+              }
+            }
+          }
+        }
+        // 2b. If not found and session_id exists, POST to create it (Checkout session only)
         if (session_id) {
           const postRes = await fetch("/api/event/success/process", {
             method: "POST",

@@ -539,13 +539,14 @@ export default function TicketingPage() {
                 >
                   <FaCreditCard />
                 </button>
+                <span className="text-sm text-gray-600">Pay with credit card</span>
                 <button
-                type="button"
-                onClick={handleCheckout}
-                className="w-full mt-6 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:bg-gray-400 flex items-center justify-center gap-2"
+                  type="button"
+                  onClick={handleCheckout}
+                  className="w-full mt-6 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:bg-gray-400 flex items-center justify-center gap-2"
                   disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0) || !emailIsValid}
-              >
-                <FaCreditCard /> {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
+                >
+                  <FaCreditCard /> {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
                 </button>
               </div>
             </div>
