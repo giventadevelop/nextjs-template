@@ -539,6 +539,7 @@ export default function TicketingPage() {
                 >
                   <FaCreditCard />
                 </button>
+                <span className="text-sm text-gray-600">Pay with credit card</span>
                 <button
                   type="button"
                   onClick={handleCheckout}
