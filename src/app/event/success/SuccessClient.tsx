@@ -124,9 +124,11 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         }
         // 2a. If PI path: poll a few times to allow webhook to create
         if (pi && !session_id) {
-          for (let i = 0; i < 8; i++) {
+          // Poll up to ~30s because webhook + fee patch may take time in prod
+          const maxTries = 20; // 20 * 1.5s ≈ 30s
+          for (let i = 0; i < maxTries; i++) {
             if (cancelled) break;
-            await new Promise(res => setTimeout(res, 1000));
+            await new Promise(res => setTimeout(res, 1500));
             const pollRes = await fetch(`/api/event/success/process?pi=${encodeURIComponent(pi)}`);
             if (pollRes.ok) {
               const data = await pollRes.json();
