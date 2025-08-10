@@ -510,31 +510,44 @@ export default function TicketingPage() {
                 {emailError && <p className="text-red-500 text-xs mt-1">Please enter a valid email address.</p>}
               </div>
 
-              {/* Wallets (Apple Pay / Google Pay) when eligible */}
+              {/* Wallets (Apple Pay / Google Pay) with disabled placeholder */}
               <div className="mt-4">
-                {Object.values(selectedTickets).some(q => q > 0) && emailIsValid ? (
-                  <StripePaymentRequestButton
-                    cart={Object.entries(selectedTickets)
-                      .filter(([, quantity]) => quantity > 0)
-                      .map(([ticketId, quantity]) => ({
-                        ticketType: { id: parseInt(ticketId) },
-                        quantity,
-                      }))}
-                    eventId={String(eventId)}
-                    email={email}
-                    discountCodeId={appliedDiscount?.id ?? null}
-                  />
-                ) : null}
+                <StripePaymentRequestButton
+                  cart={Object.entries(selectedTickets)
+                    .filter(([, quantity]) => quantity > 0)
+                    .map(([ticketId, quantity]) => ({
+                      ticketType: { id: parseInt(ticketId) },
+                      quantity,
+                    }))}
+                  eventId={String(eventId)}
+                  email={email}
+                  discountCodeId={appliedDiscount?.id ?? null}
+                  enabled={Object.values(selectedTickets).some(q => q > 0) && emailIsValid}
+                  showPlaceholder
+                />
               </div>
 
-              <button
+              <div className="mt-3 flex items-center gap-3">
+                {/* Credit card icon option mirrors Proceed to Checkout */}
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  className="inline-flex items-center justify-center bg-white border border-gray-300 text-gray-800 font-semibold py-3 px-4 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0) || !emailIsValid}
+                  aria-label="Pay with card"
+                  title="Pay with card"
+                >
+                  <FaCreditCard />
+                </button>
+                <button
                 type="button"
                 onClick={handleCheckout}
                 className="w-full mt-6 bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors duration-300 disabled:bg-gray-400 flex items-center justify-center gap-2"
-                disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0)}
+                  disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0) || !emailIsValid}
               >
                 <FaCreditCard /> {isProcessing ? 'Processing...' : 'Proceed to Checkout'}
-              </button>
+                </button>
+              </div>
             </div>
           </div>
         </div>

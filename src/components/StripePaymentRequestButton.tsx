@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentRequestButtonElement, useStripe } from '@stripe/react-stripe-js';
+import type { PaymentRequest as StripePaymentRequest, StripeElementsOptions } from '@stripe/stripe-js';
 
 type CartItem = {
   ticketType: { id: number };
@@ -13,14 +14,17 @@ type Props = {
   eventId: number | string;
   email?: string;
   discountCodeId?: number | null;
+  enabled: boolean; // whether fields are valid; when false, we show disabled overlay/placeholder
+  showPlaceholder?: boolean; // show a disabled-looking placeholder if not eligible yet
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
-function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
+function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlaceholder }: Props) {
   const stripe = useStripe();
-  const [paymentRequest, setPaymentRequest] = useState<stripe.paymentRequest.PaymentRequest | null>(null);
+  const [paymentRequest, setPaymentRequest] = useState<StripePaymentRequest | null>(null);
   const [ready, setReady] = useState(false);
+  const [eligible, setEligible] = useState(false);
 
   useEffect(() => {
     if (!stripe) return;
@@ -78,35 +82,75 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
           });
           setPaymentRequest(pr);
           setReady(true);
+          setEligible(true);
           console.log('[PRB] button rendered');
         } else {
           setPaymentRequest(null);
           setReady(false);
+          setEligible(false);
           console.warn('[PRB] not eligible (no Apple/Google Pay available for this device/browser/domain)');
         }
       } catch {
         setPaymentRequest(null);
         setReady(false);
+        setEligible(false);
         console.error('[PRB] failed to initialize');
       }
     })();
   }, [stripe, cart, eventId, email, discountCodeId]);
 
+  // Placeholder when not eligible or not ready
+  if ((!stripe || !paymentRequest || !ready) && showPlaceholder) {
+    return (
+      <div
+        id="prb-placeholder"
+        style={{
+          minHeight: 48,
+          height: 48,
+          borderRadius: 6,
+          background: '#e5e7eb',
+          color: '#6b7280',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontWeight: 600,
+          cursor: 'not-allowed',
+        }}
+        aria-disabled
+      >
+        Apple/Google Pay
+      </div>
+    );
+  }
+
   if (!stripe || !paymentRequest || !ready) return null;
+
   return (
-    <div id="prb-container" style={{ minHeight: 48, display: 'block' }}>
+    <div id="prb-container" style={{ minHeight: 48, display: 'block', position: 'relative' }}>
       <PaymentRequestButtonElement
         options={{
           paymentRequest,
           style: { paymentRequestButton: { theme: 'dark', height: '48px' } },
         }}
       />
+      {!enabled && (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'rgba(255,255,255,0.5)',
+            borderRadius: 6,
+            cursor: 'not-allowed',
+          }}
+          aria-hidden
+        />
+      )}
     </div>
   );
 }
 
 export function StripePaymentRequestButton(props: Props) {
-  const elementsOptions = useMemo(() => ({ appearance: { theme: 'stripe' } }), []);
+  const elementsOptions = useMemo<StripeElementsOptions>(() => ({ appearance: { theme: 'stripe' } }), []);
   return (
     <Elements stripe={stripePromise} options={elementsOptions}>
       {/* @ts-ignore - stripe types at runtime */}
