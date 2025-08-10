@@ -202,7 +202,11 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       </div>
     );
   }
-  if (!eventDetails?.id) {
+  // If we have a transaction but eventDetails not ready yet, keep showing loading UI
+  if (transaction && !eventDetails?.id && !readyToShowNotFound) {
+    return <LoadingTicket sessionId={session_id} />;
+  }
+  if (!eventDetails?.id && readyToShowNotFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
         <FaInfoCircle className="text-4xl text-red-500 mb-4" />
