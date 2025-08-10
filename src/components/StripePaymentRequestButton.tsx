@@ -86,15 +86,23 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             receipt_email: ev.payerEmail || email,
           });
           if (error) {
+            console.error('[PRB] confirmCardPayment error:', {
+              message: error.message,
+              type: (error as any)?.type,
+              code: (error as any)?.code,
+              decline_code: (error as any)?.decline_code,
+            });
             if (!isApplePay) { try { ev.complete('fail'); } catch { } }
             alert(error.message || 'Payment failed. Please try another method.');
             setProcessing(false);
           } else {
+            console.log('[PRB] confirmCardPayment success:', { id: paymentIntent?.id, status: paymentIntent?.status });
             if (!isApplePay) { try { ev.complete('success'); } catch { } }
             const piId = paymentIntent?.id;
             window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
           }
         } catch (e: any) {
+          console.error('[PRB] confirmCardPayment thrown:', e);
           const isApplePay = !!(canMakePaymentResult && (canMakePaymentResult.applePay || (canMakePaymentResult as any).apple_pay));
           if (!isApplePay) { try { ev.complete('fail'); } catch { } }
           alert(e?.message || 'Payment failed. Please try again.');
