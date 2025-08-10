@@ -29,23 +29,11 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!stripe) return;
+    if (!stripe || !enabled) return;
 
     (async () => {
       try {
-        // Debug context
-        try {
-          const host = typeof window !== 'undefined' ? window.location.host : '';
-          const key = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string) || '';
-          console.log('[PRB] init', {
-            host,
-            amount: typeof amountCents === 'number' ? amountCents : 0,
-            keyPrefix: key ? key.slice(0, 8) + '…' : 'missing',
-            hasClientSecret: !!clientSecret,
-          });
-        } catch { }
-
-        // We cannot get exact total without duplicating logic on client; rely on server intent amount at confirm time
+        // Create PR only when enabled to avoid manifest warnings/errors before validation
         const pr = stripe.paymentRequest({
           country: 'US',
           currency: 'usd',
@@ -55,67 +43,57 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
 
         const result = await pr.canMakePayment();
         console.log('[PRB] canMakePayment()', result);
-        if (result) {
-          pr.on('paymentmethod', async (ev) => {
-            try {
-              if (!enabled) {
-                ev.complete('fail');
-                alert('Please enter a valid email and select at least one ticket.');
-                return;
-              }
-              let secret = clientSecret;
-              if (!secret) {
-                const res = await fetch('/api/stripe/payment-intent', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-                });
-                if (!res.ok) {
-                  ev.complete('fail');
-                  alert('Unable to start payment. Please try again.');
-                  return;
-                }
-                const data = await res.json();
-                secret = data.clientSecret;
-                setClientSecret(secret || null);
-              }
-              const { error, paymentIntent } = await stripe.confirmCardPayment(secret as string, {
-                payment_method: ev.paymentMethod.id,
-                receipt_email: ev.payerEmail || email,
-              });
-              if (error) {
-                ev.complete('fail');
-              } else {
-                ev.complete('success');
-                const piId = paymentIntent?.id;
-                if (piId) {
-                  window.location.href = `/event/success?pi=${encodeURIComponent(piId)}`;
-                } else {
-                  window.location.href = '/event/success';
-                }
-              }
-            } catch {
-              ev.complete('fail');
-            }
-          });
-          setPaymentRequest(pr);
-          setReady(true);
-          setEligible(true);
-          console.log('[PRB] button rendered');
-        } else {
+        if (!result) {
           setPaymentRequest(null);
           setReady(false);
           setEligible(false);
-          console.warn('[PRB] not eligible (no Apple/Google Pay available for this device/browser/domain)');
+          return;
         }
-      } catch {
+
+        pr.on('paymentmethod', async (ev) => {
+          try {
+            let secret = clientSecret;
+            if (!secret) {
+              const res = await fetch('/api/stripe/payment-intent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+              });
+              if (!res.ok) {
+                ev.complete('fail');
+                alert('Unable to start payment. Please try again.');
+                return;
+              }
+              const data = await res.json();
+              secret = data.clientSecret;
+              setClientSecret(secret || null);
+            }
+            const { error, paymentIntent } = await stripe.confirmCardPayment(secret as string, {
+              payment_method: ev.paymentMethod.id,
+              receipt_email: ev.payerEmail || email,
+            });
+            if (error) {
+              ev.complete('fail');
+            } else {
+              ev.complete('success');
+              const piId = paymentIntent?.id;
+              window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
+            }
+          } catch {
+            ev.complete('fail');
+          }
+        });
+
+        setPaymentRequest(pr);
+        setReady(true);
+        setEligible(true);
+      } catch (e) {
         setPaymentRequest(null);
         setReady(false);
         setEligible(false);
-        console.error('[PRB] failed to initialize');
       }
     })();
-  }, [stripe]);
+  }, [stripe, enabled, amountCents, cart, eventId, email, discountCodeId, clientSecret]);
 
   // Update total and pre-create client secret when eligible
   useEffect(() => {
@@ -177,9 +155,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
     return showPlaceholder ? renderPlaceholderImage : null;
   }
 
-  if (!enabled) {
-    return renderPlaceholderImage;
-  }
+  // When enabled, render live PR button
 
   return (
     <div id="prb-container" style={{ minHeight: 48, display: 'block', position: 'relative' }}>
