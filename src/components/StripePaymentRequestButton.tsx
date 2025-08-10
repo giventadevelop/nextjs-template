@@ -34,14 +34,14 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
           body: JSON.stringify({ cart, eventId, email, discountCodeId }),
         });
         if (!res.ok) return;
-        const { clientSecret } = await res.json();
+        const { clientSecret, amount } = await res.json();
         if (!clientSecret) return;
 
         // We cannot get exact total without duplicating logic on client; rely on server intent amount at confirm time
         const pr = stripe.paymentRequest({
           country: 'US',
           currency: 'usd',
-          total: { label: 'Tickets', amount: 0 },
+          total: { label: 'Tickets', amount: typeof amount === 'number' ? amount : 0 },
           requestPayerEmail: true,
         });
 
