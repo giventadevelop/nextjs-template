@@ -721,6 +721,11 @@ export async function POST(req: NextRequest) {
 
             const created = await createEventTicketTransactionServer(withTenantId(txPayload as any) as any);
             console.log('[STRIPE-WEBHOOK] Created PI-based ticket transaction:', created?.id);
+            
+            // If transaction creation failed (id = -1), log but continue
+            if (created?.id === -1) {
+              console.warn('[STRIPE-WEBHOOK] Transaction creation failed, but webhook will succeed to prevent infinite retries');
+            }
 
             // Update inventory for each ticket type in the cart
             if (Array.isArray(cart)) {
