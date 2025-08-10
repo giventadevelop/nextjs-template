@@ -10,6 +10,7 @@ import { fetchUserProfileServer } from '@/app/admin/ApiServerActions';
 import { createEventTicketTransactionServer, updateTicketTypeInventoryServer } from './ApiServerActions';
 import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 import { getTenantId } from '@/lib/env';
+import { withTenantId } from '@/lib/withTenantId';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -162,7 +163,7 @@ async function handleChargeFeeUpdate(charge: Stripe.Charge) {
             createdAt: now as any,
             updatedAt: now as any,
           };
-          const created = await createEventTicketTransactionServer(txPayload);
+          const created = await createEventTicketTransactionServer(withTenantId(txPayload as any) as any);
           console.log('[STRIPE-WEBHOOK] Created missing PI transaction:', created?.id);
           // Update inventory
           if (Array.isArray(cart)) {
@@ -718,7 +719,7 @@ export async function POST(req: NextRequest) {
               updatedAt: now as any,
             };
 
-            const created = await createEventTicketTransactionServer(txPayload);
+            const created = await createEventTicketTransactionServer(withTenantId(txPayload as any) as any);
             console.log('[STRIPE-WEBHOOK] Created PI-based ticket transaction:', created?.id);
 
             // Update inventory for each ticket type in the cart
