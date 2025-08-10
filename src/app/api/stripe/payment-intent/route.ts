@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
 import { getAppUrl } from '@/lib/env';
+import crypto from 'crypto';
 
 type CartItem = {
   ticketType: { id: number; price?: number; name?: string };
@@ -78,6 +79,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Total must be greater than zero' }, { status: 400 });
     }
 
+    // Build idempotency key to prevent duplicate intents for the same attempt
+    const cartKey = cart
+      .map((c) => ({ id: c?.ticketType?.id, q: c?.quantity }))
+      .sort((a, b) => (a.id || 0) - (b.id || 0));
+    const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${JSON.stringify(cartKey)}`;
+    const idempotencyKey = crypto.createHash('sha256').update(idemSource).digest('hex');
+
     // Create PaymentIntent with automatic payment methods (enables wallets)
     const pi = await stripe().paymentIntents.create({
       amount: totalCents,
@@ -94,7 +102,7 @@ export async function POST(req: NextRequest) {
         ),
         ...(discountCodeId ? { discountCodeId: String(discountCodeId) } : {}),
       },
-    });
+    }, { idempotencyKey });
 
     return NextResponse.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, amount: totalCents });
   } catch (err) {
