@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { FaTags, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaMapPin, FaTicketAlt, FaUser, FaEnvelope, FaMoneyBillWave, FaReceipt } from 'react-icons/fa';
 import { Modal } from '@/components/Modal';
@@ -158,6 +158,12 @@ export default function TicketingPage() {
       return total + (ticket?.price || 0) * quantity;
     }, 0);
   };
+
+  const emailIsValid = useMemo(() => {
+    if (!email) return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }, [email]);
 
   const validateAndApplyDiscount = (code: string) => {
     if (Object.values(selectedTickets).every(q => q === 0)) {
@@ -506,17 +512,19 @@ export default function TicketingPage() {
 
               {/* Wallets (Apple Pay / Google Pay) when eligible */}
               <div className="mt-4">
-                <StripePaymentRequestButton
-                  cart={Object.entries(selectedTickets)
-                    .filter(([, quantity]) => quantity > 0)
-                    .map(([ticketId, quantity]) => ({
-                      ticketType: { id: parseInt(ticketId) },
-                      quantity,
-                    }))}
-                  eventId={String(eventId)}
-                  email={email}
-                  discountCodeId={appliedDiscount?.id ?? null}
-                />
+                {Object.values(selectedTickets).some(q => q > 0) && emailIsValid ? (
+                  <StripePaymentRequestButton
+                    cart={Object.entries(selectedTickets)
+                      .filter(([, quantity]) => quantity > 0)
+                      .map(([ticketId, quantity]) => ({
+                        ticketType: { id: parseInt(ticketId) },
+                        quantity,
+                      }))}
+                    eventId={String(eventId)}
+                    email={email}
+                    discountCodeId={appliedDiscount?.id ?? null}
+                  />
+                ) : null}
               </div>
 
               <button
