@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id });
+    return NextResponse.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, amount: totalCents });
   } catch (err) {
     console.error('[PI] Error creating PaymentIntent:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
