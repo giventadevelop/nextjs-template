@@ -80,11 +80,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Build idempotency key to prevent duplicate intents for the same attempt
+    // Include totalCents to ensure new PI when amount changes
     const cartKey = cart
       .map((c) => ({ id: c?.ticketType?.id, q: c?.quantity }))
       .sort((a, b) => (a.id || 0) - (b.id || 0));
-    const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${JSON.stringify(cartKey)}`;
+    const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${totalCents}|${JSON.stringify(cartKey)}`;
     const idempotencyKey = crypto.createHash('sha256').update(idemSource).digest('hex');
+    
+    console.log('[PI] Creating PaymentIntent:', { 
+      totalCents, 
+      eventId: eventIdRaw, 
+      email, 
+      discountCodeId,
+      idempotencyKey: idempotencyKey.substring(0, 8) + '...' 
+    });
 
     // Create PaymentIntent with automatic payment methods (enables wallets)
     const pi = await stripe().paymentIntents.create({
@@ -103,6 +112,12 @@ export async function POST(req: NextRequest) {
         ...(discountCodeId ? { discountCodeId: String(discountCodeId) } : {}),
       },
     }, { idempotencyKey });
+
+    console.log('[PI] PaymentIntent created successfully:', { 
+      id: pi.id, 
+      amount: pi.amount, 
+      status: pi.status 
+    });
 
     return NextResponse.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, amount: totalCents });
   } catch (err) {

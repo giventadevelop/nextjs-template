@@ -27,6 +27,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   const [ready, setReady] = useState(false);
   const [eligible, setEligible] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [cachedAmount, setCachedAmount] = useState<number | null>(null);
   const [processing, setProcessing] = useState(false);
   const [canMakePaymentResult, setCanMakePaymentResult] = useState<any>(null);
 
@@ -63,27 +64,32 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             try { ev.complete('success'); } catch { }
           }
 
-          // Use prefetched clientSecret if available to reduce latency
-          let secret = clientSecret;
-          if (!secret) {
-            const res = await fetch('/api/stripe/payment-intent', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-            });
-            if (!res.ok) {
-              if (!isApplePay) { try { ev.complete('fail'); } catch { } }
-              alert('Unable to start payment. Please try again.');
-              setProcessing(false);
-              return;
-            }
-            const data = await res.json();
-            secret = data.clientSecret as string;
-            if (secret) setClientSecret(secret);
+          // Always create fresh PI on payment to avoid amount mismatch
+          // Don't reuse cached clientSecret as cart/amount may have changed
+          const res = await fetch('/api/stripe/payment-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+          });
+          if (!res.ok) {
+            if (!isApplePay) { try { ev.complete('fail'); } catch { } }
+            alert('Unable to start payment. Please try again.');
+            setProcessing(false);
+            return;
           }
+          const data = await res.json();
+          const secret = data.clientSecret as string;
+          console.log('[PRB] Created fresh PI for payment:', { piId: data.paymentIntentId, amount: data.amount });
           const { error, paymentIntent } = await stripe.confirmCardPayment(secret, {
             payment_method: ev.paymentMethod.id,
             receipt_email: ev.payerEmail || email,
+          });
+          
+          console.log('[PRB] Confirmation attempt:', { 
+            piId: paymentIntent?.id || 'unknown',
+            status: paymentIntent?.status,
+            amount: paymentIntent?.amount,
+            walletAmount: ev.total?.amount
           });
           if (error) {
             console.error('[PRB] confirmCardPayment error:', {
@@ -91,6 +97,8 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
               type: (error as any)?.type,
               code: (error as any)?.code,
               decline_code: (error as any)?.decline_code,
+              payment_intent: (error as any)?.payment_intent,
+              piId: paymentIntent?.id || (error as any)?.payment_intent?.id
             });
             if (!isApplePay) { try { ev.complete('fail'); } catch { } }
             alert(error.message || 'Payment failed. Please try another method.');
@@ -121,30 +129,26 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
     // No cleanup needed; PR button will be recreated when enabled changes
   }, [stripe, enabled]);
 
-  // Update total and pre-create client secret when eligible
+  // Update PaymentRequest total when amount changes
   useEffect(() => {
     if (!paymentRequest) return;
-    try { paymentRequest.update({ total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 } }); } catch { }
-    const prepare = async () => {
-      if (!enabled) return;
-      try {
-        const res = await fetch('/api/stripe/payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.clientSecret) setClientSecret(data.clientSecret);
-        if (typeof data?.amount === 'number') {
-          try {
-            paymentRequest.update({ total: { label: 'Tickets', amount: data.amount } });
-          } catch { }
-        }
-      } catch { }
-    };
-    prepare();
-  }, [paymentRequest, enabled, cart, eventId, email, discountCodeId, amountCents]);
+    const currentAmount = typeof amountCents === 'number' ? amountCents : 0;
+    
+    // Always sync PaymentRequest total with current amount
+    try { 
+      paymentRequest.update({ total: { label: 'Tickets', amount: currentAmount } }); 
+      console.log('[PRB] Updated PaymentRequest total:', { amount: currentAmount });
+    } catch (e) {
+      console.warn('[PRB] Failed to update PaymentRequest total:', e);
+    }
+    
+    // Clear cached PI if amount changed to prevent stale reuse
+    if (cachedAmount !== null && cachedAmount !== currentAmount) {
+      console.log('[PRB] Amount changed, clearing cached PI:', { old: cachedAmount, new: currentAmount });
+      setClientSecret(null);
+    }
+    setCachedAmount(currentAmount);
+  }, [paymentRequest, amountCents, cachedAmount]);
 
   // If not ready yet or not enabled, show branded static image placeholder
   const renderPlaceholderImage = (
