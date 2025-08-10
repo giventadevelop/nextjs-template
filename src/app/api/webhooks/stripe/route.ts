@@ -591,6 +591,85 @@ export async function POST(req: NextRequest) {
             amount: pi.amount,
             status: pi.status,
           });
+
+          // Create EventTicketTransaction for wallet (Payment Request Button) flow
+          try {
+            // Expect metadata from PI creation
+            const md = (pi.metadata || {}) as any;
+            const cartJson = md.cart;
+            const discountCodeId = md.discountCodeId ? Number(md.discountCodeId) : undefined;
+            const eventIdRaw = md.eventId;
+            const email = (pi.receipt_email as string) || '';
+
+            if (!cartJson || !eventIdRaw) {
+              console.warn('[STRIPE-WEBHOOK] PI missing cart/eventId metadata; skipping transaction create');
+              break;
+            }
+
+            const cart = JSON.parse(cartJson);
+            const now = new Date().toISOString();
+            const totalQuantity = Array.isArray(cart)
+              ? cart.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0)
+              : 0;
+            const eventId = Number(eventIdRaw);
+            const amountTotal = typeof pi.amount_received === 'number' ? pi.amount_received / 100 : (typeof pi.amount === 'number' ? pi.amount / 100 : 0);
+
+            // Build payload similar to processStripeSessionServer
+            const txPayload: Omit<EventTicketTransactionDTO, 'id'> = {
+              email,
+              firstName: '',
+              lastName: '',
+              phone: '',
+              quantity: totalQuantity,
+              pricePerUnit: 0,
+              totalAmount: amountTotal, // original before discount not available here; treat as total
+              taxAmount: undefined,
+              platformFeeAmount: undefined,
+              discountCodeId,
+              discountAmount: undefined,
+              finalAmount: amountTotal,
+              status: 'COMPLETED',
+              paymentMethod: 'wallet',
+              paymentReference: pi.id,
+              purchaseDate: now as any,
+              confirmationSentAt: undefined as any,
+              refundAmount: undefined as any,
+              refundDate: undefined as any,
+              refundReason: undefined as any,
+              stripeCheckoutSessionId: undefined as any,
+              stripePaymentIntentId: pi.id,
+              stripeCustomerId: (pi.customer as string) || undefined,
+              stripePaymentStatus: pi.status,
+              stripeCustomerEmail: email,
+              stripePaymentCurrency: (pi.currency || 'usd') as any,
+              stripeAmountDiscount: undefined as any,
+              stripeAmountTax: undefined as any,
+              stripeFeeAmount: undefined as any,
+              eventId: eventId as any,
+              userId: undefined as any,
+              createdAt: now as any,
+              updatedAt: now as any,
+            };
+
+            const created = await createEventTicketTransactionServer(txPayload);
+            console.log('[STRIPE-WEBHOOK] Created PI-based ticket transaction:', created?.id);
+
+            // Update inventory for each ticket type in the cart
+            if (Array.isArray(cart)) {
+              for (const item of cart) {
+                if (item.ticketType && item.ticketType.id) {
+                  try {
+                    await updateTicketTypeInventoryServer(item.ticketType.id, item.quantity);
+                    console.log(`[STRIPE-WEBHOOK] Updated inventory for ticket type ${item.ticketType.id} by ${item.quantity}`);
+                  } catch (invErr) {
+                    console.error('[STRIPE-WEBHOOK] Inventory update failed:', invErr);
+                  }
+                }
+              }
+            }
+          } catch (piErr) {
+            console.error('[STRIPE-WEBHOOK] Error creating PI-based transaction:', piErr);
+          }
         }
         // Add your payment success logic here
         break;
