@@ -16,38 +16,30 @@ type Props = {
   discountCodeId?: number | null;
   enabled: boolean; // whether fields are valid; when false, we show disabled overlay/placeholder
   showPlaceholder?: boolean; // show a disabled-looking placeholder if not eligible yet
+  amountCents?: number; // optional current total for display
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
-function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlaceholder }: Props) {
+function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlaceholder, amountCents }: Props) {
   const stripe = useStripe();
   const [paymentRequest, setPaymentRequest] = useState<StripePaymentRequest | null>(null);
   const [ready, setReady] = useState(false);
   const [eligible, setEligible] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
 
   useEffect(() => {
     if (!stripe) return;
 
     (async () => {
       try {
-        // Ask server for clientSecret (also computes total amount)
-        const res = await fetch('/api/stripe/payment-intent', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cart, eventId, email, discountCodeId }),
-        });
-        if (!res.ok) return;
-        const { clientSecret, amount } = await res.json();
-        if (!clientSecret) return;
-
         // Debug context
         try {
           const host = typeof window !== 'undefined' ? window.location.host : '';
           const key = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string) || '';
           console.log('[PRB] init', {
             host,
-            amount,
+            amount: typeof amountCents === 'number' ? amountCents : 0,
             keyPrefix: key ? key.slice(0, 8) + '…' : 'missing',
             hasClientSecret: !!clientSecret,
           });
@@ -57,7 +49,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         const pr = stripe.paymentRequest({
           country: 'US',
           currency: 'usd',
-          total: { label: 'Tickets', amount: typeof amount === 'number' ? amount : 0 },
+          total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 },
           requestPayerEmail: true,
         });
 
@@ -66,7 +58,28 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         if (result) {
           pr.on('paymentmethod', async (ev) => {
             try {
-              const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+              if (!enabled) {
+                ev.complete('fail');
+                alert('Please enter a valid email and select at least one ticket.');
+                return;
+              }
+              let secret = clientSecret;
+              if (!secret) {
+                const res = await fetch('/api/stripe/payment-intent', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+                });
+                if (!res.ok) {
+                  ev.complete('fail');
+                  alert('Unable to start payment. Please try again.');
+                  return;
+                }
+                const data = await res.json();
+                secret = data.clientSecret;
+                setClientSecret(secret || null);
+              }
+              const { error, paymentIntent } = await stripe.confirmCardPayment(secret as string, {
                 payment_method: ev.paymentMethod.id,
                 receipt_email: ev.payerEmail || email,
               });
@@ -102,7 +115,27 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         console.error('[PRB] failed to initialize');
       }
     })();
-  }, [stripe, cart, eventId, email, discountCodeId]);
+  }, [stripe]);
+
+  // Update total and pre-create client secret when eligible
+  useEffect(() => {
+    if (!paymentRequest) return;
+    try { paymentRequest.update({ total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 } }); } catch { }
+    const prepare = async () => {
+      if (!enabled) return;
+      try {
+        const res = await fetch('/api/stripe/payment-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cart, eventId, email, discountCodeId }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.clientSecret) setClientSecret(data.clientSecret);
+      } catch { }
+    };
+    prepare();
+  }, [paymentRequest, enabled, cart, eventId, email, discountCodeId, amountCents]);
 
   // Placeholder when not eligible or not ready
   if ((!stripe || !paymentRequest || !ready) && showPlaceholder) {
@@ -113,17 +146,17 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           minHeight: 48,
           height: 48,
           borderRadius: 6,
-          background: '#e5e7eb',
-          color: '#6b7280',
+          background: '#000',
+          color: '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 600,
-          cursor: 'not-allowed',
+          cursor: 'default',
         }}
         aria-disabled
       >
-        Apple/Google Pay
+         Pay / G Pay
       </div>
     );
   }
