@@ -66,6 +66,22 @@ async function findTransactionBySessionId(
   return transactions.length > 0 ? transactions[0] : null;
 }
 
+async function findTransactionByPaymentIntentId(
+  paymentIntentId: string,
+): Promise<EventTicketTransactionDTO | null> {
+  const tenantId = getTenantId();
+  const params = new URLSearchParams({
+    'stripePaymentIntentId.equals': paymentIntentId,
+    'tenantId.equals': tenantId,
+  });
+  const response = await fetchWithJwtRetry(
+    `${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`,
+  );
+  if (!response.ok) return null;
+  const items: EventTicketTransactionDTO[] = await response.json();
+  return items.length > 0 ? items[0] : null;
+}
+
 // Create a new transaction (POST)
 async function createTransaction(transactionData: Omit<EventTicketTransactionDTO, 'id'>): Promise<EventTicketTransactionDTO> {
   const response = await fetchWithJwtRetry(

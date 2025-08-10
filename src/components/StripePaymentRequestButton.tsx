@@ -66,7 +66,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         if (result) {
           pr.on('paymentmethod', async (ev) => {
             try {
-              const { error } = await stripe.confirmCardPayment(clientSecret, {
+              const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
                 payment_method: ev.paymentMethod.id,
                 receipt_email: ev.payerEmail || email,
               });
@@ -74,7 +74,12 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
                 ev.complete('fail');
               } else {
                 ev.complete('success');
-                window.location.href = '/event/success';
+                const piId = paymentIntent?.id;
+                if (piId) {
+                  window.location.href = `/event/success?pi=${encodeURIComponent(piId)}`;
+                } else {
+                  window.location.href = '/event/success';
+                }
               }
             } catch {
               ev.complete('fail');

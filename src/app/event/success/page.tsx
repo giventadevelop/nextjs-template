@@ -105,11 +105,12 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
-export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string }> | { session_id?: string } }) {
+export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string; pi?: string }> | { session_id?: string; pi?: string } }) {
   // Await searchParams for Next.js 15+ compatibility
   const resolvedParams = typeof searchParams.then === 'function' ? await searchParams : searchParams;
   const session_id = resolvedParams.session_id;
-  if (!session_id) {
+  const pi = (resolvedParams as any).pi as string | undefined;
+  if (!session_id && !pi) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
         <h1 className="text-2xl font-bold text-gray-800">Missing session ID</h1>
@@ -119,7 +120,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   }
 
   // Check if transaction already exists on server side
-  const { exists: transactionExists, transaction } = await checkTransactionExistsServer(session_id);
+  const { exists: transactionExists, transaction } = session_id ? await checkTransactionExistsServer(session_id) : { exists: false } as any;
 
   if (transactionExists) {
     console.log(`Transaction already exists for session ${session_id}, redirecting to homepage`);
@@ -130,5 +131,5 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     redirect('/?payment=already-processed');
   }
 
-  return <SuccessClient session_id={session_id} />;
+  return <SuccessClient session_id={session_id || ''} />;
 }

@@ -104,11 +104,12 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
-    if (!session_id) {
-      return NextResponse.json({ error: 'Missing session_id' }, { status: 400 });
+    const pi = searchParams.get('pi');
+    if (!session_id && !pi) {
+      return NextResponse.json({ error: 'Missing session_id or pi' }, { status: 400 });
     }
-    // Only look up, do not create
-    const result = await processStripeSessionServer(session_id);
+    // Only look up, do not create — for PaymentIntent path, the webhook should create the transaction; here we just read
+    const result = session_id ? await processStripeSessionServer(session_id) : null;
     const transaction = result?.transaction;
     const userProfile = result?.userProfile;
     if (!transaction) {
