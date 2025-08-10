@@ -139,11 +139,26 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
 
   // If not ready yet or not enabled, show branded static image placeholder
   const renderPlaceholderImage = (
-    <div style={{ position: 'relative' }} aria-disabled>
+    <div
+      style={{
+        position: 'relative',
+        borderRadius: 8,
+        border: '1px solid #e5e7eb',
+        background: '#fff',
+        padding: 6,
+      }}
+      aria-disabled
+    >
       <img
         src="/images/both_apple_google_pay_button.png"
         alt="Apple Pay / Google Pay"
-        style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 6, display: 'block' }}
+        style={{
+          width: '100%',
+          height: 48,
+          objectFit: 'contain',
+          borderRadius: 4,
+          display: 'block',
+        }}
       />
       {/* Non-clickable overlay to indicate disabled state */}
       <div
@@ -152,7 +167,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           inset: 0,
           background: 'transparent',
           cursor: 'not-allowed',
-          borderRadius: 6,
+          borderRadius: 8,
         }}
       />
     </div>
