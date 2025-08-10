@@ -47,7 +47,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
             keyPrefix: key ? key.slice(0, 8) + '…' : 'missing',
             hasClientSecret: !!clientSecret,
           });
-        } catch {}
+        } catch { }
 
         // We cannot get exact total without duplicating logic on client; rely on server intent amount at confirm time
         const pr = stripe.paymentRequest({
