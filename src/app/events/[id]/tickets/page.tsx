@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { FaTags, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaMapPin, FaTicketAlt, FaUser, FaEnvelope, FaMoneyBillWave, FaReceipt } from 'react-icons/fa';
 import { Modal } from '@/components/Modal';
+import { StripePaymentRequestButton } from '@/components/StripePaymentRequestButton';
 import { formatInTimeZone } from 'date-fns-tz';
 import LocationDisplay from '@/components/LocationDisplay';
 
@@ -501,6 +502,21 @@ export default function TicketingPage() {
                   placeholder="you@example.com"
                 />
                 {emailError && <p className="text-red-500 text-xs mt-1">Please enter a valid email address.</p>}
+              </div>
+
+              {/* Wallets (Apple Pay / Google Pay) when eligible */}
+              <div className="mt-4">
+                <StripePaymentRequestButton
+                  cart={Object.entries(selectedTickets)
+                    .filter(([, quantity]) => quantity > 0)
+                    .map(([ticketId, quantity]) => ({
+                      ticketType: { id: parseInt(ticketId) },
+                      quantity,
+                    }))}
+                  eventId={String(eventId)}
+                  email={email}
+                  discountCodeId={appliedDiscount?.id ?? null}
+                />
               </div>
 
               <button
