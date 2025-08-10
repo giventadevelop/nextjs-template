@@ -170,6 +170,31 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     return () => { cancelled = true; };
   }, [session_id]);
 
+  // Poll specifically for QR code after transaction exists
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!result?.transaction || result?.qrCodeData) return;
+      const url = new URL(window.location.href);
+      const pi = url.searchParams.get('pi');
+      const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
+      const maxTries = 20;
+      for (let i = 0; i < maxTries; i++) {
+        if (cancelled) break;
+        await new Promise(res => setTimeout(res, 1500));
+        const res = await fetch(`/api/event/success/process?${qs}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.qrCodeData) {
+            if (!cancelled) setResult((prev: any) => ({ ...(prev || {}), ...data }));
+            break;
+          }
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [result?.transaction, session_id]);
+
   if (loading) {
     return <LoadingTicket sessionId={session_id} />;
   }
@@ -193,6 +218,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventHeroImageUrl');
     localStorage.removeItem('eventId');
   }
+  if (!transaction && !readyToShowNotFound) {
+    return <LoadingTicket sessionId={session_id} />;
+  }
   if (!transaction && readyToShowNotFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
@@ -206,6 +234,10 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   if (transaction && !eventDetails?.id && !readyToShowNotFound) {
     return <LoadingTicket sessionId={session_id} />;
   }
+  // If we have transaction and event details but QR code not ready yet, keep loading
+  if (transaction && eventDetails?.id && !qrCodeData && !readyToShowNotFound) {
+    return <LoadingTicket sessionId={session_id} />;
+  }
   if (!eventDetails?.id && readyToShowNotFound) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
@@ -215,7 +247,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       </div>
     );
   }
-  const displayName = transaction.firstName || '';
+  const displayName = transaction?.firstName || '';
   let qrError: string | null = null;
   // If qrCodeData is an error object, handle it
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
