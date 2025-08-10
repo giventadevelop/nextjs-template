@@ -37,6 +37,18 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
         const { clientSecret, amount } = await res.json();
         if (!clientSecret) return;
 
+        // Debug context
+        try {
+          const host = typeof window !== 'undefined' ? window.location.host : '';
+          const key = (process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string) || '';
+          console.log('[PRB] init', {
+            host,
+            amount,
+            keyPrefix: key ? key.slice(0, 8) + '…' : 'missing',
+            hasClientSecret: !!clientSecret,
+          });
+        } catch {}
+
         // We cannot get exact total without duplicating logic on client; rely on server intent amount at confirm time
         const pr = stripe.paymentRequest({
           country: 'US',
@@ -46,6 +58,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
         });
 
         const result = await pr.canMakePayment();
+        console.log('[PRB] canMakePayment()', result);
         if (result) {
           pr.on('paymentmethod', async (ev) => {
             try {
@@ -65,19 +78,31 @@ function InnerPRB({ cart, eventId, email, discountCodeId }: Props) {
           });
           setPaymentRequest(pr);
           setReady(true);
+          console.log('[PRB] button rendered');
         } else {
           setPaymentRequest(null);
           setReady(false);
+          console.warn('[PRB] not eligible (no Apple/Google Pay available for this device/browser/domain)');
         }
       } catch {
         setPaymentRequest(null);
         setReady(false);
+        console.error('[PRB] failed to initialize');
       }
     })();
   }, [stripe, cart, eventId, email, discountCodeId]);
 
   if (!stripe || !paymentRequest || !ready) return null;
-  return <PaymentRequestButtonElement options={{ paymentRequest }} />;
+  return (
+    <div id="prb-container" style={{ minHeight: 48, display: 'block' }}>
+      <PaymentRequestButtonElement
+        options={{
+          paymentRequest,
+          style: { paymentRequestButton: { theme: 'dark', height: '48px' } },
+        }}
+      />
+    </div>
+  );
 }
 
 export function StripePaymentRequestButton(props: Props) {
