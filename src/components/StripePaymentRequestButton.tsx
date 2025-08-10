@@ -137,31 +137,34 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
     prepare();
   }, [paymentRequest, enabled, cart, eventId, email, discountCodeId, amountCents]);
 
-  // Placeholder when not eligible or not ready
-  if ((!stripe || !paymentRequest || !ready) && showPlaceholder) {
-    return (
+  // If not ready yet or not enabled, show branded static image placeholder
+  const renderPlaceholderImage = (
+    <div style={{ position: 'relative' }} aria-disabled>
+      <img
+        src="/images/both_apple_google_pay_button.png"
+        alt="Apple Pay / Google Pay"
+        style={{ width: '100%', height: 48, objectFit: 'cover', borderRadius: 6, display: 'block' }}
+      />
+      {/* Non-clickable overlay to indicate disabled state */}
       <div
-        id="prb-placeholder"
         style={{
-          minHeight: 48,
-          height: 48,
+          position: 'absolute',
+          inset: 0,
+          background: 'transparent',
+          cursor: 'not-allowed',
           borderRadius: 6,
-          background: '#000',
-          color: '#fff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontWeight: 600,
-          cursor: 'default',
         }}
-        aria-disabled
-      >
-         Pay / G Pay
-      </div>
-    );
+      />
+    </div>
+  );
+
+  if (!stripe || !paymentRequest || !ready) {
+    return showPlaceholder ? renderPlaceholderImage : null;
   }
 
-  if (!stripe || !paymentRequest || !ready) return null;
+  if (!enabled) {
+    return renderPlaceholderImage;
+  }
 
   return (
     <div id="prb-container" style={{ minHeight: 48, display: 'block', position: 'relative' }}>
@@ -171,18 +174,6 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           style: { paymentRequestButton: { theme: 'dark', height: '48px' } },
         }}
       />
-      {!enabled && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(255,255,255,0.5)',
-            borderRadius: 6,
-            cursor: 'not-allowed',
-          }}
-          aria-hidden
-        />
-      )}
     </div>
   );
 }
