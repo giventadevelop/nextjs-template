@@ -128,6 +128,11 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         if (!res.ok) return;
         const data = await res.json();
         if (data?.clientSecret) setClientSecret(data.clientSecret);
+        if (typeof data?.amount === 'number') {
+          try {
+            paymentRequest.update({ total: { label: 'Tickets', amount: data.amount } });
+          } catch { }
+        }
       } catch { }
     };
     prepare();
