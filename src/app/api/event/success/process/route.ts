@@ -70,8 +70,13 @@ export async function POST(req: NextRequest) {
           hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
           qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
         });
-      } catch (err) {
-        console.error('[QR Code Debug] Failed to fetch QR code:', err);
+      } catch (err: any) {
+        console.error('[QR Code Debug] Failed to fetch QR code:', {
+          error: err.message,
+          transactionId: transaction.id,
+          eventId: eventDetails.id
+        });
+        // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
         qrCodeData = null;
       }
     } else {
@@ -149,8 +154,13 @@ export async function GET(req: NextRequest) {
           hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
           qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
         });
-      } catch (err) {
-        console.error('[QR Code Debug GET] Failed to fetch QR code:', err);
+      } catch (err: any) {
+        console.error('[QR Code Debug GET] Failed to fetch QR code:', {
+          error: err.message,
+          transactionId: transaction.id,
+          eventId: eventDetails.id
+        });
+        // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
         qrCodeData = null;
       }
     } else {

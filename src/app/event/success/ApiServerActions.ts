@@ -505,14 +505,34 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
 
   console.log('[fetchTransactionQrCode] Response status:', response.status);
   console.log('[fetchTransactionQrCode] Response headers:', Object.fromEntries(response.headers.entries()));
+  console.log('[fetchTransactionQrCode] Response OK:', response.ok);
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error('Failed to fetch QR code:', response.status, errorBody);
+    console.error('[fetchTransactionQrCode] Failed to fetch QR code:', {
+      status: response.status,
+      statusText: response.statusText,
+      errorBody,
+      url: qrUrl,
+      baseUrl,
+      emailHostUrlPrefix
+    });
+    
+    // If this is a 404 or similar, it might indicate the transaction/QR isn't ready yet
+    if (response.status === 404) {
+      console.log('[fetchTransactionQrCode] QR code not found (404) - might not be generated yet');
+    } else if (response.status === 401) {
+      console.log('[fetchTransactionQrCode] Unauthorized (401) - JWT token issue');
+    }
+    
     throw new Error(`Failed to fetch QR code: ${errorBody}`);
   }
+  
   // Always treat as plain text URL
   const url = await response.text();
   console.log('[fetchTransactionQrCode] QR code URL received:', url);
+  console.log('[fetchTransactionQrCode] QR code URL type:', typeof url);
+  console.log('[fetchTransactionQrCode] QR code URL length:', url?.length);
+  
   return { qrCodeImageUrl: url };
 }
