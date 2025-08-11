@@ -309,151 +309,46 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       }
       qrPollingStartedRef.current = true;
       
-      console.log('[QR Debug Mobile] Starting mobile QR workflow - showing immediate success');
+      console.log('[QR Debug Mobile] Starting mobile QR workflow - showing immediate success and preparing for redirect');
       
       // Show immediate success for mobile users - NO QR generation yet
       setResult((prev: any) => ({
         ...(prev || {}),
         qrCodeData: {
           showMobileSuccess: true,
-          message: 'Your QR code will be generated shortly. Please wait while we prepare your ticket details.'
+          message: 'Your ticket purchase is complete! We will now generate your QR code on the next page.'
         }
       }));
       
-      // Wait longer to ensure success page is fully rendered and user has read content
+      // Wait to let user see success message, then redirect to QR page
       setTimeout(() => {
-        console.log('[QR Debug Mobile] Starting delayed QR generation for mobile after 5 second wait');
-        initiateDelayedQrGeneration();
-      }, 5000); // 5 second delay to let user see and read the success page
+        console.log('[QR Debug Mobile] Redirecting mobile user to QR page after success display');
+        redirectToQrPageForGeneration();
+      }, 4000); // 4 second delay to let user see and read the success page
     }
     
-    function initiateDelayedQrGeneration() {
-      // Update UI to show QR generation is starting
-      setResult((prev: any) => ({
-        ...(prev || {}),
-        qrCodeData: {
-          isGenerating: true,
-          message: 'Generating your QR code now... This may take a moment.'
-        }
-      }));
-      
-      // Wait an additional 3 seconds before making the API call
-      setTimeout(async () => {
-        try {
-          console.log('[QR Debug Mobile] Making delayed QR generation API call');
-          await generateQrCodeForMobile();
-        } catch (error) {
-          console.error('[QR Debug Mobile] Delayed QR generation failed:', error);
-          // Instead of showing error, redirect to QR page with parameters
-          redirectToQrPage();
-        }
-      }, 3000); // Additional 3 second delay before API call
-    }
-    
-    function redirectToQrPage() {
+    function redirectToQrPageForGeneration() {
       const url = new URL(window.location.href);
       const pi = url.searchParams.get('pi');
       const identifier = session_id || pi;
       
-      console.log('[QR Debug Mobile] Redirecting to QR page for mobile (QR generation failed)');
+      console.log('[QR Debug Mobile] Redirecting to QR page for mobile QR generation');
       
-      // Store transaction data even if QR generation failed, so user can see ticket details
-      const qrDisplayData = {
-        qrCodeImageUrl: '', // Empty since generation failed
+      // Store transaction data for QR generation on the next page
+      const qrGenerationData = {
+        sessionId: session_id,
+        paymentIntent: pi,
         transaction: result.transaction,
         eventDetails: result.eventDetails,
         transactionItems: result.transactionItems || [],
         heroImageUrl: result.heroImageUrl || "/images/default_placeholder_hero_image.jpeg",
-        generationFailed: true
+        needsGeneration: true // Flag to indicate QR generation is needed
       };
       
-      sessionStorage.setItem('mobileQrData', JSON.stringify(qrDisplayData));
-      console.log('[QR Debug Mobile] Stored fallback data for failed QR generation:', qrDisplayData);
+      sessionStorage.setItem('mobileQrGeneration', JSON.stringify(qrGenerationData));
+      console.log('[QR Debug Mobile] Stored generation data for QR page:', qrGenerationData);
       
-      // Redirect to QR display page  
-      window.location.href = '/event/ticket-qr';
-    }
-    
-    async function generateQrCodeForMobile() {
-      const url = new URL(window.location.href);
-      const pi = url.searchParams.get('pi');
-      const identifier = session_id || pi;
-      
-      console.log('[QR Debug Mobile] Generating QR code for mobile after delays:', {
-        transactionId: result.transaction.id,
-        eventId: result.eventDetails?.id,
-        identifier,
-        totalWaitTime: '8 seconds'
-      });
-      
-      // Make direct QR code request with additional timeout for mobile
-      try {
-        const directUrl = `/api/proxy/events/${result.eventDetails.id}/transactions/${result.transaction.id}/emailHostUrlPrefix/${Buffer.from(window.location.origin).toString('base64')}/qrcode`;
-        console.log('[QR Debug Mobile] Making delayed direct QR request:', directUrl);
-        
-        // Add longer timeout for mobile QR generation
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log('[QR Debug Mobile] QR request timeout - redirecting to QR page');
-          controller.abort();
-        }, 15000); // 15 second timeout
-        
-        const qrResponse = await fetch(directUrl, {
-          signal: controller.signal,
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0',
-            'X-Mobile-Request': 'true',
-            'X-Delayed-Generation': 'true'
-          }
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (qrResponse.ok) {
-          const qrUrl = await qrResponse.text();
-          if (qrUrl && qrUrl.trim() && (qrUrl.startsWith('http') || qrUrl.startsWith('data:'))) {
-            console.log('[QR Debug Mobile] QR code generated successfully after delays:', qrUrl);
-            
-            // Instead of updating current page, redirect to QR display page with the QR URL
-            redirectToQrPageWithSuccess(qrUrl.trim());
-            
-          } else {
-            console.log('[QR Debug Mobile] Invalid QR URL received after delays:', qrUrl);
-            throw new Error('Invalid QR code URL received');
-          }
-        } else {
-          console.log('[QR Debug Mobile] QR request failed after delays:', qrResponse.status);
-          throw new Error(`QR generation failed with status ${qrResponse.status}`);
-        }
-      } catch (error) {
-        console.error('[QR Debug Mobile] QR generation error after delays:', error);
-        throw error;
-      }
-    }
-    
-    function redirectToQrPageWithSuccess(qrUrl: string) {
-      const url = new URL(window.location.href);
-      const pi = url.searchParams.get('pi');
-      const identifier = session_id || pi;
-      
-      console.log('[QR Debug Mobile] Redirecting to QR success page with generated QR');
-      
-      // Store complete QR data for the QR display page in the format it expects
-      const qrDisplayData = {
-        qrCodeImageUrl: qrUrl,
-        transaction: result.transaction,
-        eventDetails: result.eventDetails,
-        transactionItems: result.transactionItems || [],
-        heroImageUrl: result.heroImageUrl || "/images/default_placeholder_hero_image.jpeg"
-      };
-      
-      sessionStorage.setItem('mobileQrData', JSON.stringify(qrDisplayData));
-      console.log('[QR Debug Mobile] Stored QR data for redirect:', qrDisplayData);
-      
-      // Redirect to QR display page  
+      // Redirect to QR display page where generation will happen
       window.location.href = '/event/ticket-qr';
     }
     

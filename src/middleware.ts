@@ -7,6 +7,7 @@ export default authMiddleware({
     "/event",
     "/event/success",
     "/event/success/(.*)",
+    "/event/ticket-qr",
     "/pricing",
     "/events",
     "/events/(.*)/tickets",
