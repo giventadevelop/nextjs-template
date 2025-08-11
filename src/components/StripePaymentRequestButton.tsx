@@ -43,13 +43,30 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
     });
 
     pr.canMakePayment().then((result) => {
-      console.log('[PRB] canMakePayment()', result);
+      console.log('[PRB] canMakePayment() result:', result);
+      console.log('[PRB] Environment info:', {
+        userAgent: navigator.userAgent,
+        domain: window.location.hostname,
+        protocol: window.location.protocol,
+        isHTTPS: window.location.protocol === 'https:',
+        isChrome: /Chrome/.test(navigator.userAgent),
+        stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
+      });
+      
       if (!result) {
+        console.warn('[PRB] canMakePayment() returned null - no payment methods available');
         setPaymentRequest(null);
         setReady(false);
         setEligible(false);
         return;
       }
+      
+      console.log('[PRB] Payment methods available:', {
+        applePay: result.applePay || (result as any).apple_pay,
+        googlePay: result.googlePay || (result as any).google_pay,
+        link: (result as any).link
+      });
+      
       setCanMakePaymentResult(result);
       pr.on('paymentmethod', async (ev) => {
         if (processing) {

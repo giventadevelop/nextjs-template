@@ -74,7 +74,8 @@ export async function POST(req: NextRequest) {
         console.error('[QR Code Debug] Failed to fetch QR code:', {
           error: err.message,
           transactionId: transaction.id,
-          eventId: eventDetails.id
+          eventId: eventDetails.id,
+          errorType: err.constructor.name
         });
         // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
         qrCodeData = null;
@@ -158,7 +159,8 @@ export async function GET(req: NextRequest) {
         console.error('[QR Code Debug GET] Failed to fetch QR code:', {
           error: err.message,
           transactionId: transaction.id,
-          eventId: eventDetails.id
+          eventId: eventDetails.id,
+          errorType: err.constructor.name
         });
         // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
         qrCodeData = null;

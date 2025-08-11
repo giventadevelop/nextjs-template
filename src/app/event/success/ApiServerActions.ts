@@ -515,17 +515,23 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
       errorBody,
       url: qrUrl,
       baseUrl,
-      emailHostUrlPrefix
+      emailHostUrlPrefix,
+      eventId,
+      transactionId
     });
     
     // If this is a 404 or similar, it might indicate the transaction/QR isn't ready yet
     if (response.status === 404) {
-      console.log('[fetchTransactionQrCode] QR code not found (404) - might not be generated yet');
+      console.log('[fetchTransactionQrCode] QR code not found (404) - transaction/QR might not be ready yet');
+      // Don't throw an error for 404, just return null to allow polling to continue
+      return { qrCodeImageUrl: '' };
     } else if (response.status === 401) {
       console.log('[fetchTransactionQrCode] Unauthorized (401) - JWT token issue');
+    } else if (response.status >= 500) {
+      console.log('[fetchTransactionQrCode] Server error - backend issue');
     }
     
-    throw new Error(`Failed to fetch QR code: ${errorBody}`);
+    throw new Error(`Failed to fetch QR code (${response.status}): ${errorBody}`);
   }
   
   // Always treat as plain text URL
