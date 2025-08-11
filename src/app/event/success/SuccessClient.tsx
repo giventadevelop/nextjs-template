@@ -205,12 +205,25 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     );
   }
 
+  // Desktop-only data fetching - mobile users use the brief success flow
   useEffect(() => {
+    // Skip data fetching for mobile users - they get the brief success page
+    if (typeof window !== 'undefined') {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                      window.innerWidth <= 768;
+      if (isMobile) {
+        console.log('[SuccessClient] Skipping data fetch for mobile user');
+        return;
+      }
+    }
+    
+    // Desktop data fetching logic
     let cancelled = false;
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
+        console.log('[SuccessClient] Desktop - fetching transaction data');
         // 1. Try to GET the transaction by session_id (idempotency)
         const getRes = await fetch(`/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`, {
           cache: 'no-store'
@@ -246,6 +259,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         }
       }
     }
+    
     fetchData();
     return () => { cancelled = true; };
   }, [session_id]);
