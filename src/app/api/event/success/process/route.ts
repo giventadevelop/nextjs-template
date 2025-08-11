@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processStripeSessionServer, fetchTransactionQrCode } from '@/app/event/success/ApiServerActions';
 import { fetchEventDetailsByIdServer } from '@/app/admin/events/[id]/media/ApiServerActions';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2025-03-31.basil',
+});
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
@@ -42,13 +47,64 @@ async function getHeroImageUrl(eventId: number) {
   return imageUrl || defaultHeroImageUrl;
 }
 
+// Function to get session_id from payment intent
+async function getSessionIdFromPaymentIntent(paymentIntentId: string): Promise<string | null> {
+  try {
+    console.log('[Payment Intent] Looking up session for payment intent:', paymentIntentId);
+    
+    // Get the payment intent from Stripe
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    
+    // The session ID should be in the metadata or we need to search for it
+    if (paymentIntent.metadata?.session_id) {
+      console.log('[Payment Intent] Found session_id in metadata:', paymentIntent.metadata.session_id);
+      return paymentIntent.metadata.session_id;
+    }
+    
+    // If not in metadata, we need to search checkout sessions
+    // This is more expensive but necessary for mobile flows
+    const sessions = await stripe.checkout.sessions.list({
+      payment_intent: paymentIntentId,
+      limit: 1
+    });
+    
+    if (sessions.data.length > 0) {
+      const sessionId = sessions.data[0].id;
+      console.log('[Payment Intent] Found session_id via lookup:', sessionId);
+      return sessionId;
+    }
+    
+    console.log('[Payment Intent] No session found for payment intent:', paymentIntentId);
+    return null;
+  } catch (error) {
+    console.error('[Payment Intent] Error looking up session:', error);
+    return null;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
-    const { session_id } = await req.json();
-    if (!session_id) {
-      return NextResponse.json({ error: 'Missing session_id' }, { status: 400 });
+    const body = await req.json();
+    const { session_id, pi } = body;
+    
+    if (!session_id && !pi) {
+      return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
-    const result = await processStripeSessionServer(session_id);
+    
+    // For payment intent, we need to process it by session_id (requires conversion)
+    // For now, we'll use the same processStripeSessionServer function which expects session_id
+    let result = null;
+    if (session_id) {
+      result = await processStripeSessionServer(session_id);
+    } else if (pi) {
+      // Payment intent processing - convert to session_id first
+      console.log('[API] Processing payment intent:', pi);
+      const sessionId = await getSessionIdFromPaymentIntent(pi);
+      if (!sessionId) {
+        return NextResponse.json({ error: 'Could not find session for payment intent' }, { status: 404 });
+      }
+      result = await processStripeSessionServer(sessionId);
+    }
     const transaction = result?.transaction;
     const userProfile = result?.userProfile;
     if (!transaction) {
@@ -104,11 +160,24 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
-    if (!session_id) {
-      return NextResponse.json({ error: 'Missing session_id' }, { status: 400 });
+    const pi = searchParams.get('pi');
+    
+    if (!session_id && !pi) {
+      return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
+    
     // Only look up, do not create
-    const result = await processStripeSessionServer(session_id);
+    let result = null;
+    if (session_id) {
+      result = await processStripeSessionServer(session_id);
+    } else if (pi) {
+      console.log('[API GET] Processing payment intent:', pi);
+      const sessionId = await getSessionIdFromPaymentIntent(pi);
+      if (!sessionId) {
+        return NextResponse.json({ error: 'Could not find session for payment intent' }, { status: 404 });
+      }
+      result = await processStripeSessionServer(sessionId);
+    }
     const transaction = result?.transaction;
     const userProfile = result?.userProfile;
     if (!transaction) {

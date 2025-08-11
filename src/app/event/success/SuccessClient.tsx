@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SuccessClientProps {
   session_id: string;
+  payment_intent?: string;
 }
 
 function formatTime(time: string): string {
@@ -25,7 +26,7 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
-export default function SuccessClient({ session_id }: SuccessClientProps) {
+export default function SuccessClient({ session_id, payment_intent }: SuccessClientProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -42,13 +43,26 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
 
     if (isMobile) {
       console.log('[SuccessClient] Mobile browser detected - redirecting to QR page');
-      // Store session_id in sessionStorage for QR page
-      sessionStorage.setItem('stripe_session_id', session_id);
-      // Redirect to separate QR page for mobile
-      router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
+      
+      // Determine which identifier to use and store
+      const identifier = session_id || payment_intent;
+      if (!identifier) {
+        setError('Missing session ID or payment intent');
+        setLoading(false);
+        return;
+      }
+      
+      // Store the identifier in sessionStorage for QR page
+      if (session_id) {
+        sessionStorage.setItem('stripe_session_id', session_id);
+        router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
+      } else if (payment_intent) {
+        sessionStorage.setItem('stripe_payment_intent', payment_intent);
+        router.replace(`/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`);
+      }
       return;
     }
-  }, [session_id, router]);
+  }, [session_id, payment_intent, router]);
 
   // Hero image is handled by the HydrationSafeHeroImage component
 

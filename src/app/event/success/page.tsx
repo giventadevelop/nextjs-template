@@ -132,5 +132,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     }
   }
 
-  return <SuccessClient session_id={session_id || ''} />;
+  // For mobile users with payment intent, we need to convert pi to session_id
+  // Pass both parameters to SuccessClient to handle the conversion
+  return <SuccessClient session_id={session_id || ''} payment_intent={pi} />;
 }

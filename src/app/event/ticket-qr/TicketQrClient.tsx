@@ -30,9 +30,14 @@ export default function TicketQrClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Get session_id from URL params or sessionStorage
+  // Get session_id or payment_intent from URL params or sessionStorage
   const session_id = searchParams?.get('session_id') || 
                     (typeof window !== 'undefined' ? sessionStorage.getItem('stripe_session_id') : null);
+  const payment_intent = searchParams?.get('pi') || 
+                        (typeof window !== 'undefined' ? sessionStorage.getItem('stripe_payment_intent') : null);
+  
+  // Determine which identifier to use
+  const identifier = session_id || payment_intent;
 
   // Helper to get ticket number
   function getTicketNumber(transaction: any) {
@@ -45,8 +50,8 @@ export default function TicketQrClient() {
 
   // First, load transaction data
   useEffect(() => {
-    if (!session_id) {
-      setError('Missing session ID');
+    if (!identifier) {
+      setError('Missing session ID or payment intent');
       setLoading(false);
       return;
     }
@@ -54,10 +59,19 @@ export default function TicketQrClient() {
     let cancelled = false;
     async function fetchTransactionData() {
       try {
-        console.log('[TicketQrClient] Fetching transaction data for session:', session_id);
+        console.log('[TicketQrClient] Fetching transaction data for identifier:', identifier);
         
-        // Try to GET the transaction by session_id
-        const getRes = await fetch(`/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`, {
+        // Build the appropriate query parameters
+        const queryParams = new URLSearchParams();
+        if (session_id) {
+          queryParams.set('session_id', session_id);
+        } else if (payment_intent) {
+          queryParams.set('pi', payment_intent);
+        }
+        queryParams.set('_t', Date.now().toString());
+        
+        // Try to GET the transaction
+        const getRes = await fetch(`/api/event/success/process?${queryParams.toString()}`, {
           cache: 'no-store'
         });
         
@@ -72,10 +86,17 @@ export default function TicketQrClient() {
         }
         
         // If not found, POST to create it
+        const postBody: any = {};
+        if (session_id) {
+          postBody.session_id = session_id;
+        } else if (payment_intent) {
+          postBody.pi = payment_intent;
+        }
+        
         const postRes = await fetch("/api/event/success/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id }),
+          body: JSON.stringify(postBody),
         });
         
         if (!postRes.ok) throw new Error(await postRes.text());
@@ -97,7 +118,7 @@ export default function TicketQrClient() {
     
     fetchTransactionData();
     return () => { cancelled = true; };
-  }, [session_id]);
+  }, [identifier, session_id, payment_intent]);
 
   // Second, once transaction is loaded, fetch QR code
   useEffect(() => {
@@ -136,7 +157,7 @@ export default function TicketQrClient() {
   }, [result]);
 
   if (loading) {
-    return <LoadingTicket sessionId={session_id || ''} />;
+    return <LoadingTicket sessionId={identifier || ''} />;
   }
 
   if (error) {
