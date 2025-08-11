@@ -159,7 +159,14 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         // 1. Try to GET the transaction by session_id or pi (idempotency)
         const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
         console.log('[QR Debug] Fetching success data with URL:', `/api/event/success/process?${qs}`);
-        const getRes = await fetch(`/api/event/success/process?${qs}`);
+        const getRes = await fetch(`/api/event/success/process?${qs}&_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
         console.log('[QR Debug] Initial fetch response:', { status: getRes.status, ok: getRes.ok });
         if (getRes.ok) {
           const data = await getRes.json();
@@ -197,7 +204,14 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           for (let i = 0; i < maxTries; i++) {
             if (cancelled) break;
             await new Promise(res => setTimeout(res, 1500));
-            const pollRes = await fetch(`/api/event/success/process?pi=${encodeURIComponent(pi)}`);
+            const pollRes = await fetch(`/api/event/success/process?pi=${encodeURIComponent(pi)}&_t=${Date.now()}`, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
             if (pollRes.ok) {
               const data = await pollRes.json();
               if (data.transaction) {
@@ -279,7 +293,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       const pi = url.searchParams.get('pi');
       const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
       // Exponential-ish backoff to avoid hammering (approx total ~60s for mobile)
-      const delays = [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
+      // Limit mobile to fewer attempts to prevent infinite loops and multiple emails
+      const delays = isMobile ? [2000, 4000, 6000, 10000, 15000] : [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
       
       // Check if this is mobile
       const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -311,11 +326,12 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
 
         try {
           const startTime = Date.now();
-          const res = await fetch(`/api/event/success/process?${qs}`, {
+          const res = await fetch(`/api/event/success/process?${qs}&_t=${Date.now()}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache',
+              'Expires': '0',
               'X-Mobile-Request': isMobile ? 'true' : 'false'
             }
           });
@@ -399,6 +415,19 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           hasResult: !!result,
           hasQrCode: !!result?.qrCodeData
         });
+        
+        // For mobile: if QR polling exhausted and still no QR code, 
+        // set a placeholder to allow success page to show
+        if (isMobile && result && !result.qrCodeData) {
+          console.log('[QR Debug Mobile] Setting fallback QR data for mobile to show success page');
+          setResult((prev: any) => ({ 
+            ...(prev || {}), 
+            qrCodeData: { 
+              error: 'QR code generation is taking longer than expected. Please check your email for your ticket.',
+              qrCodeImageUrl: null 
+            } 
+          }));
+        }
       }
     })();
     return () => { 
