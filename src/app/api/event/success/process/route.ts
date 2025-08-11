@@ -118,6 +118,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
     const pi = searchParams.get('pi');
+    
+    // Debug mobile vs desktop requests
+    const userAgent = req.headers.get('user-agent') || '';
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+    
+    console.log('[Success API Mobile] GET request details:', {
+      session_id,
+      pi,
+      isMobile,
+      userAgent: userAgent.substring(0, 100) + '...',
+      url: req.url,
+      isMobileHeader: req.headers.get('X-Mobile-Request'),
+      contentType: req.headers.get('content-type'),
+      cacheControl: req.headers.get('cache-control'),
+      pragma: req.headers.get('pragma')
+    });
     if (!session_id && !pi) {
       return NextResponse.json({ error: 'Missing session_id or pi' }, { status: 400 });
     }
