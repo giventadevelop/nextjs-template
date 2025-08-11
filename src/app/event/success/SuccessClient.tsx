@@ -40,7 +40,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     payment_intent
   });
 
-  // Mobile detection and redirect logic
+  // Mobile detection and redirect logic - show brief success then redirect
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -56,7 +56,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     });
 
     if (isMobile) {
-      console.log('[SuccessClient] Mobile browser detected - redirecting to QR page');
+      console.log('[SuccessClient] Mobile browser detected - will show brief success then redirect');
       
       // Determine which identifier to use and store
       const identifier = session_id || payment_intent;
@@ -67,16 +67,28 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         return;
       }
       
-      // Store the identifier in sessionStorage for QR page
-      if (session_id) {
-        console.log('[SuccessClient] Using session_id for redirect:', session_id);
-        sessionStorage.setItem('stripe_session_id', session_id);
-        router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
-      } else if (payment_intent) {
-        console.log('[SuccessClient] Using payment_intent for redirect:', payment_intent);
-        sessionStorage.setItem('stripe_payment_intent', payment_intent);
-        router.replace(`/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`);
-      }
+      // Show brief success message then redirect after 2 seconds
+      setLoading(false);
+      setResult({ 
+        isMobileBrief: true, 
+        identifier,
+        session_id,
+        payment_intent 
+      });
+      
+      setTimeout(() => {
+        // Store the identifier in sessionStorage for QR page
+        if (session_id) {
+          console.log('[SuccessClient] Redirecting with session_id:', session_id);
+          sessionStorage.setItem('stripe_session_id', session_id);
+          router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
+        } else if (payment_intent) {
+          console.log('[SuccessClient] Redirecting with payment_intent:', payment_intent);
+          sessionStorage.setItem('stripe_payment_intent', payment_intent);
+          router.replace(`/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`);
+        }
+      }, 2000);
+      
       return;
     } else {
       console.log('[SuccessClient] Desktop browser detected - staying on success page');
@@ -251,6 +263,24 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       </div>
     );
   }
+  // Handle mobile brief success display
+  if (result?.isMobileBrief) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+          <FaCheckCircle className="h-10 w-10 text-green-500" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">Payment Successful!</h1>
+        <p className="text-gray-600 mb-6">Thank you for your purchase. Your tickets are confirmed.</p>
+        <div className="flex items-center justify-center gap-2 text-teal-600">
+          <FaTicketAlt className="animate-bounce" />
+          <span className="text-lg font-semibold">Preparing your tickets...</span>
+        </div>
+        <p className="text-sm text-gray-500 mt-4">You will be redirected to view your tickets in a moment.</p>
+      </div>
+    );
+  }
+
   const { transaction, userProfile, eventDetails, qrCodeData, transactionItems, heroImageUrl: fetchedHeroImageUrl } = result || {};
 
   // Clear hero image storage since we're on success page
