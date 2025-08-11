@@ -1,10 +1,6 @@
 import { processStripeSessionServer, fetchTransactionQrCode } from '@/app/event/success/ApiServerActions';
 import { fetchUserProfileServer } from '@/app/admin/ApiServerActions';
 import { fetchEventDetailsByIdServer } from '@/app/admin/events/[id]/media/ApiServerActions';
-import {
-  FaCheckCircle, FaTicketAlt, FaCalendarAlt, FaUser, FaEnvelope,
-  FaMoneyBillWave, FaInfoCircle, FaReceipt, FaMapMarkerAlt, FaClock, FaMapPin
-} from 'react-icons/fa';
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import Image from 'next/image';
@@ -119,6 +115,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
     console.log('[SuccessPage SERVER] Missing both session_id and pi - showing error');
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
+        <div className="text-4xl text-red-500 mb-4">⚠️</div>
         <h1 className="text-2xl font-bold text-gray-800">Missing session ID or payment intent</h1>
         <p className="text-gray-600 mt-2">No session ID or payment intent was provided. Please check your payment link or contact support.</p>
         <p className="text-gray-500 text-sm mt-2">Debug: session_id={session_id}, pi={pi}</p>
