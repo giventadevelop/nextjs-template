@@ -30,6 +30,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [readyToShowNotFound, setReadyToShowNotFound] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -117,6 +118,43 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     }
   }, [searchParams]);
 
+  // Handle refresh detection - only redirect on actual refresh attempts
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const pi = url.searchParams.get('pi');
+
+    // Use either session_id or pi for tracking
+    const identifier = session_id || pi;
+    if (!identifier) return;
+
+    const completedKey = `success_completed_${identifier}`;
+
+    // Check if this transaction was already completed and we're seeing it again
+    const wasCompleted = sessionStorage.getItem(completedKey);
+
+    // Only redirect if we're sure this is a refresh AND the transaction was previously completed
+    if (wasCompleted) {
+      // Use a more conservative approach - only redirect if it's clearly a refresh
+      const isDefiniteRefresh = (
+        performance.navigation?.type === 1 || // Modern browsers: 1 = TYPE_RELOAD
+        (performance as any).navigation?.type === 'reload' // Some browsers use string
+      );
+
+      // Add a delay to ensure it's not just a quick navigation
+      if (isDefiniteRefresh) {
+        console.log('Success page refresh detected after completion - redirecting to home');
+        setTimeout(() => {
+          window.location.replace('/?payment=already-processed');
+        }, 100);
+        return;
+      } else {
+        console.log('Success page revisited but not a refresh - allowing access');
+      }
+    }
+
+    console.log('Success page accessed for:', identifier);
+  }, [session_id]);
+
   // Enhanced back button prevention
   useEffect(() => {
     console.log('Setting up enhanced navigation prevention...');
@@ -135,8 +173,11 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       window.location.replace('/');
     };
 
-    // Remove beforeunload handler to allow normal navigation
-    // Only prevent specific refresh attempts via keydown
+    // Handle page reload attempts - redirect to home instead
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Let the refresh detection in the other useEffect handle this
+      console.log('Page unload detected - refresh detection will handle redirect');
+    };
 
     // Enhanced keydown prevention for F5 and Ctrl+R
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -151,6 +192,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     // Add event listeners
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // Push current state to prevent back navigation
     window.history.pushState(null, '', window.location.href);
@@ -162,6 +204,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     return () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
@@ -186,6 +229,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       }
     }
     
+    // Desktop data fetching logic
     let cancelled = false;
     async function fetchData() {
       setLoading(true);
@@ -193,13 +237,14 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       try {
         console.log('[SuccessClient] Desktop - fetching transaction data');
         // 1. Try to GET the transaction by session_id (idempotency)
-        const getRes = await fetch(`/api/event/success/process?session_id=${session_id}`);
+        const getRes = await fetch(`/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`, {
+          cache: 'no-store'
+        });
         if (getRes.ok) {
           const data = await getRes.json();
           if (data.transaction) {
             if (!cancelled) {
               setResult(data);
-              // Hero image is handled by HydrationSafeHeroImage component
             }
             setLoading(false);
             return;
@@ -215,17 +260,22 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         const postData = await postRes.json();
         if (!cancelled) {
           setResult(postData);
-          // Hero image is handled by HydrationSafeHeroImage component
         }
       } catch (err: any) {
-        if (!cancelled) setError(err?.message || "Unknown error");
+        if (!cancelled) {
+          setError(err?.message || "Unknown error");
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
+    
     fetchData();
     return () => { cancelled = true; };
   }, [session_id]);
+
 
   if (loading) {
     return <LoadingTicket sessionId={session_id} />;
@@ -278,19 +328,11 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       </div>
     );
   }
-  if (!eventDetails?.id) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-        <FaInfoCircle className="text-4xl text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-800">Event Details Not Found</h1>
-        <p className="text-gray-600 mt-2">We could not find the event details for your transaction.</p>
-      </div>
-    );
-  }
-  const displayName = transaction.firstName || '';
+  const displayName = transaction?.firstName || '';
   let qrError: string | null = null;
   // If qrCodeData is an error object, handle it
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
+
 
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>

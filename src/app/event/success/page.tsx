@@ -12,10 +12,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { Suspense } from 'react';
 import LoadingTicketFallback from './LoadingTicketFallback';
 import SuccessClient from './SuccessClient';
-import { getTenantId } from '@/lib/env';
+import { getTenantId, getAppUrl } from '@/lib/env';
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // Function to check if transaction already exists on server side
 async function checkTransactionExistsServer(sessionId: string): Promise<{ exists: boolean; transaction?: any }> {
@@ -27,7 +25,7 @@ async function checkTransactionExistsServer(sessionId: string): Promise<{ exists
     });
 
     const response = await fetchWithJwtRetry(
-      `${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`,
+      `${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`,
       { cache: 'no-store' }
     );
 
@@ -55,7 +53,7 @@ async function checkTransactionExistsServer(sessionId: string): Promise<{ exists
 async function getHeroImageUrl(eventId: number): Promise<string> {
   const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
   let imageUrl: string | null = null;
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   try {
     const flyerRes = await fetch(`${baseUrl}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
     if (flyerRes.ok) {
@@ -80,14 +78,14 @@ async function getHeroImageUrl(eventId: number): Promise<string> {
 }
 
 async function fetchTransactionItemsByTransactionId(transactionId: number) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   const res = await fetch(`${baseUrl}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function fetchTicketTypeById(ticketTypeId: number) {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   const res = await fetch(`${baseUrl}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
@@ -129,15 +127,18 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   }
 
   // Check if transaction already exists on server side
-  const { exists: transactionExists, transaction } = await checkTransactionExistsServer(session_id);
+  const { exists: transactionExists, transaction } = session_id ? await checkTransactionExistsServer(session_id) : { exists: false } as any;
 
   if (transactionExists) {
     console.log(`Transaction already exists for session ${session_id}, redirecting to homepage`);
     console.log(`This could be due to: page refresh, back button, or duplicate access`);
     console.log(`Transaction ID: ${transaction?.id}, Status: ${transaction?.status}`);
-
-    // Redirect to homepage with a query parameter to indicate why
-    redirect('/?payment=already-processed');
+    // Keep user on success page after first load; only redirect on explicit refresh
+    // Detect a refresh via a special query flag
+    const refreshed = (resolvedParams as any)?.ref === '1';
+    if (refreshed) {
+      redirect('/?payment=already-processed');
+    }
   }
 
   // For mobile users with payment intent, we need to convert pi to session_id

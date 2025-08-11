@@ -1,6 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
-import { getEmailHostUrlPrefix } from '@/lib/env';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -29,27 +28,39 @@ async function fetchWithJwtRetry(apiUrl: string, options: any = {}, debugLabel =
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('[QR Code Proxy] Request received:', {
     method: req.method,
-    query: req.query,
-    headers: req.headers
+    query: req.query
   });
 
   if (!API_BASE_URL) {
     res.status(500).json({ error: 'API base URL not configured' });
     return;
   }
-  const { id, transactionId } = req.query;
-  if (!id || !transactionId) {
-    res.status(400).json({ error: 'Missing eventId or transactionId' });
+
+  const { id, transactionId, emailHostUrlPrefix } = req.query;
+  
+  if (!id || !transactionId || !emailHostUrlPrefix) {
+    res.status(400).json({ error: 'Missing eventId, transactionId, or emailHostUrlPrefix' });
     return;
   }
 
-  // Get emailHostUrlPrefix from request headers or use default
-  const emailHostUrlPrefix = req.headers['x-email-host-url-prefix'] as string ||
-                           getEmailHostUrlPrefix();
+  // Decode the Base64 emailHostUrlPrefix for logging
+  let decodedEmailHostUrlPrefix = '';
+  try {
+    decodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix as string, 'base64').toString();
+  } catch (error) {
+    console.error('[QR Code Proxy] Failed to decode emailHostUrlPrefix:', error);
+  }
 
-  const apiUrl = `${API_BASE_URL}/api/events/${id}/transactions/${transactionId}/emailHostUrlPrefix/${encodeURIComponent(emailHostUrlPrefix)}/qrcode`;
+  // Create backend URL that matches the API specification
+  const apiUrl = `${API_BASE_URL}/api/events/${id}/transactions/${transactionId}/emailHostUrlPrefix/${emailHostUrlPrefix}/qrcode`;
 
-  console.log('[QR Code Proxy] Backend URL:', apiUrl);
+  console.log('[QR Code Proxy] Backend API call:', {
+    eventId: id,
+    transactionId: transactionId,
+    emailHostUrlPrefix: decodedEmailHostUrlPrefix,
+    encodedEmailHostUrlPrefix: emailHostUrlPrefix,
+    backendUrl: apiUrl
+  });
 
   try {
     const response = await fetchWithJwtRetry(apiUrl, {
@@ -58,8 +69,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         'Content-Type': 'application/json',
       },
     }, 'event-transaction-qrcode');
+    
+    // Handle response as text since backend returns S3 URL as plain text
     const data = await response.text();
     console.log('[QR Code Proxy] Backend response status:', response.status);
+    console.log('[QR Code Proxy] S3 URL received:', data);
+    
     res.status(response.status).send(data);
   } catch (error) {
     console.error('Error in event transaction QR code proxy:', error);

@@ -5,19 +5,17 @@ import {
   EventTicketTypeDTO,
   UserProfileDTO,
 } from '@/types';
-import { getTenantId } from '@/lib/env';
+import { getTenantId, getAppUrl, getEmailHostUrlPrefix } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
 import Stripe from 'stripe';
 import { getTenantSettings } from '@/lib/tenantSettingsCache';
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
-import { getEmailHostUrlPrefix } from '@/lib/env';
 
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // Define ShoppingCartItem locally (not in @/types)
 export interface ShoppingCartItem {
@@ -30,7 +28,7 @@ export interface ShoppingCartItem {
 async function fetchTicketTypeByIdServer(
   id: number,
 ): Promise<EventTicketTypeDTO | null> {
-  const url = `${APP_URL}/api/proxy/event-ticket-types/${id}`;
+  const url = `${getAppUrl()}/api/proxy/event-ticket-types/${id}`;
   const response = await fetchWithJwtRetry(url, { cache: 'no-store' });
 
   if (!response.ok) {
@@ -51,7 +49,7 @@ async function findTransactionBySessionId(
   });
 
   const response = await fetchWithJwtRetry(
-    `${APP_URL}/api/proxy/event-ticket-transactions?${params.toString()}`,
+    `${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`,
   );
 
   if (!response.ok) {
@@ -66,10 +64,26 @@ async function findTransactionBySessionId(
   return transactions.length > 0 ? transactions[0] : null;
 }
 
+async function findTransactionByPaymentIntentId(
+  paymentIntentId: string,
+): Promise<EventTicketTransactionDTO | null> {
+  const tenantId = getTenantId();
+  const params = new URLSearchParams({
+    'stripePaymentIntentId.equals': paymentIntentId,
+    'tenantId.equals': tenantId,
+  });
+  const response = await fetchWithJwtRetry(
+    `${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`,
+  );
+  if (!response.ok) return null;
+  const items: EventTicketTransactionDTO[] = await response.json();
+  return items.length > 0 ? items[0] : null;
+}
+
 // Create a new transaction (POST)
 async function createTransaction(transactionData: Omit<EventTicketTransactionDTO, 'id'>): Promise<EventTicketTransactionDTO> {
   const response = await fetchWithJwtRetry(
-    `${APP_URL}/api/proxy/event-ticket-transactions`,
+    `${getAppUrl()}/api/proxy/event-ticket-transactions`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -88,7 +102,7 @@ async function createTransaction(transactionData: Omit<EventTicketTransactionDTO
 
 // Helper to bulk create transaction items
 async function createTransactionItemsBulk(items: any[]): Promise<any[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
   const response = await fetchWithJwtRetry(
     `${baseUrl}/api/proxy/event-ticket-transaction-items/bulk`,
     {
@@ -276,7 +290,7 @@ export async function processStripeSessionServer(
       'tenantId.equals': getTenantId(),
     });
     const attendeeLookupRes = await fetchWithJwtRetry(
-      `${APP_URL}/api/proxy/event-attendees?${attendeeLookupParams.toString()}`,
+      `${getAppUrl()}/api/proxy/event-attendees?${attendeeLookupParams.toString()}`,
       { method: 'GET', headers: { 'Content-Type': 'application/json' } }
     );
     let attendee = null;
@@ -300,7 +314,7 @@ export async function processStripeSessionServer(
         updatedAt: now,
       });
       const attendeeInsertRes = await fetchWithJwtRetry(
-        `${APP_URL}/api/proxy/event-attendees`,
+        `${getAppUrl()}/api/proxy/event-attendees`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -337,7 +351,7 @@ export async function processStripeSessionServer(
           'tenantId.equals': tenantId,
         });
         const userProfileRes = await fetchWithJwtRetry(
-          `${APP_URL}/api/proxy/user-profiles?${userProfileParams.toString()}`,
+          `${getAppUrl()}/api/proxy/user-profiles?${userProfileParams.toString()}`,
           { method: 'GET', headers: { 'Content-Type': 'application/json' } }
         );
 
@@ -356,7 +370,7 @@ export async function processStripeSessionServer(
           'tenantId.equals': tenantId,
         });
         const emailRes = await fetchWithJwtRetry(
-          `${APP_URL}/api/proxy/user-profiles?${emailParams.toString()}`,
+          `${getAppUrl()}/api/proxy/user-profiles?${emailParams.toString()}`,
           { method: 'GET', headers: { 'Content-Type': 'application/json' } }
         );
 
@@ -394,7 +408,7 @@ export async function processStripeSessionServer(
         };
 
         const updateRes = await fetchWithJwtRetry(
-          `${APP_URL}/api/proxy/user-profiles/${existingProfile.id}`,
+          `${getAppUrl()}/api/proxy/user-profiles/${existingProfile.id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -410,7 +424,7 @@ export async function processStripeSessionServer(
       } else {
         // Create new profile
         const createRes = await fetchWithJwtRetry(
-          `${APP_URL}/api/proxy/user-profiles`,
+          `${getAppUrl()}/api/proxy/user-profiles`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -441,7 +455,7 @@ export async function processStripeSessionServer(
         if (i < 1) await new Promise(res => setTimeout(res, 4000));
       }
       if (stripeFeeAmount > 0) {
-        const patchUrl = `${APP_URL}/api/proxy/event-ticket-transactions/${newTransaction.id}`;
+        const patchUrl = `${getAppUrl()}/api/proxy/event-ticket-transactions/${newTransaction.id}`;
         const patchRes = await fetchWithJwtRetry(patchUrl, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/merge-patch+json' },
@@ -470,20 +484,24 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
 
   // Get the current domain/host URL prefix for email context
   const emailHostUrlPrefix = getEmailHostUrlPrefix();
+  
+  // Backend expects Base64 encoded emailHostUrlPrefix in URL path
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
 
   console.log('[fetchTransactionQrCode] Starting QR code fetch:', {
     eventId,
     transactionId,
     emailHostUrlPrefix,
+    encodedEmailHostUrlPrefix,
     baseUrl
   });
 
   const response = await fetchWithJwtRetry(
-    `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${Buffer.from(emailHostUrlPrefix).toString('base64')}/qrcode`,
+    `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`,
     {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
       }
     }
   );
