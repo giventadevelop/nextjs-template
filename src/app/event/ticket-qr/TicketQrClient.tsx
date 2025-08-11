@@ -60,18 +60,25 @@ export default function TicketQrClient() {
     async function fetchTransactionData() {
       try {
         console.log('[TicketQrClient] Fetching transaction data for identifier:', identifier);
+        console.log('[TicketQrClient] session_id:', session_id);
+        console.log('[TicketQrClient] payment_intent:', payment_intent);
         
         // Build the appropriate query parameters
         const queryParams = new URLSearchParams();
         if (session_id) {
           queryParams.set('session_id', session_id);
+          console.log('[TicketQrClient] Added session_id to query params');
         } else if (payment_intent) {
           queryParams.set('pi', payment_intent);
+          console.log('[TicketQrClient] Added pi to query params');
         }
         queryParams.set('_t', Date.now().toString());
         
+        const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
+        console.log('[TicketQrClient] Making GET request to:', apiUrl);
+        
         // Try to GET the transaction
-        const getRes = await fetch(`/api/event/success/process?${queryParams.toString()}`, {
+        const getRes = await fetch(apiUrl, {
           cache: 'no-store'
         });
         
@@ -89,10 +96,13 @@ export default function TicketQrClient() {
         const postBody: any = {};
         if (session_id) {
           postBody.session_id = session_id;
+          console.log('[TicketQrClient] POST body with session_id:', postBody);
         } else if (payment_intent) {
           postBody.pi = payment_intent;
+          console.log('[TicketQrClient] POST body with pi:', postBody);
         }
         
+        console.log('[TicketQrClient] Making POST request to create transaction');
         const postRes = await fetch("/api/event/success/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
