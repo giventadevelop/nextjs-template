@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 interface SuccessClientProps {
   session_id: string;
+  payment_intent?: string;
 }
 
 function formatTime(time: string): string {
@@ -25,12 +26,85 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
-export default function SuccessClient({ session_id }: SuccessClientProps) {
+export default function SuccessClient({ session_id, payment_intent }: SuccessClientProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Log component initialization
+  console.log('[SuccessClient] Component initialized with props:', {
+    session_id,
+    payment_intent
+  });
+
+  // Mobile detection and redirect logic - show brief success then redirect
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    window.innerWidth <= 768;
+
+    console.log('[SuccessClient] Mobile detection:', {
+      isMobile,
+      userAgent: navigator.userAgent,
+      windowWidth: window.innerWidth,
+      session_id,
+      payment_intent
+    });
+
+    if (isMobile) {
+      console.log('[SuccessClient] Mobile browser detected - will show brief success then redirect');
+      
+      // Determine which identifier to use and store
+      const identifier = session_id || payment_intent;
+      if (!identifier) {
+        console.log('[SuccessClient] ERROR: Missing both session_id and payment_intent');
+        setError('Missing session ID or payment intent');
+        setLoading(false);
+        return;
+      }
+      
+      // Show brief success message then redirect after 2 seconds
+      setLoading(false);
+      setResult({ 
+        isMobileBrief: true, 
+        identifier,
+        session_id,
+        payment_intent 
+      });
+      
+      setTimeout(() => {
+        // Store the identifier in sessionStorage for QR page
+        if (session_id) {
+          const redirectUrl = `/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`;
+          console.log('[SuccessClient] Redirecting with session_id:', {
+            session_id,
+            redirectUrl,
+            currentUrl: window.location.href
+          });
+          sessionStorage.setItem('stripe_session_id', session_id);
+          router.replace(redirectUrl);
+        } else if (payment_intent) {
+          const redirectUrl = `/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`;
+          console.log('[SuccessClient] Redirecting with payment_intent:', {
+            payment_intent,
+            redirectUrl,
+            currentUrl: window.location.href
+          });
+          sessionStorage.setItem('stripe_payment_intent', payment_intent);
+          router.replace(redirectUrl);
+        } else {
+          console.error('[SuccessClient] ERROR: No session_id or payment_intent to redirect with!');
+        }
+      }, 2000);
+      
+      return;
+    } else {
+      console.log('[SuccessClient] Desktop browser detected - staying on success page');
+    }
+  }, [session_id, payment_intent, router]);
 
   // Hero image is handled by the HydrationSafeHeroImage component
 
@@ -100,12 +174,24 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     );
   }
 
+  // Desktop-only data fetching - mobile users use the brief success flow
   useEffect(() => {
+    // Skip data fetching for mobile users - they get the brief success page
+    if (typeof window !== 'undefined') {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                      window.innerWidth <= 768;
+      if (isMobile) {
+        console.log('[SuccessClient] Skipping data fetch for mobile user');
+        return;
+      }
+    }
+    
     let cancelled = false;
     async function fetchData() {
       setLoading(true);
       setError(null);
       try {
+        console.log('[SuccessClient] Desktop - fetching transaction data');
         // 1. Try to GET the transaction by session_id (idempotency)
         const getRes = await fetch(`/api/event/success/process?session_id=${session_id}`);
         if (getRes.ok) {
@@ -153,6 +239,25 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       </div>
     );
   }
+
+  // Handle mobile brief success display
+  if (result?.isMobileBrief) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+          <FaCheckCircle className="h-10 w-10 text-green-500" />
+        </div>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">Payment Successful!</h1>
+        <p className="text-gray-600 mb-6">Thank you for your purchase. Your tickets are confirmed.</p>
+        <div className="flex items-center justify-center gap-2 text-teal-600">
+          <FaTicketAlt className="animate-bounce" />
+          <span className="text-lg font-semibold">Preparing your tickets...</span>
+        </div>
+        <p className="text-sm text-gray-500 mt-4">You will be redirected to view your tickets in a moment.</p>
+      </div>
+    );
+  }
+
   const { transaction, userProfile, eventDetails, qrCodeData, transactionItems, heroImageUrl: fetchedHeroImageUrl } = result || {};
 
   // Clear hero image storage since we're on success page
