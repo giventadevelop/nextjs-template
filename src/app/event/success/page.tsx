@@ -108,11 +108,20 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
   const resolvedParams = typeof searchParams.then === 'function' ? await searchParams : searchParams;
   const session_id = resolvedParams.session_id;
   const pi = (resolvedParams as any).pi as string | undefined;
+  
+  console.log('[SuccessPage SERVER] Received parameters:', {
+    session_id,
+    pi,
+    resolvedParams
+  });
+  
   if (!session_id && !pi) {
+    console.log('[SuccessPage SERVER] Missing both session_id and pi - showing error');
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-        <h1 className="text-2xl font-bold text-gray-800">Missing session ID</h1>
-        <p className="text-gray-600 mt-2">No session ID was provided. Please check your payment link or contact support.</p>
+        <h1 className="text-2xl font-bold text-gray-800">Missing session ID or payment intent</h1>
+        <p className="text-gray-600 mt-2">No session ID or payment intent was provided. Please check your payment link or contact support.</p>
+        <p className="text-gray-500 text-sm mt-2">Debug: session_id={session_id}, pi={pi}</p>
       </div>
     );
   }

@@ -34,6 +34,12 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Log component initialization
+  console.log('[SuccessClient] Component initialized with props:', {
+    session_id,
+    payment_intent
+  });
+
   // Mobile detection and redirect logic
   useEffect(() => {
     if (typeof window === 'undefined') return;
