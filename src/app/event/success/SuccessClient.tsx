@@ -41,12 +41,21 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                     window.innerWidth <= 768;
 
+    console.log('[SuccessClient] Mobile detection:', {
+      isMobile,
+      userAgent: navigator.userAgent,
+      windowWidth: window.innerWidth,
+      session_id,
+      payment_intent
+    });
+
     if (isMobile) {
       console.log('[SuccessClient] Mobile browser detected - redirecting to QR page');
       
       // Determine which identifier to use and store
       const identifier = session_id || payment_intent;
       if (!identifier) {
+        console.log('[SuccessClient] ERROR: Missing both session_id and payment_intent');
         setError('Missing session ID or payment intent');
         setLoading(false);
         return;
@@ -54,13 +63,17 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       
       // Store the identifier in sessionStorage for QR page
       if (session_id) {
+        console.log('[SuccessClient] Using session_id for redirect:', session_id);
         sessionStorage.setItem('stripe_session_id', session_id);
         router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
       } else if (payment_intent) {
+        console.log('[SuccessClient] Using payment_intent for redirect:', payment_intent);
         sessionStorage.setItem('stripe_payment_intent', payment_intent);
         router.replace(`/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`);
       }
       return;
+    } else {
+      console.log('[SuccessClient] Desktop browser detected - staying on success page');
     }
   }, [session_id, payment_intent, router]);
 

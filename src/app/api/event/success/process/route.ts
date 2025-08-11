@@ -87,7 +87,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { session_id, pi } = body;
     
+    console.log('[API POST] Received body:', {
+      session_id,
+      pi,
+      body
+    });
+    
     if (!session_id && !pi) {
+      console.log('[API POST] Missing both session_id and pi parameters');
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
     
@@ -162,7 +169,15 @@ export async function GET(req: NextRequest) {
     const session_id = searchParams.get('session_id');
     const pi = searchParams.get('pi');
     
+    console.log('[API GET] Received parameters:', {
+      session_id,
+      pi,
+      url: req.url,
+      searchParams: Object.fromEntries(searchParams.entries())
+    });
+    
     if (!session_id && !pi) {
+      console.log('[API GET] Missing both session_id and pi parameters');
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
     
