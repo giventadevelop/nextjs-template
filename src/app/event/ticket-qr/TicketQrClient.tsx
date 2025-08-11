@@ -41,31 +41,37 @@ export default function TicketQrClient() {
   } : 'SSR');
 
   // Get session_id or payment_intent from URL params or sessionStorage
-  const session_id = searchParams?.get('session_id') || 
-                    (typeof window !== 'undefined' ? sessionStorage.getItem('stripe_session_id') : null);
-  const payment_intent = searchParams?.get('pi') || 
-                        (typeof window !== 'undefined' ? sessionStorage.getItem('stripe_payment_intent') : null);
-  
-  // Determine which identifier to use
-  const identifier = session_id || payment_intent;
+  const [session_id, setSessionId] = useState<string | null>(null);
+  const [payment_intent, setPaymentIntent] = useState<string | null>(null);
+  const [identifier, setIdentifier] = useState<string | null>(null);
 
-  // Debug logging for parameter retrieval
-  console.log('[TicketQrClient] Parameter retrieval debug:', {
-    urlParams: {
-      session_id: searchParams?.get('session_id'),
-      pi: searchParams?.get('pi')
-    },
-    sessionStorage: typeof window !== 'undefined' ? {
-      stripe_session_id: sessionStorage.getItem('stripe_session_id'),
-      stripe_payment_intent: sessionStorage.getItem('stripe_payment_intent')
-    } : null,
-    finalValues: {
-      session_id,
-      payment_intent,
-      identifier
-    },
-    currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
-  });
+  // Initialize parameters on client side to avoid SSR issues
+  useEffect(() => {
+    const urlSessionId = searchParams?.get('session_id');
+    const urlPaymentIntent = searchParams?.get('pi');
+    const storageSessionId = sessionStorage.getItem('stripe_session_id');
+    const storagePaymentIntent = sessionStorage.getItem('stripe_payment_intent');
+
+    const finalSessionId = urlSessionId || storageSessionId;
+    const finalPaymentIntent = urlPaymentIntent || storagePaymentIntent;
+    const finalIdentifier = finalSessionId || finalPaymentIntent;
+
+    console.log('[MOBILE QR DEBUG] Parameter initialization:', {
+      urlSessionId,
+      urlPaymentIntent,
+      storageSessionId,
+      storagePaymentIntent,
+      finalSessionId,
+      finalPaymentIntent,
+      finalIdentifier
+    });
+
+    setSessionId(finalSessionId);
+    setPaymentIntent(finalPaymentIntent);
+    setIdentifier(finalIdentifier);
+  }, [searchParams]);
+
+  // Debug logging for parameter retrieval will now happen in useEffect above
 
   // Helper to get ticket number
   function getTicketNumber(transaction: any) {
@@ -93,10 +99,16 @@ export default function TicketQrClient() {
     }
   }, [session_id, payment_intent]);
 
-  // First, load transaction data
+  // First, load transaction data - wait for parameters to be initialized
   useEffect(() => {
+    // Skip if parameters haven't been initialized yet (identifier will be null during SSR)
+    if (identifier === null) {
+      console.log('[MOBILE QR DEBUG] Parameters not initialized yet, waiting...');
+      return;
+    }
+    
     if (!identifier) {
-      console.error('[MOBILE QR DEBUG] Missing identifier - session_id:', session_id, 'payment_intent:', payment_intent);
+      console.error('[MOBILE QR DEBUG] Missing identifier after initialization - session_id:', session_id, 'payment_intent:', payment_intent);
       setError('Missing session ID or payment intent');
       setLoading(false);
       return;
