@@ -285,15 +285,43 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   // Poll specifically for QR code after transaction exists (mobile-safe, single loop with backoff)
   useEffect(() => {
     let cancelled = false;
+    let failsafeTimeout: NodeJS.Timeout | undefined;
+    
     (async () => {
-      if (qrPollingStartedRef.current) return; // prevent duplicate loops on mobile re-renders
-      if (!result?.transaction || result?.qrCodeData) return;
+      console.log('[QR Debug Mobile] QR polling useEffect triggered:', {
+        pollingStarted: qrPollingStartedRef.current,
+        hasTransaction: !!result?.transaction,
+        hasQrCode: !!result?.qrCodeData,
+        transactionId: result?.transaction?.id
+      });
+      
+      if (qrPollingStartedRef.current) {
+        console.log('[QR Debug Mobile] QR polling already started, skipping');
+        return; // prevent duplicate loops on mobile re-renders
+      }
+      if (!result?.transaction || result?.qrCodeData) {
+        console.log('[QR Debug Mobile] No transaction or QR code already exists, skipping polling');
+        return;
+      }
+      
+      console.log('[QR Debug Mobile] Starting QR polling for transaction:', result.transaction.id);
       qrPollingStartedRef.current = true;
+      
+      // Check if this is mobile
+      const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
+      
+      // Add a fail-safe timeout for mobile browsers to prevent infinite loops
+      failsafeTimeout = setTimeout(() => {
+        if (!cancelled) {
+          console.log('[QR Debug Mobile] Failsafe timeout triggered - forcing polling termination');
+          qrPollingStartedRef.current = false;
+          cancelled = true;
+        }
+      }, isMobile ? 120000 : 90000); // 2 minutes for mobile, 1.5 minutes for desktop
+      
       const url = new URL(window.location.href);
       const pi = url.searchParams.get('pi');
       const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-      // Check if this is mobile
-      const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
       
       // Mobile gets more attempts with shorter delays since the backend is working but mobile has network issues
       // Exponential-ish backoff to avoid hammering (approx total ~60s for mobile)
@@ -370,7 +398,13 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               eventId: data?.eventDetails?.id
             });
 
-            if (data?.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
+            // Enhanced QR code validation
+            const hasValidQrUrl = data?.qrCodeData?.qrCodeImageUrl && 
+                                  data.qrCodeData.qrCodeImageUrl.trim() !== '' && 
+                                  (data.qrCodeData.qrCodeImageUrl.startsWith('http') || data.qrCodeData.qrCodeImageUrl.startsWith('data:'));
+            const hasQrData = data?.qrCodeData?.qrCodeData && data.qrCodeData.qrCodeData.trim() !== '';
+            
+            if (data?.qrCodeData && (hasValidQrUrl || hasQrData)) {
               console.log('[QR Debug Mobile] QR code found! Setting result and breaking loop:', {
                 qrCodeImageUrl: data.qrCodeData.qrCodeImageUrl,
                 hasQrCodeData: !!data.qrCodeData.qrCodeData,
@@ -379,6 +413,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               });
               
               if (!cancelled) {
+                // Mark polling as complete BEFORE updating state to prevent re-triggers
+                qrPollingStartedRef.current = false;
+                
                 setResult((prev: any) => {
                   const updated = { ...(prev || {}), ...data };
                   console.log('[QR Debug Mobile] Updated result state:', {
@@ -398,6 +435,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
                   console.log('[QR Debug Mobile] Marked transaction as completed:', identifier);
                 }
               }
+              console.log('[QR Debug Mobile] Breaking polling loop - QR code obtained');
               break;
             } else {
               console.log(`[QR Debug Mobile] QR code not ready yet on attempt ${i + 1}/${delays.length}`);
@@ -437,6 +475,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       }
 
       if (!cancelled) {
+        // Always mark polling as complete when all attempts exhausted
+        qrPollingStartedRef.current = false;
+        
         console.log('[QR Debug Mobile] QR polling completed - all attempts exhausted:', {
           totalAttempts: delays.length,
           isMobile,
@@ -506,9 +547,13 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     })();
     return () => { 
       cancelled = true;
-      console.log('[QR Debug Mobile] Cleanup: QR polling effect cancelled');
+      console.log('[QR Debug Mobile] Cleanup: QR polling effect cancelled, resetting polling flag');
+      // Clear the failsafe timeout if component unmounts
+      if (failsafeTimeout) {
+        clearTimeout(failsafeTimeout);
+      }
     };
-  }, [result?.transaction, session_id]);
+  }, [result?.transaction?.id, session_id]); // Use transaction.id instead of full transaction object
 
   if (loading) {
     const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
