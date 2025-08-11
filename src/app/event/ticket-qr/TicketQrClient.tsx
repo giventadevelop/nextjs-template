@@ -22,6 +22,9 @@ function formatTime(time: string): string {
 }
 
 export default function TicketQrClient() {
+  // Add immediate debug logging to see if component is even instantiated
+  console.log('[QR CLIENT DEBUG] TicketQrClient function called - component starting');
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -29,6 +32,8 @@ export default function TicketQrClient() {
   const [qrError, setQrError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  console.log('[QR CLIENT DEBUG] State and hooks initialized');
 
   // Component initialization debug
   console.log('[MOBILE QR DEBUG] TicketQrClient component mounted');
