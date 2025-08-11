@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import LoadingTicket from "./LoadingTicket";
 import Image from "next/image";
 import {
@@ -30,6 +30,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [readyToShowNotFound, setReadyToShowNotFound] = useState(false);
+  const qrPollingStartedRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -48,16 +49,16 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   useEffect(() => {
     const url = new URL(window.location.href);
     const pi = url.searchParams.get('pi');
-    
+
     // Use either session_id or pi for tracking
     const identifier = session_id || pi;
     if (!identifier) return;
 
     const completedKey = `success_completed_${identifier}`;
-    
+
     // Check if this transaction was already completed and we're seeing it again
     const wasCompleted = sessionStorage.getItem(completedKey);
-    
+
     // Only redirect if we're sure this is a refresh AND the transaction was previously completed
     if (wasCompleted) {
       // Use a more conservative approach - only redirect if it's clearly a refresh
@@ -65,7 +66,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         performance.navigation?.type === 1 || // Modern browsers: 1 = TYPE_RELOAD
         (performance as any).navigation?.type === 'reload' // Some browsers use string
       );
-      
+
       // Add a delay to ensure it's not just a quick navigation
       if (isDefiniteRefresh) {
         console.log('Success page refresh detected after completion - redirecting to home');
@@ -77,7 +78,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         console.log('Success page revisited but not a refresh - allowing access');
       }
     }
-    
+
     console.log('Success page accessed for:', identifier);
   }, [session_id]);
 
@@ -159,16 +160,16 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         console.log('[QR Debug] Initial fetch response:', { status: getRes.status, ok: getRes.ok });
         if (getRes.ok) {
           const data = await getRes.json();
-          console.log('[QR Debug] Success data received:', { 
-            hasTransaction: !!data.transaction, 
+          console.log('[QR Debug] Success data received:', {
+            hasTransaction: !!data.transaction,
             hasQrCode: !!data.qrCodeData,
-            qrCodeData: data.qrCodeData 
+            qrCodeData: data.qrCodeData
           });
           if (data.transaction) {
             if (!cancelled) {
               setResult(data);
               // Hero image is handled by HydrationSafeHeroImage component
-              
+
               // Mark as completed if we have QR code already
               if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
                 const url = new URL(window.location.href);
@@ -198,9 +199,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               if (data.transaction) {
                 if (!cancelled) {
                   setResult(data);
-                  
+
                   // Mark as completed if we have QR code
-              if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
+                  if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
                     const completedKey = `success_completed_${pi}`;
                     sessionStorage.setItem(completedKey, 'true');
                     console.log('[Success Debug] Marked PI transaction as completed with QR:', pi);
@@ -226,7 +227,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           if (!cancelled) {
             setResult(postData);
             // Hero image is handled by HydrationSafeHeroImage component
-            
+
             // Mark as completed if we have QR code
             if (postData.qrCodeData && (postData.qrCodeData.qrCodeImageUrl || postData.qrCodeData.qrCodeData)) {
               const completedKey = `success_completed_${session_id}`;
@@ -247,45 +248,48 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     return () => { cancelled = true; };
   }, [session_id]);
 
-  // Poll specifically for QR code after transaction exists
+  // Poll specifically for QR code after transaction exists (mobile-safe, single loop with backoff)
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (qrPollingStartedRef.current) return; // prevent duplicate loops on mobile re-renders
       if (!result?.transaction || result?.qrCodeData) return;
+      qrPollingStartedRef.current = true;
       const url = new URL(window.location.href);
       const pi = url.searchParams.get('pi');
       const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-      const maxTries = 30; // Increased to 45 seconds (30 * 1.5s)
-      
+      // Exponential-ish backoff to avoid hammering (approx total ~40s)
+      const delays = [1500, 2500, 4000, 6000, 9000, 12000];
+
       console.log('[QR Debug] Starting QR code polling for:', { transactionId: result.transaction.id, eventId: result.eventDetails?.id });
-      
-      for (let i = 0; i < maxTries; i++) {
+
+      for (let i = 0; i < delays.length; i++) {
         if (cancelled) break;
-        await new Promise(res => setTimeout(res, 1500));
-        
+        await new Promise(res => setTimeout(res, delays[i]));
+
         try {
-          const res = await fetch(`/api/event/success/process?${qs}`, { 
+          const res = await fetch(`/api/event/success/process?${qs}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache'
             }
           });
-          
+
           if (res.ok) {
             const data = await res.json();
-            console.log('[QR Debug] QR poll response:', { 
-              attempt: i + 1, 
-              hasQrCode: !!data?.qrCodeData, 
+            console.log('[QR Debug] QR poll response:', {
+              attempt: i + 1, delayMs: delays[i],
+              hasQrCode: !!data?.qrCodeData,
               qrData: data?.qrCodeData,
-              status: res.status 
+              status: res.status
             });
-            
-            if (data?.qrCodeData && data.qrCodeData.qrCodeImageUrl) {
+
+            if (data?.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
               console.log('[QR Debug] QR code found!', data.qrCodeData);
               if (!cancelled) {
                 setResult((prev: any) => ({ ...(prev || {}), ...data }));
-                
+
                 // Mark as completed now that we have QR code
                 const url = new URL(window.location.href);
                 const pi = url.searchParams.get('pi');
@@ -305,10 +309,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           console.error('[QR Debug] QR poll error:', error);
         }
       }
-      
-      if (!cancelled) {
-        console.log('[QR Debug] QR polling completed after', maxTries, 'attempts');
-      }
+
+      if (!cancelled) console.log('[QR Debug] QR polling completed (backoff schedule exhausted)');
     })();
     return () => { cancelled = true; };
   }, [result?.transaction, session_id]);
