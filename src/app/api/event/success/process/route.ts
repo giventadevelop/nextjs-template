@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
-    let qrCodeData = null;
+    let qrCodeData = null as any;
     if (transaction.id && eventDetails?.id) {
       try {
         console.log('[QR Code Debug] Attempting to fetch QR code for:', {
@@ -70,6 +70,10 @@ export async function POST(req: NextRequest) {
           hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
           qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
         });
+        // If the backend returned an empty payload, treat as not ready so client keeps polling
+        if (!qrCodeData?.qrCodeImageUrl) {
+          qrCodeData = null;
+        }
       } catch (err: any) {
         console.error('[QR Code Debug] Failed to fetch QR code:', {
           error: err.message,
@@ -142,7 +146,7 @@ export async function GET(req: NextRequest) {
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
-    let qrCodeData = null;
+    let qrCodeData = null as any;
     if (transaction.id && eventDetails?.id) {
       try {
         console.log('[QR Code Debug GET] Attempting to fetch QR code for:', {
@@ -155,6 +159,9 @@ export async function GET(req: NextRequest) {
           hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
           qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
         });
+        if (!qrCodeData?.qrCodeImageUrl) {
+          qrCodeData = null;
+        }
       } catch (err: any) {
         console.error('[QR Code Debug GET] Failed to fetch QR code:', {
           error: err.message,
