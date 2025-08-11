@@ -38,12 +38,38 @@ export function getTenantId() {
  * Returns the full URL including protocol (e.g., "http://localhost:3000" or "https://www.adwiise.com")
  */
 export function getAppUrl(): string {
-  // In production, use the actual domain
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_APP_URL || 'https://www.adwiise.com';
+  // Log all relevant environment variables for debugging
+  console.log('[getAppUrl] Environment debug:', {
+    NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    AMPLIFY_NEXT_PUBLIC_APP_URL: process.env.AMPLIFY_NEXT_PUBLIC_APP_URL,
+    AWS_LAMBDA_FUNCTION_NAME: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+    AMPLIFY_APP_ID: !!process.env.AMPLIFY_APP_ID,
+    VERCEL: !!process.env.VERCEL,
+    NETLIFY: !!process.env.NETLIFY
+  });
+  
+  // Always prefer explicit URL environment variables
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.AMPLIFY_NEXT_PUBLIC_APP_URL;
+  if (appUrl) {
+    console.log('[getAppUrl] Using explicit app URL:', appUrl);
+    return appUrl;
   }
+  
+  // Check for AWS Lambda/Amplify environment indicators
+  const isAWSLambda = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AMPLIFY_APP_ID;
+  const isVercel = process.env.VERCEL || process.env.VERCEL_URL;
+  const isNetlify = process.env.NETLIFY;
+  
+  // If we're in a cloud environment or production, use production domain
+  if (process.env.NODE_ENV === 'production' || isAWSLambda || isVercel || isNetlify) {
+    console.log('[getAppUrl] Using production domain - detected cloud environment');
+    return 'https://www.adwiise.com';
+  }
+  
   // In development, use localhost with dynamic port detection
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  console.log('[getAppUrl] Using localhost - local development detected');
+  return 'http://localhost:3000';
 }
 
 /**
@@ -52,10 +78,21 @@ export function getAppUrl(): string {
  * Returns the full URL including protocol (e.g., "http://localhost:3000" or "https://www.adwiise.com")
  */
 export function getEmailHostUrlPrefix(): string {
-  // In production, use the actual domain
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_APP_URL || 'https://www.adwiise.com';
+  // Always prefer explicit NEXT_PUBLIC_APP_URL if set
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
   }
+  
+  // Check for cloud environment indicators
+  const isAWSLambda = process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.AMPLIFY_APP_ID;
+  const isVercel = process.env.VERCEL || process.env.VERCEL_URL;
+  const isNetlify = process.env.NETLIFY;
+  
+  // If we're in a cloud environment or production, use production domain
+  if (process.env.NODE_ENV === 'production' || isAWSLambda || isVercel || isNetlify) {
+    return 'https://www.adwiise.com';
+  }
+  
   // In development, use localhost
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  return 'http://localhost:3000';
 }

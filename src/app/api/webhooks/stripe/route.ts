@@ -300,10 +300,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Get baseUrl for proxy API calls
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL;
-    if (!baseUrl) {
-      baseUrl = 'http://localhost:3000';
-    }
+    const { getAppUrl } = await import('@/lib/env');
+    const baseUrl = getAppUrl();
 
     // Get backend API base URL for direct calls
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
