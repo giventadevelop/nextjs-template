@@ -79,13 +79,25 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       setTimeout(() => {
         // Store the identifier in sessionStorage for QR page
         if (session_id) {
-          console.log('[SuccessClient] Redirecting with session_id:', session_id);
+          const redirectUrl = `/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`;
+          console.log('[SuccessClient] Redirecting with session_id:', {
+            session_id,
+            redirectUrl,
+            currentUrl: window.location.href
+          });
           sessionStorage.setItem('stripe_session_id', session_id);
-          router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
+          router.replace(redirectUrl);
         } else if (payment_intent) {
-          console.log('[SuccessClient] Redirecting with payment_intent:', payment_intent);
+          const redirectUrl = `/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`;
+          console.log('[SuccessClient] Redirecting with payment_intent:', {
+            payment_intent,
+            redirectUrl,
+            currentUrl: window.location.href
+          });
           sessionStorage.setItem('stripe_payment_intent', payment_intent);
-          router.replace(`/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`);
+          router.replace(redirectUrl);
+        } else {
+          console.error('[SuccessClient] ERROR: No session_id or payment_intent to redirect with!');
         }
       }, 2000);
       
