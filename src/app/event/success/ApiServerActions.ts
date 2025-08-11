@@ -502,6 +502,9 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     }
   });
 

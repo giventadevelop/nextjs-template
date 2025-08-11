@@ -147,7 +147,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
-      const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+      const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
       console.log('[Success Debug] Starting fetchData on:', { isMobile, session_id });
       
       setLoading(true);
@@ -260,7 +260,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         if (!cancelled) {
           console.error('[Success Debug Mobile] Error in fetchData:', {
             error: err?.message || "Unknown error",
-            isMobile: /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent),
+            isMobile: typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false,
             stack: err?.stack,
             sessionId: session_id
           });
@@ -268,7 +268,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         }
       } finally {
         if (!cancelled) {
-          const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+          const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
           console.log('[Success Debug Mobile] Setting loading to false in finally block:', {
             isMobile,
             sessionId: session_id,
@@ -292,18 +292,18 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       const url = new URL(window.location.href);
       const pi = url.searchParams.get('pi');
       const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-      // Exponential-ish backoff to avoid hammering (approx total ~60s for mobile)
-      // Limit mobile to fewer attempts to prevent infinite loops and multiple emails
-      const delays = isMobile ? [2000, 4000, 6000, 10000, 15000] : [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
-      
       // Check if this is mobile
-      const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+      const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
+      
+      // Mobile gets more attempts with shorter delays since the backend is working but mobile has network issues
+      // Exponential-ish backoff to avoid hammering (approx total ~60s for mobile)
+      const delays = isMobile ? [1000, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000] : [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
       console.log('[QR Debug Mobile] Device detection:', { 
         isMobile, 
-        userAgent: navigator.userAgent.substring(0, 100),
-        screen: { width: window.screen.width, height: window.screen.height },
-        viewport: { width: window.innerWidth, height: window.innerHeight },
-        connectionType: (navigator as any).connection?.effectiveType || 'unknown'
+        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 100) : 'undefined',
+        screen: typeof window !== 'undefined' ? { width: window.screen.width, height: window.screen.height } : 'undefined',
+        viewport: typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : 'undefined',
+        connectionType: typeof navigator !== 'undefined' ? (navigator as any).connection?.effectiveType || 'unknown' : 'undefined'
       });
 
       console.log('[QR Debug Mobile] Starting QR code polling for:', { 
@@ -437,7 +437,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   }, [result?.transaction, session_id]);
 
   if (loading) {
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
     console.log('[Success Debug Mobile] Showing LoadingTicket - loading state true:', {
       isMobile,
       sessionId: session_id,
@@ -470,7 +470,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventId');
   }
   if (!transaction && !readyToShowNotFound) {
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
     console.log('[Success Debug Mobile] Showing LoadingTicket - no transaction and not ready for not found:', {
       isMobile,
       sessionId: session_id,
@@ -491,7 +491,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   }
   // If we have a transaction but eventDetails not ready yet, keep showing loading UI
   if (transaction && !eventDetails?.id && !readyToShowNotFound) {
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
     console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction but no event details:', {
       isMobile,
       sessionId: session_id,
@@ -505,7 +505,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   // If we have transaction and event details but QR code not ready yet, keep loading
   // Don't show "not found" until we've exhausted all attempts
   if (transaction && eventDetails?.id && !qrCodeData) {
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
     console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction and event details but no QR code:', {
       isMobile,
       sessionId: session_id,
@@ -534,7 +534,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
 
   // Log successful page render
-  const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+  const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
   console.log('[Success Debug Mobile] Rendering main success page:', {
     isMobile,
     sessionId: session_id,
