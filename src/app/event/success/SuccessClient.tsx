@@ -34,6 +34,13 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Enhanced desktop debug logging
+  console.log('[DESKTOP SUCCESS DEBUG] SuccessClient component initialized');
+  console.log('[DESKTOP SUCCESS DEBUG] Props:', { session_id, payment_intent });
+  console.log('[DESKTOP SUCCESS DEBUG] User Agent:', typeof window !== 'undefined' ? navigator.userAgent : 'SSR');
+  console.log('[DESKTOP SUCCESS DEBUG] URL:', typeof window !== 'undefined' ? window.location.href : 'SSR');
+  console.log('[DESKTOP SUCCESS DEBUG] Referrer:', typeof window !== 'undefined' ? document.referrer : 'SSR');
+
   // Log component initialization
   console.log('[SuccessClient] Component initialized with props:', {
     session_id,
@@ -47,12 +54,14 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                     window.innerWidth <= 768;
 
-    console.log('[SuccessClient] Mobile detection:', {
+    console.log('[DESKTOP SUCCESS DEBUG] Mobile detection result:', {
       isMobile,
       userAgent: navigator.userAgent,
       windowWidth: window.innerWidth,
       session_id,
-      payment_intent
+      payment_intent,
+      mobileRegexMatch: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+      narrowScreenMatch: window.innerWidth <= 768
     });
 
     if (isMobile) {
@@ -103,7 +112,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       
       return;
     } else {
-      console.log('[SuccessClient] Desktop browser detected - staying on success page');
+      console.log('[DESKTOP SUCCESS DEBUG] Desktop browser detected - staying on success page');
     }
   }, [session_id, payment_intent, router]);
 
@@ -217,6 +226,23 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     );
   }
 
+  // Call desktop debug endpoint to verify flow is working
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const debugDesktop = async () => {
+        try {
+          console.log('[DESKTOP SUCCESS DEBUG] Calling desktop debug endpoint...');
+          const response = await fetch(`/api/debug/mobile?page=success&session_id=${session_id || 'none'}&payment_intent=${payment_intent || 'none'}&type=desktop`);
+          const data = await response.json();
+          console.log('[DESKTOP SUCCESS DEBUG] Debug response:', data);
+        } catch (error) {
+          console.error('[DESKTOP SUCCESS DEBUG] Debug endpoint error:', error);
+        }
+      };
+      debugDesktop();
+    }
+  }, [session_id, payment_intent]);
+
   // Desktop-only data fetching - mobile users use the brief success flow
   useEffect(() => {
     // Skip data fetching for mobile users - they get the brief success page
@@ -235,34 +261,70 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       setLoading(true);
       setError(null);
       try {
-        console.log('[SuccessClient] Desktop - fetching transaction data');
+        console.log('[DESKTOP SUCCESS DEBUG] Desktop - starting data fetch');
+        console.log('[DESKTOP SUCCESS DEBUG] Fetching with session_id:', session_id);
         // 1. Try to GET the transaction by session_id (idempotency)
-        const getRes = await fetch(`/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`, {
+        const getUrl = `/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`;
+        console.log('[DESKTOP SUCCESS DEBUG] GET request URL:', getUrl);
+        
+        const getRes = await fetch(getUrl, {
           cache: 'no-store'
         });
+        
+        console.log('[DESKTOP SUCCESS DEBUG] GET response status:', getRes.status);
+        
         if (getRes.ok) {
           const data = await getRes.json();
+          console.log('[DESKTOP SUCCESS DEBUG] GET response data:', data);
+          
           if (data.transaction) {
+            console.log('[DESKTOP SUCCESS DEBUG] Transaction found in GET response:', data.transaction.id);
             if (!cancelled) {
               setResult(data);
             }
             setLoading(false);
             return;
+          } else {
+            console.log('[DESKTOP SUCCESS DEBUG] No transaction in GET response, will try POST');
           }
+        } else {
+          const errorText = await getRes.text();
+          console.error('[DESKTOP SUCCESS DEBUG] GET request failed:', getRes.status, errorText);
         }
         // 2. If not found, POST to create it
+        console.log('[DESKTOP SUCCESS DEBUG] Making POST request to create transaction');
+        const postBody = { session_id };
+        console.log('[DESKTOP SUCCESS DEBUG] POST body:', postBody);
+        
         const postRes = await fetch("/api/event/success/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id }),
+          body: JSON.stringify(postBody),
         });
-        if (!postRes.ok) throw new Error(await postRes.text());
+        
+        console.log('[DESKTOP SUCCESS DEBUG] POST response status:', postRes.status);
+        
+        if (!postRes.ok) {
+          const errorText = await postRes.text();
+          console.error('[DESKTOP SUCCESS DEBUG] POST request failed:', postRes.status, errorText);
+          throw new Error(errorText);
+        }
+        
         const postData = await postRes.json();
+        console.log('[DESKTOP SUCCESS DEBUG] POST response data:', postData);
+        
         if (!cancelled) {
+          console.log('[DESKTOP SUCCESS DEBUG] Setting result data:', postData);
           setResult(postData);
         }
       } catch (err: any) {
         if (!cancelled) {
+          console.error('[DESKTOP SUCCESS DEBUG] Error in fetchData:', err);
+          console.error('[DESKTOP SUCCESS DEBUG] Error details:', {
+            message: err?.message,
+            stack: err?.stack,
+            session_id
+          });
           setError(err?.message || "Unknown error");
         }
       } finally {
