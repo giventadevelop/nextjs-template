@@ -30,6 +30,16 @@ export default function TicketQrClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Component initialization debug
+  console.log('[MOBILE QR DEBUG] TicketQrClient component mounted');
+  console.log('[MOBILE QR DEBUG] User Agent:', typeof window !== 'undefined' ? navigator.userAgent : 'SSR');
+  console.log('[MOBILE QR DEBUG] Window dimensions:', typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : 'SSR');
+  console.log('[MOBILE QR DEBUG] Referrer:', typeof window !== 'undefined' ? document.referrer : 'SSR');
+  console.log('[MOBILE QR DEBUG] Session storage data:', typeof window !== 'undefined' ? {
+    stripe_session_id: sessionStorage.getItem('stripe_session_id'),
+    stripe_payment_intent: sessionStorage.getItem('stripe_payment_intent')
+  } : 'SSR');
+
   // Get session_id or payment_intent from URL params or sessionStorage
   const session_id = searchParams?.get('session_id') || 
                     (typeof window !== 'undefined' ? sessionStorage.getItem('stripe_session_id') : null);
@@ -66,9 +76,27 @@ export default function TicketQrClient() {
     );
   }
 
+  // Call mobile debug endpoint to verify mobile flow is working
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const debugMobile = async () => {
+        try {
+          console.log('[MOBILE QR DEBUG] Calling mobile debug endpoint...');
+          const response = await fetch(`/api/debug/mobile?page=ticket-qr&pi=${payment_intent || 'none'}&session_id=${session_id || 'none'}`);
+          const data = await response.json();
+          console.log('[MOBILE QR DEBUG] Mobile debug response:', data);
+        } catch (error) {
+          console.error('[MOBILE QR DEBUG] Mobile debug endpoint error:', error);
+        }
+      };
+      debugMobile();
+    }
+  }, [session_id, payment_intent]);
+
   // First, load transaction data
   useEffect(() => {
     if (!identifier) {
+      console.error('[MOBILE QR DEBUG] Missing identifier - session_id:', session_id, 'payment_intent:', payment_intent);
       setError('Missing session ID or payment intent');
       setLoading(false);
       return;
@@ -77,9 +105,11 @@ export default function TicketQrClient() {
     let cancelled = false;
     async function fetchTransactionData() {
       try {
-        console.log('[TicketQrClient] Fetching transaction data for identifier:', identifier);
-        console.log('[TicketQrClient] session_id:', session_id);
-        console.log('[TicketQrClient] payment_intent:', payment_intent);
+        console.log('[MOBILE QR DEBUG] Starting transaction fetch');
+        console.log('[MOBILE QR DEBUG] Fetching transaction data for identifier:', identifier);
+        console.log('[MOBILE QR DEBUG] session_id:', session_id);
+        console.log('[MOBILE QR DEBUG] payment_intent:', payment_intent);
+        console.log('[MOBILE QR DEBUG] URL params:', Object.fromEntries(searchParams?.entries() || []));
         
         // Build the appropriate query parameters
         const queryParams = new URLSearchParams();
@@ -131,13 +161,20 @@ export default function TicketQrClient() {
         const postData = await postRes.json();
         
         if (!cancelled) {
-          console.log('[TicketQrClient] Transaction created:', postData.transaction.id);
+          console.log('[MOBILE QR DEBUG] Transaction created:', postData.transaction.id);
           setResult(postData);
           setLoading(false);
         }
       } catch (err: any) {
         if (!cancelled) {
-          console.error('[TicketQrClient] Error loading transaction:', err);
+          console.error('[MOBILE QR DEBUG] Error loading transaction:', err);
+          console.error('[MOBILE QR DEBUG] Error details:', {
+            message: err?.message,
+            stack: err?.stack,
+            identifier,
+            session_id,
+            payment_intent
+          });
           setError(err?.message || "Failed to load transaction");
           setLoading(false);
         }
@@ -156,25 +193,44 @@ export default function TicketQrClient() {
     async function fetchQrCode() {
       try {
         const { transaction, eventDetails } = result;
-        console.log('[TicketQrClient] Fetching QR code for transaction:', transaction.id);
+        console.log('[MOBILE QR DEBUG] Fetching QR code for transaction:', transaction.id);
+        console.log('[MOBILE QR DEBUG] Event details:', { id: eventDetails?.id, title: eventDetails?.title });
         
         // Use current window location for emailHostUrlPrefix
         const emailHostUrlPrefix = window.location.origin;
         const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
-        const qrRes = await fetch(`/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`);
+        const qrApiUrl = `/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+        
+        console.log('[MOBILE QR DEBUG] QR API call:', {
+          emailHostUrlPrefix,
+          encodedEmailHostUrlPrefix,
+          qrApiUrl,
+          eventId: eventDetails.id,
+          transactionId: transaction.id
+        });
+        
+        const qrRes = await fetch(qrApiUrl);
+        
+        console.log('[MOBILE QR DEBUG] QR response status:', qrRes.status);
         
         if (qrRes.ok) {
           const qrUrl = await qrRes.text();
           if (!cancelled) {
-            console.log('[TicketQrClient] QR code received:', qrUrl);
+            console.log('[MOBILE QR DEBUG] QR code received:', qrUrl);
             setQrCodeData({ qrCodeImageUrl: qrUrl });
           }
         } else {
-          throw new Error(`QR code fetch failed: ${qrRes.status}`);
+          const errorText = await qrRes.text();
+          console.error('[MOBILE QR DEBUG] QR fetch failed:', qrRes.status, errorText);
+          throw new Error(`QR code fetch failed: ${qrRes.status} - ${errorText}`);
         }
       } catch (err: any) {
         if (!cancelled) {
-          console.error('[TicketQrClient] QR code error:', err);
+          console.error('[MOBILE QR DEBUG] QR code error:', err);
+          console.error('[MOBILE QR DEBUG] QR error details:', {
+            message: err?.message,
+            stack: err?.stack
+          });
           setQrError(err?.message || "Failed to load QR code");
         }
       }

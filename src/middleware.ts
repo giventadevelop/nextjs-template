@@ -24,6 +24,7 @@ export default authMiddleware({
     "/api/proxy/(.*)",
     "/api/webhooks/(.*)",
     "/api/event/success/process",
+    "/api/debug/(.*)",
     "/api/tasks",
     "/api/billing/(.*)",
     "/api/stripe/(.*)",
