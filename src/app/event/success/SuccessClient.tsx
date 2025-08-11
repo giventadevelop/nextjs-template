@@ -326,15 +326,27 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
 
         try {
           const startTime = Date.now();
+          // Create AbortController for mobile timeout handling
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => {
+            controller.abort();
+          }, isMobile ? 30000 : 15000);
+
           const res = await fetch(`/api/event/success/process?${qs}&_t=${Date.now()}`, {
             cache: 'no-store',
+            signal: controller.signal,
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
               'Pragma': 'no-cache',
               'Expires': '0',
-              'X-Mobile-Request': isMobile ? 'true' : 'false'
+              'X-Mobile-Request': isMobile ? 'true' : 'false',
+              'X-Request-Timeout': isMobile ? '30000' : '15000',
+              // Add user agent info for backend debugging
+              'X-User-Agent': typeof navigator !== 'undefined' ? navigator.userAgent.substring(0, 200) : 'unknown'
             }
           });
+          
+          clearTimeout(timeoutId);
           const fetchTime = Date.now() - startTime;
 
           console.log(`[QR Debug Mobile] Fetch completed in ${fetchTime}ms:`, {
@@ -400,11 +412,27 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             });
           }
         } catch (error) {
+          const isAbortError = error instanceof Error && error.name === 'AbortError';
+          const isNetworkError = error instanceof TypeError && error.message.includes('fetch');
+          
           console.error(`[QR Debug Mobile] QR poll error on attempt ${i + 1}:`, {
             error: error instanceof Error ? error.message : error,
+            errorName: error instanceof Error ? error.name : 'unknown',
+            isAbortError,
+            isNetworkError,
             stack: error instanceof Error ? error.stack : undefined,
-            isMobile
+            isMobile,
+            attemptNumber: i + 1,
+            totalAttempts: delays.length,
+            delayUsed: delays[i]
           });
+          
+          // For mobile browsers, add extra delay after network errors or timeouts
+          if (isMobile && (isNetworkError || isAbortError)) {
+            const extraDelay = isAbortError ? 2000 : 1000; // Longer delay for timeouts
+            console.log(`[QR Debug Mobile] Adding extra ${extraDelay}ms delay for mobile ${isAbortError ? 'timeout' : 'network'} error on attempt ${i + 1}`);
+            await new Promise(res => setTimeout(res, extraDelay));
+          }
         }
       }
 
@@ -423,10 +451,56 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           setResult((prev: any) => ({ 
             ...(prev || {}), 
             qrCodeData: { 
-              error: 'QR code generation is taking longer than expected. Please check your email for your ticket.',
-              qrCodeImageUrl: null 
+              error: 'QR code generation is taking longer than expected on mobile. Please check your email for your ticket or try refreshing the page in a few moments.',
+              qrCodeImageUrl: null,
+              isMobileFallback: true
             } 
           }));
+        }
+        
+        // For all devices: if QR polling completed but still no QR code and we have a transaction,
+        // try one final direct backend call with extended timeout
+        if (!result?.qrCodeData && result?.transaction?.id && result?.eventDetails?.id) {
+          console.log('[QR Debug Mobile] Making final direct QR code attempt with extended timeout');
+          try {
+            const finalController = new AbortController();
+            const finalTimeoutId = setTimeout(() => {
+              finalController.abort();
+            }, 45000); // 45 second timeout
+            
+            const directUrl = `/api/proxy/events/${result.eventDetails.id}/transactions/${result.transaction.id}/emailHostUrlPrefix/${Buffer.from(window.location.origin).toString('base64')}/qrcode`;
+            console.log('[QR Debug Mobile] Final QR attempt URL:', directUrl);
+            
+            const directRes = await fetch(directUrl, {
+              signal: finalController.signal,
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+              }
+            });
+            
+            clearTimeout(finalTimeoutId);
+            
+            if (directRes.ok) {
+              const qrUrl = await directRes.text();
+              if (qrUrl && qrUrl.trim()) {
+                console.log('[QR Debug Mobile] Final direct QR attempt succeeded:', qrUrl);
+                setResult((prev: any) => ({
+                  ...(prev || {}),
+                  qrCodeData: {
+                    qrCodeImageUrl: qrUrl.trim(),
+                    fromFinalAttempt: true
+                  }
+                }));
+              }
+            } else {
+              console.log('[QR Debug Mobile] Final direct QR attempt failed:', directRes.status);
+            }
+          } catch (finalError) {
+            console.log('[QR Debug Mobile] Final direct QR attempt error:', finalError);
+          }
         }
       }
     })();

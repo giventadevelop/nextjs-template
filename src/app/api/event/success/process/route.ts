@@ -121,18 +121,27 @@ export async function GET(req: NextRequest) {
     
     // Debug mobile vs desktop requests
     const userAgent = req.headers.get('user-agent') || '';
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
+    const xUserAgent = req.headers.get('x-user-agent') || '';
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent) || /Mobile|Android|iPhone|iPad/i.test(xUserAgent);
+    const isMobileHeader = req.headers.get('X-Mobile-Request') === 'true';
     
     console.log('[Success API Mobile] GET request details:', {
       session_id,
       pi,
       isMobile,
+      isMobileHeader,
       userAgent: userAgent.substring(0, 100) + '...',
+      xUserAgent: xUserAgent ? xUserAgent.substring(0, 100) + '...' : 'none',
       url: req.url,
-      isMobileHeader: req.headers.get('X-Mobile-Request'),
       contentType: req.headers.get('content-type'),
       cacheControl: req.headers.get('cache-control'),
-      pragma: req.headers.get('pragma')
+      pragma: req.headers.get('pragma'),
+      requestTimeout: req.headers.get('x-request-timeout'),
+      // CloudFront headers for production debugging
+      cfIsDesktop: req.headers.get('cloudfront-is-desktop-viewer'),
+      cfIsMobile: req.headers.get('cloudfront-is-mobile-viewer'),
+      cfViewerCountry: req.headers.get('cloudfront-viewer-country'),
+      cfViewerAsn: req.headers.get('cloudfront-viewer-asn')
     });
     if (!session_id && !pi) {
       return NextResponse.json({ error: 'Missing session_id or pi' }, { status: 400 });
