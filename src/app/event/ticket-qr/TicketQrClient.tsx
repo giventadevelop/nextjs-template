@@ -30,8 +30,15 @@ export default function TicketQrClient() {
   const [result, setResult] = useState<any>(null);
   const [qrCodeData, setQrCodeData] = useState<any>(null);
   const [qrError, setQrError] = useState<string | null>(null);
+  const [apiLogs, setApiLogs] = useState<string[]>([]);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Helper function to add logs that will be visible in error screen
+  const addApiLog = (message: string) => {
+    console.log(message);
+    setApiLogs(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+  };
 
   console.log('[QR CLIENT DEBUG] State and hooks initialized');
 
@@ -122,25 +129,26 @@ export default function TicketQrClient() {
     let cancelled = false;
     async function fetchTransactionData() {
       try {
-        console.log('[MOBILE QR DEBUG] Starting transaction fetch');
-        console.log('[MOBILE QR DEBUG] Fetching transaction data for identifier:', identifier);
-        console.log('[MOBILE QR DEBUG] session_id:', session_id);
-        console.log('[MOBILE QR DEBUG] payment_intent:', payment_intent);
-        console.log('[MOBILE QR DEBUG] URL params:', Object.fromEntries(searchParams?.entries() || []));
+        addApiLog('Starting transaction fetch');
+        addApiLog(`Fetching for identifier: ${identifier}`);
+        addApiLog(`session_id: ${session_id}, payment_intent: ${payment_intent}`);
         
         // Build the appropriate query parameters
         const queryParams = new URLSearchParams();
         if (session_id) {
           queryParams.set('session_id', session_id);
           console.log('[TicketQrClient] Added session_id to query params');
+          addApiLog('Added session_id to query params');
         } else if (payment_intent) {
           queryParams.set('pi', payment_intent);
           console.log('[TicketQrClient] Added pi to query params');
+          addApiLog('Added payment_intent to query params');
         }
         queryParams.set('_t', Date.now().toString());
         
         const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
         console.log('[TicketQrClient] Making GET request to:', apiUrl);
+        addApiLog(`Making GET request to: ${apiUrl}`);
         
         // Try to GET the transaction
         const getRes = await fetch(apiUrl, {
@@ -148,22 +156,31 @@ export default function TicketQrClient() {
         });
         
         console.log('[MOBILE QR DEBUG] GET response status:', getRes.status);
+        addApiLog(`GET response status: ${getRes.status}`);
         
         if (getRes.ok) {
           const data = await getRes.json();
           console.log('[MOBILE QR DEBUG] GET response data:', data);
+          addApiLog(`GET response received: ${JSON.stringify({
+            hasTransaction: !!data.transaction,
+            transactionId: data.transaction?.id,
+            error: data.error
+          })}`);
           
           if (data.transaction && !cancelled) {
             console.log('[MOBILE QR DEBUG] Transaction data loaded:', data.transaction.id);
+            addApiLog(`Transaction data loaded successfully: ID ${data.transaction.id}`);
             setResult(data);
             setLoading(false);
             return;
           } else {
             console.log('[MOBILE QR DEBUG] No transaction in GET response, will try POST');
+            addApiLog('No transaction in GET response, attempting POST');
           }
         } else {
           const errorText = await getRes.text();
           console.error('[MOBILE QR DEBUG] GET request failed:', getRes.status, errorText);
+          addApiLog(`GET request failed: ${getRes.status} - ${errorText.substring(0, 200)}`);
         }
         
         // If not found, POST to create it
@@ -171,23 +188,39 @@ export default function TicketQrClient() {
         if (session_id) {
           postBody.session_id = session_id;
           console.log('[TicketQrClient] POST body with session_id:', postBody);
+          addApiLog(`POST body prepared with session_id: ${session_id}`);
         } else if (payment_intent) {
           postBody.pi = payment_intent;
           console.log('[TicketQrClient] POST body with pi:', postBody);
+          addApiLog(`POST body prepared with payment_intent: ${payment_intent}`);
         }
         
         console.log('[TicketQrClient] Making POST request to create transaction');
+        addApiLog('Making POST request to create transaction');
         const postRes = await fetch("/api/event/success/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(postBody),
         });
         
-        if (!postRes.ok) throw new Error(await postRes.text());
+        addApiLog(`POST response status: ${postRes.status}`);
+        
+        if (!postRes.ok) {
+          const errorText = await postRes.text();
+          addApiLog(`POST request failed: ${postRes.status} - ${errorText.substring(0, 200)}`);
+          throw new Error(errorText);
+        }
+        
         const postData = await postRes.json();
+        addApiLog(`POST response received: ${JSON.stringify({
+          hasTransaction: !!postData.transaction,
+          transactionId: postData.transaction?.id,
+          error: postData.error
+        })}`);
         
         if (!cancelled) {
           console.log('[MOBILE QR DEBUG] Transaction created:', postData.transaction.id);
+          addApiLog(`Transaction created successfully: ID ${postData.transaction.id}`);
           setResult(postData);
           setLoading(false);
         }
@@ -201,6 +234,8 @@ export default function TicketQrClient() {
             session_id,
             payment_intent
           });
+          addApiLog(`ERROR: ${err?.message || 'Unknown error occurred'}`);
+          addApiLog(`Error details: ${err?.stack ? err.stack.substring(0, 200) : 'No stack trace'}`);
           setError(err?.message || "Failed to load transaction");
           setLoading(false);
         }
@@ -283,6 +318,20 @@ export default function TicketQrClient() {
           
           <div className="mt-2"><strong>Current URL:</strong></div>
           <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
+          
+          {/* API Logs Section for Loading State */}
+          {apiLogs.length > 0 && (
+            <div className="mt-4">
+              <strong>Live API Logs:</strong>
+              <div className="mt-1 max-h-40 overflow-y-auto bg-white p-2 rounded border text-xs">
+                {apiLogs.map((log, index) => (
+                  <div key={index} className="mb-1 font-mono">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <LoadingTicket sessionId={identifier || ''} />
       </div>
@@ -314,6 +363,20 @@ export default function TicketQrClient() {
           
           <div className="mt-2"><strong>Current URL:</strong></div>
           <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
+          
+          {/* API Logs Section */}
+          {apiLogs.length > 0 && (
+            <div className="mt-4">
+              <strong>API Call Logs:</strong>
+              <div className="mt-1 max-h-60 overflow-y-auto bg-white p-2 rounded border text-xs">
+                {apiLogs.map((log, index) => (
+                  <div key={index} className="mb-1 font-mono">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
         <button 
