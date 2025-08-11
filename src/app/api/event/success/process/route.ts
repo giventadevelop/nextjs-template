@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processStripeSessionServer, fetchTransactionQrCode } from '@/app/event/success/ApiServerActions';
 import { fetchEventDetailsByIdServer } from '@/app/admin/events/[id]/media/ApiServerActions';
-import { getAppUrl } from '@/lib/env';
+
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 async function fetchTransactionItemsByTransactionId(transactionId: number) {
-  const res = await fetch(`${getAppUrl()}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
+  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function fetchTicketTypeById(ticketTypeId: number) {
-  const res = await fetch(`${getAppUrl()}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
+  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
 }
@@ -19,7 +20,7 @@ async function getHeroImageUrl(eventId: number) {
   const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
   let imageUrl: string | null = null;
   try {
-    const flyerRes = await fetch(`${getAppUrl()}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
+    const flyerRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
     if (flyerRes.ok) {
       const flyerData = await flyerRes.json();
       if (Array.isArray(flyerData) && flyerData.length > 0 && flyerData[0].fileUrl) {
@@ -27,7 +28,7 @@ async function getHeroImageUrl(eventId: number) {
       }
     }
     if (!imageUrl) {
-      const featuredRes = await fetch(`${getAppUrl()}/api/proxy/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true`, { cache: 'no-store' });
+      const featuredRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true`, { cache: 'no-store' });
       if (featuredRes.ok) {
         const featuredData = await featuredRes.json();
         if (Array.isArray(featuredData) && featuredData.length > 0 && featuredData[0].fileUrl) {
@@ -57,31 +58,17 @@ export async function POST(req: NextRequest) {
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
-    let qrCodeData = null as any;
+    let qrCodeData = null;
     if (transaction.id && eventDetails?.id) {
       try {
         console.log('[QR Code Debug] Attempting to fetch QR code for:', {
           eventId: eventDetails.id,
-          transactionId: transaction.id,
-          baseUrl: getAppUrl()
+          transactionId: transaction.id
         });
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
-        console.log('[QR Code Debug] QR code fetched successfully:', {
-          hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
-          qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
-        });
-        // If the backend returned an empty payload, treat as not ready so client keeps polling
-        if (!qrCodeData?.qrCodeImageUrl) {
-          qrCodeData = null;
-        }
-      } catch (err: any) {
-        console.error('[QR Code Debug] Failed to fetch QR code:', {
-          error: err.message,
-          transactionId: transaction.id,
-          eventId: eventDetails.id,
-          errorType: err.constructor.name
-        });
-        // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
+        console.log('[QR Code Debug] QR code fetched successfully:', qrCodeData);
+      } catch (err) {
+        console.error('[QR Code Debug] Failed to fetch QR code:', err);
         qrCodeData = null;
       }
     } else {
@@ -117,53 +104,13 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
-    const pi = searchParams.get('pi');
-    
-    // Debug mobile vs desktop requests
-    const userAgent = req.headers.get('user-agent') || '';
-    const xUserAgent = req.headers.get('x-user-agent') || '';
-    const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent) || /Mobile|Android|iPhone|iPad/i.test(xUserAgent);
-    const isMobileHeader = req.headers.get('X-Mobile-Request') === 'true';
-    
-    console.log('[Success API Mobile] GET request details:', {
-      session_id,
-      pi,
-      isMobile,
-      isMobileHeader,
-      userAgent: userAgent.substring(0, 100) + '...',
-      xUserAgent: xUserAgent ? xUserAgent.substring(0, 100) + '...' : 'none',
-      url: req.url,
-      contentType: req.headers.get('content-type'),
-      cacheControl: req.headers.get('cache-control'),
-      pragma: req.headers.get('pragma'),
-      requestTimeout: req.headers.get('x-request-timeout'),
-      // CloudFront headers for production debugging
-      cfIsDesktop: req.headers.get('cloudfront-is-desktop-viewer'),
-      cfIsMobile: req.headers.get('cloudfront-is-mobile-viewer'),
-      cfViewerCountry: req.headers.get('cloudfront-viewer-country'),
-      cfViewerAsn: req.headers.get('cloudfront-viewer-asn')
-    });
-    if (!session_id && !pi) {
-      return NextResponse.json({ error: 'Missing session_id or pi' }, { status: 400 });
+    if (!session_id) {
+      return NextResponse.json({ error: 'Missing session_id' }, { status: 400 });
     }
-    // Only look up, do not create — for PaymentIntent path, read from backend by paymentIntentId
-    let result = null as any;
-    if (session_id) {
-      result = await processStripeSessionServer(session_id);
-    }
-    let transaction = result?.transaction as any;
-    let userProfile = result?.userProfile as any;
-    if (!transaction && pi) {
-      // Find transaction by paymentIntentId via proxy
-      const params = new URLSearchParams({ 'stripePaymentIntentId.equals': pi });
-      const txRes = await fetch(`${getAppUrl()}/api/proxy/event-ticket-transactions?${params.toString()}`, { cache: 'no-store' });
-      if (txRes.ok) {
-        const arr = await txRes.json();
-        if (Array.isArray(arr) && arr.length > 0) {
-          transaction = arr[0];
-        }
-      }
-    }
+    // Only look up, do not create
+    const result = await processStripeSessionServer(session_id);
+    const transaction = result?.transaction;
+    const userProfile = result?.userProfile;
     if (!transaction) {
       return NextResponse.json({ transaction: null }, { status: 200 });
     }
@@ -171,37 +118,13 @@ export async function GET(req: NextRequest) {
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
-    let qrCodeData = null as any;
+    let qrCodeData = null;
     if (transaction.id && eventDetails?.id) {
       try {
-        console.log('[QR Code Debug GET] Attempting to fetch QR code for:', {
-          eventId: eventDetails.id,
-          transactionId: transaction.id,
-          baseUrl: getAppUrl()
-        });
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
-        console.log('[QR Code Debug GET] QR code fetched successfully:', {
-          hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
-          qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
-        });
-        if (!qrCodeData?.qrCodeImageUrl) {
-          qrCodeData = null;
-        }
-      } catch (err: any) {
-        console.error('[QR Code Debug GET] Failed to fetch QR code:', {
-          error: err.message,
-          transactionId: transaction.id,
-          eventId: eventDetails.id,
-          errorType: err.constructor.name
-        });
-        // Don't set qrCodeData to indicate it's not ready yet - polling will handle this
+      } catch (err) {
         qrCodeData = null;
       }
-    } else {
-      console.log('[QR Code Debug GET] Skipping QR code fetch - missing IDs:', {
-        transactionId: transaction.id,
-        eventId: eventDetails?.id
-      });
     }
     // Fetch transaction items and ticket type names
     let transactionItems = [];

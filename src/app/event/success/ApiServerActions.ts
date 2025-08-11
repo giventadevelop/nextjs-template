@@ -480,76 +480,41 @@ export async function processStripeSessionServer(
 }
 
 export async function fetchTransactionQrCode(eventId: number, transactionId: number): Promise<{ qrCodeImageUrl: string }> {
-  const baseUrl = getAppUrl();
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   // Get the current domain/host URL prefix for email context
   const emailHostUrlPrefix = getEmailHostUrlPrefix();
+  
+  // Backend expects Base64 encoded emailHostUrlPrefix in URL path
+  const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
 
   console.log('[fetchTransactionQrCode] Starting QR code fetch:', {
     eventId,
     transactionId,
     emailHostUrlPrefix,
-    baseUrl,
-    nodeEnv: process.env.NODE_ENV,
-    awsLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
-    hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL
+    encodedEmailHostUrlPrefix,
+    baseUrl
   });
 
-  const qrUrl = `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${Buffer.from(emailHostUrlPrefix).toString('base64')}/qrcode`;
-  console.log('[fetchTransactionQrCode] Full QR URL:', qrUrl);
-
-  const response = await fetchWithJwtRetry(qrUrl, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
-      'Pragma': 'no-cache',
-      'Expires': '0'
+  const response = await fetchWithJwtRetry(
+    `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     }
-  });
+  );
 
   console.log('[fetchTransactionQrCode] Response status:', response.status);
-  console.log('[fetchTransactionQrCode] Response headers:', Object.fromEntries(response.headers.entries()));
-  console.log('[fetchTransactionQrCode] Response OK:', response.ok);
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error('[fetchTransactionQrCode] Failed to fetch QR code:', {
-      status: response.status,
-      statusText: response.statusText,
-      errorBody,
-      url: qrUrl,
-      baseUrl,
-      emailHostUrlPrefix,
-      eventId,
-      transactionId
-    });
-    
-    // If this is a 404 or similar, it might indicate the transaction/QR isn't ready yet
-    if (response.status === 404) {
-      console.log('[fetchTransactionQrCode] QR code not found (404) - transaction/QR might not be ready yet');
-      // Don't throw an error for 404, just return null to allow polling to continue
-      return { qrCodeImageUrl: '' };
-    } else if (response.status === 401) {
-      console.log('[fetchTransactionQrCode] Unauthorized (401) - JWT token issue');
-    } else if (response.status >= 500) {
-      console.log('[fetchTransactionQrCode] Server error - backend issue');
-    }
-    
-    throw new Error(`Failed to fetch QR code (${response.status}): ${errorBody}`);
+    console.error('Failed to fetch QR code:', response.status, errorBody);
+    throw new Error(`Failed to fetch QR code: ${errorBody}`);
   }
-  
   // Always treat as plain text URL
   const url = await response.text();
   console.log('[fetchTransactionQrCode] QR code URL received:', url);
-  console.log('[fetchTransactionQrCode] QR code URL type:', typeof url);
-  console.log('[fetchTransactionQrCode] QR code URL length:', url?.length);
-  
-  // If backend returns empty string, it means QR is not ready yet
-  if (!url || url.trim() === '') {
-    console.log('[fetchTransactionQrCode] Backend returned empty QR URL - QR generation not complete yet');
-    return { qrCodeImageUrl: '' };
-  }
-  
-  return { qrCodeImageUrl: url.trim() };
+  return { qrCodeImageUrl: url };
 }

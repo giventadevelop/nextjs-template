@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import LoadingTicket from "./LoadingTicket";
 import Image from "next/image";
 import {
@@ -30,7 +30,6 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [readyToShowNotFound, setReadyToShowNotFound] = useState(false);
-  const qrPollingStartedRef = useRef(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -147,133 +146,40 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
-      const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-      console.log('[Success Debug] Starting fetchData on:', { isMobile, session_id });
-      
       setLoading(true);
       setError(null);
-      setReadyToShowNotFound(false);
       try {
-        const url = new URL(window.location.href);
-        const pi = url.searchParams.get('pi');
-        // 1. Try to GET the transaction by session_id or pi (idempotency)
-        const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-        console.log('[QR Debug] Fetching success data with URL:', `/api/event/success/process?${qs}`);
-        const getRes = await fetch(`/api/event/success/process?${qs}&_t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
+        // 1. Try to GET the transaction by session_id (idempotency)
+        const getRes = await fetch(`/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`, {
+          cache: 'no-store'
         });
-        console.log('[QR Debug] Initial fetch response:', { status: getRes.status, ok: getRes.ok });
         if (getRes.ok) {
           const data = await getRes.json();
-          console.log('[QR Debug] Success data received:', {
-            hasTransaction: !!data.transaction,
-            hasQrCode: !!data.qrCodeData,
-            qrCodeData: data.qrCodeData
-          });
           if (data.transaction) {
             if (!cancelled) {
               setResult(data);
-              // Hero image is handled by HydrationSafeHeroImage component
-
-              // Mark as completed if we have QR code already
-              if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
-                const url = new URL(window.location.href);
-                const pi = url.searchParams.get('pi');
-                const identifier = session_id || pi;
-                if (identifier) {
-                  const completedKey = `success_completed_${identifier}`;
-                  sessionStorage.setItem(completedKey, 'true');
-                  console.log('[Success Debug] Marked transaction as completed with QR:', identifier);
-                }
-              }
             }
-            console.log('[Success Debug] Setting loading to false - transaction found immediately');
             setLoading(false);
             return;
           }
         }
-        // 2a. If PI path: poll a few times to allow webhook to create
-        if (pi && !session_id) {
-          // Poll up to ~30s because webhook + fee patch may take time in prod
-          const maxTries = 20; // 20 * 1.5s ≈ 30s
-          for (let i = 0; i < maxTries; i++) {
-            if (cancelled) break;
-            await new Promise(res => setTimeout(res, 1500));
-            const pollRes = await fetch(`/api/event/success/process?pi=${encodeURIComponent(pi)}&_t=${Date.now()}`, {
-              cache: 'no-store',
-              headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0'
-              }
-            });
-            if (pollRes.ok) {
-              const data = await pollRes.json();
-              if (data.transaction) {
-                if (!cancelled) {
-                  setResult(data);
-
-                  // Mark as completed if we have QR code
-                  if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
-                    const completedKey = `success_completed_${pi}`;
-                    sessionStorage.setItem(completedKey, 'true');
-                    console.log('[Success Debug] Marked PI transaction as completed with QR:', pi);
-                  }
-                }
-                setLoading(false);
-                return;
-              }
-            }
-          }
-          // Exhausted polling without a transaction
-          setReadyToShowNotFound(true);
+        // 2. If not found, POST to create it
+        const postRes = await fetch("/api/event/success/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id }),
+        });
+        if (!postRes.ok) throw new Error(await postRes.text());
+        const postData = await postRes.json();
+        if (!cancelled) {
+          setResult(postData);
         }
-        // 2b. If not found and session_id exists, POST to create it (Checkout session only)
-        if (session_id) {
-          const postRes = await fetch("/api/event/success/process", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ session_id }),
-          });
-          if (!postRes.ok) throw new Error(await postRes.text());
-          const postData = await postRes.json();
-          if (!cancelled) {
-            setResult(postData);
-            // Hero image is handled by HydrationSafeHeroImage component
-
-            // Mark as completed if we have QR code
-            if (postData.qrCodeData && (postData.qrCodeData.qrCodeImageUrl || postData.qrCodeData.qrCodeData)) {
-              const completedKey = `success_completed_${session_id}`;
-              sessionStorage.setItem(completedKey, 'true');
-              console.log('[Success Debug] Marked session transaction as completed with QR:', session_id);
-            }
-          }
-        }
-        // If we reach here without a transaction, mark ready to show not found
-        setReadyToShowNotFound(true);
       } catch (err: any) {
         if (!cancelled) {
-          console.error('[Success Debug Mobile] Error in fetchData:', {
-            error: err?.message || "Unknown error",
-            isMobile: typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false,
-            stack: err?.stack,
-            sessionId: session_id
-          });
           setError(err?.message || "Unknown error");
         }
       } finally {
         if (!cancelled) {
-          const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-          console.log('[Success Debug Mobile] Setting loading to false in finally block:', {
-            isMobile,
-            sessionId: session_id,
-            hadError: !!error
-          });
           setLoading(false);
         }
       }
@@ -282,172 +188,8 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     return () => { cancelled = true; };
   }, [session_id]);
 
-  // Mobile-specific QR code handling (separate from desktop polling)
-  useEffect(() => {
-    if (!result?.transaction || result?.qrCodeData) return;
-    
-    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-    
-    console.log('[QR Debug] QR code handling triggered:', {
-      isMobile,
-      transactionId: result.transaction.id,
-      hasQrCode: !!result.qrCodeData
-    });
-    
-    if (isMobile) {
-      // Mobile: Use async background QR generation without polling
-      handleMobileQrGeneration();
-    } else {
-      // Desktop: Use existing polling logic
-      handleDesktopQrPolling();
-    }
-    
-    async function handleMobileQrGeneration() {
-      if (qrPollingStartedRef.current) {
-        console.log('[QR Debug Mobile] Mobile QR generation already started, skipping');
-        return;
-      }
-      qrPollingStartedRef.current = true;
-      
-      console.log('[QR Debug Mobile] Starting mobile QR workflow - showing immediate success and preparing for redirect');
-      
-      // Show immediate success for mobile users - NO QR generation yet
-      setResult((prev: any) => ({
-        ...(prev || {}),
-        qrCodeData: {
-          showMobileSuccess: true,
-          message: 'Your ticket purchase is complete! We will now generate your QR code on the next page.'
-        }
-      }));
-      
-      // Wait to let user see success message, then redirect to QR page
-      setTimeout(() => {
-        console.log('[QR Debug Mobile] Redirecting mobile user to QR page after success display');
-        redirectToQrPageForGeneration();
-      }, 4000); // 4 second delay to let user see and read the success page
-    }
-    
-    function redirectToQrPageForGeneration() {
-      const url = new URL(window.location.href);
-      const pi = url.searchParams.get('pi');
-      const identifier = session_id || pi;
-      
-      console.log('[QR Debug Mobile] Redirecting to QR page for mobile QR generation');
-      
-      // Store transaction data for QR generation on the next page
-      const qrGenerationData = {
-        sessionId: session_id,
-        paymentIntent: pi,
-        transaction: result.transaction,
-        eventDetails: result.eventDetails,
-        transactionItems: result.transactionItems || [],
-        heroImageUrl: result.heroImageUrl || "/images/default_placeholder_hero_image.jpeg",
-        needsGeneration: true // Flag to indicate QR generation is needed
-      };
-      
-      sessionStorage.setItem('mobileQrGeneration', JSON.stringify(qrGenerationData));
-      console.log('[QR Debug Mobile] Stored generation data for QR page:', qrGenerationData);
-      
-      // Redirect to QR display page where generation will happen
-      window.location.href = '/event/ticket-qr';
-    }
-    
-    async function handleDesktopQrPolling() {
-      if (qrPollingStartedRef.current) {
-        console.log('[QR Debug Desktop] Desktop QR polling already started, skipping');
-        return; // prevent duplicate loops
-      }
-      qrPollingStartedRef.current = true;
-      
-      console.log('[QR Debug Desktop] Starting desktop QR polling');
-      
-      const url = new URL(window.location.href);
-      const pi = url.searchParams.get('pi');
-      const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-      
-      // Desktop polling with exponential backoff
-      const delays = [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
-      
-      console.log('[QR Debug Desktop] Starting QR code polling for:', { 
-        transactionId: result.transaction.id, 
-        eventId: result.eventDetails?.id,
-        sessionId: session_id,
-        pi: pi,
-        queryString: qs
-      });
-
-      for (let i = 0; i < delays.length; i++) {
-        console.log(`[QR Debug Desktop] Starting attempt ${i + 1}/${delays.length} after ${delays[i]}ms delay`);
-        await new Promise(res => setTimeout(res, delays[i]));
-
-        try {
-          const res = await fetch(`/api/event/success/process?${qs}&_t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-              'Expires': '0'
-            }
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            console.log('[QR Debug Desktop] QR poll response data:', {
-              attempt: i + 1, 
-              hasTransaction: !!data?.transaction,
-              hasEventDetails: !!data?.eventDetails,
-              hasQrCode: !!data?.qrCodeData,
-              qrData: data?.qrCodeData
-            });
-
-            // Enhanced QR code validation
-            const hasValidQrUrl = data?.qrCodeData?.qrCodeImageUrl && 
-                                  data.qrCodeData.qrCodeImageUrl.trim() !== '' && 
-                                  (data.qrCodeData.qrCodeImageUrl.startsWith('http') || data.qrCodeData.qrCodeImageUrl.startsWith('data:'));
-            const hasQrData = data?.qrCodeData?.qrCodeData && data.qrCodeData.qrCodeData.trim() !== '';
-            
-            if (data?.qrCodeData && (hasValidQrUrl || hasQrData)) {
-              console.log('[QR Debug Desktop] QR code found! Setting result and breaking loop:', {
-                qrCodeImageUrl: data.qrCodeData.qrCodeImageUrl,
-                attempt: i + 1
-              });
-              
-              setResult((prev: any) => ({ ...(prev || {}), ...data }));
-
-              // Mark as completed
-              const identifier = session_id || pi;
-              if (identifier) {
-                const completedKey = `success_completed_${identifier}`;
-                sessionStorage.setItem(completedKey, 'true');
-                console.log('[QR Debug Desktop] Marked desktop transaction as completed:', identifier);
-              }
-              
-              qrPollingStartedRef.current = false;
-              break;
-            }
-          }
-        } catch (error) {
-          console.error(`[QR Debug Desktop] QR poll error on attempt ${i + 1}:`, error);
-        }
-      }
-      
-      // Mark polling as complete when exhausted
-      qrPollingStartedRef.current = false;
-      console.log('[QR Debug Desktop] Desktop QR polling completed');
-    }
-  }, [result?.transaction?.id, session_id]);
 
   if (loading) {
-    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-    console.log('[Success Debug Mobile] Showing LoadingTicket - loading state true:', {
-      isMobile,
-      sessionId: session_id,
-      hasResult: !!result,
-      hasTransaction: !!result?.transaction,
-      hasQrCode: !!result?.qrCodeData,
-      hasEventDetails: !!result?.eventDetails,
-      readyToShowNotFound
-    });
     return <LoadingTicket sessionId={session_id} />;
   }
   if (error) {
@@ -470,18 +212,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventHeroImageUrl');
     localStorage.removeItem('eventId');
   }
-  if (!transaction && !readyToShowNotFound) {
-    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-    console.log('[Success Debug Mobile] Showing LoadingTicket - no transaction and not ready for not found:', {
-      isMobile,
-      sessionId: session_id,
-      hasTransaction: !!transaction,
-      readyToShowNotFound,
-      hasResult: !!result
-    });
-    return <LoadingTicket sessionId={session_id} />;
-  }
-  if (!transaction && readyToShowNotFound) {
+  if (!transaction) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
         <FaInfoCircle className="text-4xl text-red-500 mb-4" />
@@ -490,63 +221,11 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       </div>
     );
   }
-  // If we have a transaction but eventDetails not ready yet, keep showing loading UI
-  if (transaction && !eventDetails?.id && !readyToShowNotFound) {
-    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-    console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction but no event details:', {
-      isMobile,
-      sessionId: session_id,
-      hasTransaction: !!transaction,
-      hasEventDetails: !!eventDetails?.id,
-      eventDetailsId: eventDetails?.id,
-      readyToShowNotFound
-    });
-    return <LoadingTicket sessionId={session_id} />;
-  }
-  // If we have transaction and event details but QR code not ready yet, keep loading
-  // Don't show "not found" until we've exhausted all attempts
-  if (transaction && eventDetails?.id && !qrCodeData) {
-    const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-    console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction and event details but no QR code:', {
-      isMobile,
-      sessionId: session_id,
-      hasTransaction: !!transaction,
-      transactionId: transaction?.id,
-      hasEventDetails: !!eventDetails?.id,
-      eventId: eventDetails?.id,
-      hasQrCode: !!qrCodeData,
-      qrCodeData: qrCodeData,
-      qrPollingStarted: qrPollingStartedRef.current
-    });
-    return <LoadingTicket sessionId={session_id} />;
-  }
-  if (!eventDetails?.id && readyToShowNotFound) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-        <FaInfoCircle className="text-4xl text-red-500 mb-4" />
-        <h1 className="text-2xl font-bold text-gray-800">Event Details Not Found</h1>
-        <p className="text-gray-600 mt-2">We could not find the event details for your transaction.</p>
-      </div>
-    );
-  }
   const displayName = transaction?.firstName || '';
   let qrError: string | null = null;
   // If qrCodeData is an error object, handle it
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
 
-  // Log successful page render
-  const isMobile = typeof navigator !== 'undefined' ? /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent) : false;
-  console.log('[Success Debug Mobile] Rendering main success page:', {
-    isMobile,
-    sessionId: session_id,
-    hasTransaction: !!transaction,
-    transactionId: transaction?.id,
-    hasEventDetails: !!eventDetails?.id,
-    eventId: eventDetails?.id,
-    hasQrCode: !!qrCodeData,
-    displayName,
-    qrError
-  });
 
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
@@ -705,7 +384,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           {!qrCodeData && !qrError && (
             <div className="text-lg text-teal-700 font-semibold flex items-center justify-center gap-2">
               <FaTicketAlt className="animate-bounce" />
-              Please wait while your QR code is being generated…
+              Please wait while your tickets are created…
             </div>
           )}
           {qrError && (
@@ -714,56 +393,13 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           {qrCodeData && (
             <>
               <div className="flex flex-col items-center justify-center gap-4">
-                {/* Mobile: Show initial success message */}
-                {qrCodeData.showMobileSuccess && !qrCodeData.isGenerating && (
-                  <>
-                    <div className="text-lg font-semibold text-blue-700">📱 Mobile Ticket Processing</div>
-                    <FaTicketAlt className="animate-pulse text-3xl text-blue-500" />
-                    <div className="text-gray-600 max-w-md text-center">{qrCodeData.message}</div>
-                    <div className="text-sm text-gray-500 mt-2">You can review your transaction details below while we prepare your QR code.</div>
-                  </>
-                )}
-                
-                {/* Mobile: Show generating message */}
-                {qrCodeData.isGenerating && (
-                  <>
-                    <div className="text-lg font-semibold text-teal-700">🔄 Generating QR Code</div>
-                    <FaTicketAlt className="animate-bounce text-3xl text-teal-500" />
-                    <div className="text-gray-600 max-w-md text-center">{qrCodeData.message}</div>
-                    <div className="text-sm text-gray-500 mt-2">This process may take a moment on mobile devices...</div>
-                  </>
-                )}
-                
-                {/* Show QR code when available (Desktop mostly) */}
-                {qrCodeData.qrCodeImageUrl && !qrCodeData.showMobileSuccess && !qrCodeData.isGenerating && (
-                  <>
-                    <div className="text-lg font-semibold text-gray-800">
-                      Your Ticket QR Code
-                      {qrCodeData.fromMobileGeneration && (
-                        <span className="text-sm text-green-600 block">✓ Generated successfully for mobile</span>
-                      )}
-                    </div>
-                    <img 
-                      src={qrCodeData.qrCodeImageUrl} 
-                      alt="Ticket QR Code" 
-                      className="mx-auto w-48 h-48 object-contain border border-gray-300 rounded-lg shadow" 
-                    />
-                  </>
-                )}
-                
-                {/* Show QR data if no image URL (Desktop fallback) */}
-                {!qrCodeData.qrCodeImageUrl && qrCodeData.qrCodeData && !qrCodeData.isGenerating && !qrCodeData.showMobileSuccess && (
-                  <>
-                    <div className="text-lg font-semibold text-gray-800">Your Ticket QR Code</div>
-                    <div className="bg-gray-100 p-4 rounded text-xs break-all max-w-full">{qrCodeData.qrCodeData}</div>
-                  </>
-                )}
-                
-                {/* Show error or fallback message (Desktop) */}
-                {!qrCodeData.qrCodeImageUrl && !qrCodeData.qrCodeData && !qrCodeData.isGenerating && !qrCodeData.showMobileSuccess && (
-                  <div className="text-gray-500">
-                    {qrCodeData.error || "QR code not available at this time. Please check your email for your ticket."}
-                  </div>
+                <div className="text-lg font-semibold text-gray-800">Your Ticket QR Code</div>
+                {qrCodeData.qrCodeImageUrl ? (
+                  <img src={qrCodeData.qrCodeImageUrl} alt="Ticket QR Code" className="mx-auto w-48 h-48 object-contain border border-gray-300 rounded-lg shadow" />
+                ) : qrCodeData.qrCodeData ? (
+                  <div className="bg-gray-100 p-4 rounded text-xs break-all max-w-full">{qrCodeData.qrCodeData}</div>
+                ) : (
+                  <div className="text-gray-500">QR code not available.</div>
                 )}
               </div>
             </>

@@ -3,7 +3,7 @@ import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-async function fetchWithJwtRetry(apiUrl: string, options: any = {}) {
+async function fetchWithJwtRetry(apiUrl: string, options: any = {}, debugLabel = '') {
   let token = await getCachedApiJwt();
   let response = await fetch(apiUrl, {
     ...options,
@@ -26,6 +26,11 @@ async function fetchWithJwtRetry(apiUrl: string, options: any = {}) {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log('[QR Code Proxy] Request received:', {
+    method: req.method,
+    query: req.query
+  });
+
   if (!API_BASE_URL) {
     res.status(500).json({ error: 'API base URL not configured' });
     return;
@@ -38,68 +43,41 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  // Construct the backend URL using the route parameters
+  // Decode the Base64 emailHostUrlPrefix for logging
+  let decodedEmailHostUrlPrefix = '';
+  try {
+    decodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix as string, 'base64').toString();
+  } catch (error) {
+    console.error('[QR Code Proxy] Failed to decode emailHostUrlPrefix:', error);
+  }
+
+  // Create backend URL that matches the API specification
   const apiUrl = `${API_BASE_URL}/api/events/${id}/transactions/${transactionId}/emailHostUrlPrefix/${emailHostUrlPrefix}/qrcode`;
 
-  // Add mobile detection and debugging
-  const userAgent = req.headers['user-agent'] || '';
-  const isMobile = /Mobile|Android|iPhone|iPad/i.test(userAgent);
-  const isMobileHeader = req.headers['x-mobile-request'] === 'true';
-  const isQrPageGeneration = req.headers['x-qr-page-generation'] === 'true';
-  
-  console.log('[QR Code Proxy] Request details:', {
+  console.log('[QR Code Proxy] Backend API call:', {
     eventId: id,
-    transactionId,
-    emailHostUrlPrefix,
-    isMobile,
-    isMobileHeader,
-    isQrPageGeneration,
-    userAgent: userAgent.substring(0, 100) + '...',
-    method: req.method
+    transactionId: transactionId,
+    emailHostUrlPrefix: decodedEmailHostUrlPrefix,
+    encodedEmailHostUrlPrefix: emailHostUrlPrefix,
+    backendUrl: apiUrl
   });
-  console.log('[QR Code Proxy] Backend URL:', apiUrl);
 
   try {
     const response = await fetchWithJwtRetry(apiUrl, {
       method: req.method,
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': userAgent,
-        ...(isMobileHeader && { 'X-Mobile-Request': 'true' }),
-        ...(isQrPageGeneration && { 'X-QR-Page-Generation': 'true' })
       },
-    });
+    }, 'event-transaction-qrcode');
     
+    // Handle response as text since backend returns S3 URL as plain text
+    const data = await response.text();
     console.log('[QR Code Proxy] Backend response status:', response.status);
-    console.log('[QR Code Proxy] Backend response headers:', Object.fromEntries(response.headers.entries()));
+    console.log('[QR Code Proxy] S3 URL received:', data);
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('[QR Code Proxy] Backend error response:', errorText);
-      res.status(response.status).json({ error: 'Backend error', details: errorText });
-      return;
-    }
-    
-    // Check if the response is an image
-    const contentType = response.headers.get('content-type');
-    console.log('[QR Code Proxy] Content-Type:', contentType);
-    
-    if (contentType && contentType.startsWith('image/')) {
-      // Handle image response - convert to base64 data URL
-      const buffer = await response.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
-      const dataUrl = `data:${contentType};base64,${base64}`;
-      
-      console.log('[QR Code Proxy] Image response converted to data URL, length:', dataUrl.length);
-      res.status(200).send(dataUrl);
-    } else {
-      // Handle text response
-      const data = await response.text();
-      console.log('[QR Code Proxy] Text response:', data);
-      res.status(response.status).send(data);
-    }
+    res.status(response.status).send(data);
   } catch (error) {
-    console.error('Error in QR code proxy:', error);
+    console.error('Error in event transaction QR code proxy:', error);
     res.status(500).json({ error: 'Failed to fetch QR code' });
   }
 }
