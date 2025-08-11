@@ -62,10 +62,14 @@ export async function POST(req: NextRequest) {
       try {
         console.log('[QR Code Debug] Attempting to fetch QR code for:', {
           eventId: eventDetails.id,
-          transactionId: transaction.id
+          transactionId: transaction.id,
+          baseUrl: getAppUrl()
         });
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
-        console.log('[QR Code Debug] QR code fetched successfully:', qrCodeData);
+        console.log('[QR Code Debug] QR code fetched successfully:', {
+          hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
+          qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
+        });
       } catch (err) {
         console.error('[QR Code Debug] Failed to fetch QR code:', err);
         qrCodeData = null;
@@ -135,10 +139,25 @@ export async function GET(req: NextRequest) {
     let qrCodeData = null;
     if (transaction.id && eventDetails?.id) {
       try {
+        console.log('[QR Code Debug GET] Attempting to fetch QR code for:', {
+          eventId: eventDetails.id,
+          transactionId: transaction.id,
+          baseUrl: getAppUrl()
+        });
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
+        console.log('[QR Code Debug GET] QR code fetched successfully:', {
+          hasQrCodeImageUrl: !!qrCodeData?.qrCodeImageUrl,
+          qrCodeImageUrl: qrCodeData?.qrCodeImageUrl
+        });
       } catch (err) {
+        console.error('[QR Code Debug GET] Failed to fetch QR code:', err);
         qrCodeData = null;
       }
+    } else {
+      console.log('[QR Code Debug GET] Skipping QR code fetch - missing IDs:', {
+        transactionId: transaction.id,
+        eventId: eventDetails?.id
+      });
     }
     // Fetch transaction items and ticket type names
     let transactionItems = [];
