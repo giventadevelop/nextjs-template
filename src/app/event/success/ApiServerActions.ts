@@ -490,7 +490,9 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
     transactionId,
     emailHostUrlPrefix,
     baseUrl,
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
+    awsLambda: !!process.env.AWS_LAMBDA_FUNCTION_NAME,
+    hasAppUrl: !!process.env.NEXT_PUBLIC_APP_URL
   });
 
   const qrUrl = `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${Buffer.from(emailHostUrlPrefix).toString('base64')}/qrcode`;

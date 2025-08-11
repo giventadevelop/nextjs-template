@@ -147,6 +147,9 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
+      const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+      console.log('[Success Debug] Starting fetchData on:', { isMobile, session_id });
+      
       setLoading(true);
       setError(null);
       setReadyToShowNotFound(false);
@@ -182,6 +185,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
                 }
               }
             }
+            console.log('[Success Debug] Setting loading to false - transaction found immediately');
             setLoading(false);
             return;
           }
@@ -239,9 +243,25 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
         // If we reach here without a transaction, mark ready to show not found
         setReadyToShowNotFound(true);
       } catch (err: any) {
-        if (!cancelled) setError(err?.message || "Unknown error");
+        if (!cancelled) {
+          console.error('[Success Debug Mobile] Error in fetchData:', {
+            error: err?.message || "Unknown error",
+            isMobile: /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent),
+            stack: err?.stack,
+            sessionId: session_id
+          });
+          setError(err?.message || "Unknown error");
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+          console.log('[Success Debug Mobile] Setting loading to false in finally block:', {
+            isMobile,
+            sessionId: session_id,
+            hadError: !!error
+          });
+          setLoading(false);
+        }
       }
     }
     fetchData();
@@ -258,37 +278,87 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       const url = new URL(window.location.href);
       const pi = url.searchParams.get('pi');
       const qs = session_id ? `session_id=${encodeURIComponent(session_id)}` : (pi ? `pi=${encodeURIComponent(pi)}` : '');
-      // Exponential-ish backoff to avoid hammering (approx total ~40s)
-      const delays = [1500, 2500, 4000, 6000, 9000, 12000];
+      // Exponential-ish backoff to avoid hammering (approx total ~60s for mobile)
+      const delays = [1000, 2000, 3000, 5000, 8000, 12000, 15000, 20000];
+      
+      // Check if this is mobile
+      const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+      console.log('[QR Debug Mobile] Device detection:', { 
+        isMobile, 
+        userAgent: navigator.userAgent.substring(0, 100),
+        screen: { width: window.screen.width, height: window.screen.height },
+        viewport: { width: window.innerWidth, height: window.innerHeight },
+        connectionType: (navigator as any).connection?.effectiveType || 'unknown'
+      });
 
-      console.log('[QR Debug] Starting QR code polling for:', { transactionId: result.transaction.id, eventId: result.eventDetails?.id });
+      console.log('[QR Debug Mobile] Starting QR code polling for:', { 
+        transactionId: result.transaction.id, 
+        eventId: result.eventDetails?.id,
+        isMobile,
+        sessionId: session_id,
+        pi: pi,
+        queryString: qs
+      });
 
       for (let i = 0; i < delays.length; i++) {
-        if (cancelled) break;
+        if (cancelled) {
+          console.log('[QR Debug Mobile] Polling cancelled at attempt:', i + 1);
+          break;
+        }
+        
+        console.log(`[QR Debug Mobile] Starting attempt ${i + 1}/${delays.length} after ${delays[i]}ms delay`);
         await new Promise(res => setTimeout(res, delays[i]));
 
         try {
+          const startTime = Date.now();
           const res = await fetch(`/api/event/success/process?${qs}`, {
             cache: 'no-store',
             headers: {
               'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
+              'Pragma': 'no-cache',
+              'X-Mobile-Request': isMobile ? 'true' : 'false'
             }
+          });
+          const fetchTime = Date.now() - startTime;
+
+          console.log(`[QR Debug Mobile] Fetch completed in ${fetchTime}ms:`, {
+            attempt: i + 1, 
+            delayMs: delays[i],
+            status: res.status,
+            ok: res.ok,
+            fetchTimeMs: fetchTime,
+            headers: Object.fromEntries(res.headers.entries())
           });
 
           if (res.ok) {
             const data = await res.json();
-            console.log('[QR Debug] QR poll response:', {
-              attempt: i + 1, delayMs: delays[i],
+            console.log('[QR Debug Mobile] QR poll response data:', {
+              attempt: i + 1, 
+              hasTransaction: !!data?.transaction,
+              hasEventDetails: !!data?.eventDetails,
               hasQrCode: !!data?.qrCodeData,
               qrData: data?.qrCodeData,
-              status: res.status
+              transactionId: data?.transaction?.id,
+              eventId: data?.eventDetails?.id
             });
 
             if (data?.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
-              console.log('[QR Debug] QR code found!', data.qrCodeData);
+              console.log('[QR Debug Mobile] QR code found! Setting result and breaking loop:', {
+                qrCodeImageUrl: data.qrCodeData.qrCodeImageUrl,
+                hasQrCodeData: !!data.qrCodeData.qrCodeData,
+                attempt: i + 1,
+                isMobile
+              });
+              
               if (!cancelled) {
-                setResult((prev: any) => ({ ...(prev || {}), ...data }));
+                setResult((prev: any) => {
+                  const updated = { ...(prev || {}), ...data };
+                  console.log('[QR Debug Mobile] Updated result state:', {
+                    hasQrCode: !!updated.qrCodeData,
+                    transactionId: updated.transaction?.id
+                  });
+                  return updated;
+                });
 
                 // Mark as completed now that we have QR code
                 const url = new URL(window.location.href);
@@ -297,25 +367,57 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
                 if (identifier) {
                   const completedKey = `success_completed_${identifier}`;
                   sessionStorage.setItem(completedKey, 'true');
-                  console.log('[QR Debug] Marked transaction as completed:', identifier);
+                  console.log('[QR Debug Mobile] Marked transaction as completed:', identifier);
                 }
               }
               break;
+            } else {
+              console.log(`[QR Debug Mobile] QR code not ready yet on attempt ${i + 1}/${delays.length}`);
             }
           } else {
-            console.warn('[QR Debug] QR poll failed:', res.status, await res.text());
+            const errorText = await res.text();
+            console.warn(`[QR Debug Mobile] QR poll failed on attempt ${i + 1}:`, {
+              status: res.status,
+              statusText: res.statusText,
+              errorText,
+              fetchTimeMs: fetchTime
+            });
           }
         } catch (error) {
-          console.error('[QR Debug] QR poll error:', error);
+          console.error(`[QR Debug Mobile] QR poll error on attempt ${i + 1}:`, {
+            error: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+            isMobile
+          });
         }
       }
 
-      if (!cancelled) console.log('[QR Debug] QR polling completed (backoff schedule exhausted)');
+      if (!cancelled) {
+        console.log('[QR Debug Mobile] QR polling completed - all attempts exhausted:', {
+          totalAttempts: delays.length,
+          isMobile,
+          hasResult: !!result,
+          hasQrCode: !!result?.qrCodeData
+        });
+      }
     })();
-    return () => { cancelled = true; };
+    return () => { 
+      cancelled = true;
+      console.log('[QR Debug Mobile] Cleanup: QR polling effect cancelled');
+    };
   }, [result?.transaction, session_id]);
 
   if (loading) {
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    console.log('[Success Debug Mobile] Showing LoadingTicket - loading state true:', {
+      isMobile,
+      sessionId: session_id,
+      hasResult: !!result,
+      hasTransaction: !!result?.transaction,
+      hasQrCode: !!result?.qrCodeData,
+      hasEventDetails: !!result?.eventDetails,
+      readyToShowNotFound
+    });
     return <LoadingTicket sessionId={session_id} />;
   }
   if (error) {
@@ -339,6 +441,14 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     localStorage.removeItem('eventId');
   }
   if (!transaction && !readyToShowNotFound) {
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    console.log('[Success Debug Mobile] Showing LoadingTicket - no transaction and not ready for not found:', {
+      isMobile,
+      sessionId: session_id,
+      hasTransaction: !!transaction,
+      readyToShowNotFound,
+      hasResult: !!result
+    });
     return <LoadingTicket sessionId={session_id} />;
   }
   if (!transaction && readyToShowNotFound) {
@@ -352,11 +462,32 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   }
   // If we have a transaction but eventDetails not ready yet, keep showing loading UI
   if (transaction && !eventDetails?.id && !readyToShowNotFound) {
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction but no event details:', {
+      isMobile,
+      sessionId: session_id,
+      hasTransaction: !!transaction,
+      hasEventDetails: !!eventDetails?.id,
+      eventDetailsId: eventDetails?.id,
+      readyToShowNotFound
+    });
     return <LoadingTicket sessionId={session_id} />;
   }
   // If we have transaction and event details but QR code not ready yet, keep loading
   // Don't show "not found" until we've exhausted all attempts
   if (transaction && eventDetails?.id && !qrCodeData) {
+    const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+    console.log('[Success Debug Mobile] Showing LoadingTicket - have transaction and event details but no QR code:', {
+      isMobile,
+      sessionId: session_id,
+      hasTransaction: !!transaction,
+      transactionId: transaction?.id,
+      hasEventDetails: !!eventDetails?.id,
+      eventId: eventDetails?.id,
+      hasQrCode: !!qrCodeData,
+      qrCodeData: qrCodeData,
+      qrPollingStarted: qrPollingStartedRef.current
+    });
     return <LoadingTicket sessionId={session_id} />;
   }
   if (!eventDetails?.id && readyToShowNotFound) {
@@ -372,6 +503,20 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   let qrError: string | null = null;
   // If qrCodeData is an error object, handle it
   if (qrCodeData && qrCodeData.error) qrError = qrCodeData.error;
+
+  // Log successful page render
+  const isMobile = /Mobile|Android|iPhone|iPad/i.test(navigator.userAgent);
+  console.log('[Success Debug Mobile] Rendering main success page:', {
+    isMobile,
+    sessionId: session_id,
+    hasTransaction: !!transaction,
+    transactionId: transaction?.id,
+    hasEventDetails: !!eventDetails?.id,
+    eventId: eventDetails?.id,
+    hasQrCode: !!qrCodeData,
+    displayName,
+    qrError
+  });
 
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
