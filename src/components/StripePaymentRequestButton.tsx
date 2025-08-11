@@ -80,6 +80,18 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           const data = await res.json();
           const secret = data.clientSecret as string;
           console.log('[PRB] Created fresh PI for payment:', { piId: data.paymentIntentId, amount: data.amount });
+
+          // CRITICAL: Ensure Payment Request total matches PI amount before confirm
+          // This prevents amount_mismatch errors in Stripe confirm
+          if (typeof data.amount === 'number' && pr) {
+            try {
+              pr.update({ total: { label: 'Tickets', amount: data.amount } });
+              console.log('[PRB] Updated Payment Request total to match PI:', { piAmount: data.amount, walletTotal: data.amount });
+            } catch (updateErr) {
+              console.warn('[PRB] Failed to update Payment Request total:', updateErr);
+            }
+          }
+
           const { error, paymentIntent } = await stripe.confirmCardPayment(secret, {
             payment_method: ev.paymentMethod.id,
             receipt_email: ev.payerEmail || email,
@@ -89,17 +101,35 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             piId: paymentIntent?.id || 'unknown',
             status: paymentIntent?.status,
             amount: paymentIntent?.amount,
-            walletAmount: ev.total?.amount
+            walletAmount: (ev as any).total?.amount
           });
           if (error) {
-            console.error('[PRB] confirmCardPayment error:', {
+            // Enhanced error logging for production debugging
+            const errorDetails = {
               message: error.message,
               type: (error as any)?.type,
               code: (error as any)?.code,
               decline_code: (error as any)?.decline_code,
               payment_intent: (error as any)?.payment_intent,
-              piId: paymentIntent?.id || (error as any)?.payment_intent?.id
-            });
+              piId: paymentIntent?.id || (error as any)?.payment_intent?.id,
+              // Additional context for debugging
+              piAmount: data.amount,
+              walletTotal: (ev as any).total?.amount,
+              clientSecret: secret.substring(0, 20) + '...',
+              paymentMethodId: ev.paymentMethod.id,
+              timestamp: new Date().toISOString()
+            };
+            
+            console.error('[PRB] confirmCardPayment error:', errorDetails);
+            
+            // Log to help identify specific Stripe 400 causes
+            if (error.code === 'amount_mismatch') {
+              console.error('[PRB] AMOUNT_MISMATCH: PI amount differs from wallet total');
+            } else if (error.code === 'payment_intent_unexpected_state') {
+              console.error('[PRB] UNEXPECTED_STATE: PI may be stale or already processed');
+            } else if (error.code === 'parameter_invalid_empty') {
+              console.error('[PRB] INVALID_PARAMETER: Required parameter missing or empty');
+            }
             if (!isApplePay) { try { ev.complete('fail'); } catch { } }
             alert(error.message || 'Payment failed. Please try another method.');
             setProcessing(false);

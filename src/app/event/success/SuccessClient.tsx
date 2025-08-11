@@ -44,6 +44,30 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     }
   }, [searchParams]);
 
+  // Handle refresh detection - if user refreshes a completed transaction, redirect home
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const pi = url.searchParams.get('pi');
+    
+    // Use either session_id or pi for tracking
+    const identifier = session_id || pi;
+    if (!identifier) return;
+
+    const visitKey = `success_visited_${identifier}`;
+    const hasVisited = sessionStorage.getItem(visitKey);
+    
+    if (hasVisited) {
+      // User has already visited this success page - this is a refresh/back navigation
+      console.log('Success page already visited - redirecting to home to prevent refresh');
+      window.location.replace('/?payment=already-processed');
+      return;
+    }
+    
+    // Mark this success page as visited
+    sessionStorage.setItem(visitKey, 'true');
+    console.log('First visit to success page - marking as visited for:', identifier);
+  }, [session_id]);
+
   // Enhanced back button prevention
   useEffect(() => {
     console.log('Setting up enhanced navigation prevention...');
@@ -62,8 +86,11 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       window.location.replace('/');
     };
 
-    // Remove beforeunload handler to allow normal navigation
-    // Only prevent specific refresh attempts via keydown
+    // Handle page reload attempts - redirect to home instead
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Let the refresh detection in the other useEffect handle this
+      console.log('Page unload detected - refresh detection will handle redirect');
+    };
 
     // Enhanced keydown prevention for F5 and Ctrl+R
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -78,6 +105,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     // Add event listeners
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     // Push current state to prevent back navigation
     window.history.pushState(null, '', window.location.href);
@@ -89,6 +117,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     return () => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
 
