@@ -1,72 +1,153 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { FaCalendarAlt, FaMapMarkerAlt, FaClock, FaTicketAlt, FaDollarSign, FaArrowLeft, FaDownload } from 'react-icons/fa';
+import { FaCalendarAlt, FaMapMarkerAlt, FaClock, FaTicketAlt, FaDollarSign, FaArrowLeft, FaDownload, FaSpinner } from 'react-icons/fa';
 import { formatInTimeZone } from 'date-fns-tz';
 
-interface QrDisplayData {
-  qrCodeImageUrl: string;
+interface QrGenerationData {
+  sessionId?: string;
+  paymentIntent?: string;
   transaction: any;
   eventDetails: any;
   transactionItems: any[];
   heroImageUrl: string;
-  generationFailed?: boolean;
+  needsGeneration?: boolean;
 }
 
 export function TicketQrClient() {
-  const [qrData, setQrData] = useState<QrDisplayData | null>(null);
+  const [generationData, setGenerationData] = useState<QrGenerationData | null>(null);
+  const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const generationStartedRef = useRef(false);
   const router = useRouter();
 
   useEffect(() => {
-    // Retrieve QR data from sessionStorage
+    // Retrieve generation data from sessionStorage
     try {
-      const storedData = sessionStorage.getItem('mobileQrData');
+      const storedData = sessionStorage.getItem('mobileQrGeneration');
       if (!storedData) {
-        setError('No QR code data found. Please return to the success page.');
+        setError('No ticket data found. Please return to the success page.');
         setLoading(false);
         return;
       }
 
       const parsedData = JSON.parse(storedData);
-      console.log('[QR Display] Retrieved data from sessionStorage:', parsedData);
+      console.log('[QR Display] Retrieved generation data from sessionStorage:', parsedData);
       
-      // Allow display even if QR generation failed - show ticket details
-      if (!parsedData.qrCodeImageUrl && !parsedData.generationFailed) {
-        setError('QR code not ready. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      setQrData(parsedData);
+      setGenerationData(parsedData);
       setLoading(false);
       
       // Clear the sessionStorage data after successful retrieval
-      sessionStorage.removeItem('mobileQrData');
+      sessionStorage.removeItem('mobileQrGeneration');
+      
+      // Start QR generation if needed
+      if (parsedData.needsGeneration) {
+        console.log('[QR Display] Starting QR generation process');
+        setTimeout(() => {
+          startQrGeneration(parsedData);
+        }, 2000); // 2 second delay to let page load
+      }
     } catch (err) {
-      console.error('[QR Display] Error retrieving QR data:', err);
-      setError('Failed to load QR code data.');
+      console.error('[QR Display] Error retrieving generation data:', err);
+      setError('Failed to load ticket data.');
       setLoading(false);
     }
   }, []);
+
+  const startQrGeneration = async (data: QrGenerationData) => {
+    if (generationStartedRef.current) {
+      console.log('[QR Display] Generation already started, skipping');
+      return;
+    }
+    generationStartedRef.current = true;
+    setGenerating(true);
+    setGenerationError(null);
+
+    try {
+      console.log('[QR Display] Starting QR code generation for mobile:', {
+        transactionId: data.transaction.id,
+        eventId: data.eventDetails?.id
+      });
+
+      const directUrl = `/api/proxy/events/${data.eventDetails.id}/transactions/${data.transaction.id}/emailHostUrlPrefix/${Buffer.from(window.location.origin).toString('base64')}/qrcode`;
+      console.log('[QR Display] Making QR request to:', directUrl);
+
+      // Add timeout for QR generation
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log('[QR Display] QR request timeout');
+        controller.abort();
+      }, 20000); // 20 second timeout
+
+      const qrResponse = await fetch(directUrl, {
+        signal: controller.signal,
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Mobile-Request': 'true',
+          'X-QR-Page-Generation': 'true'
+        }
+      });
+
+      clearTimeout(timeoutId);
+
+      if (qrResponse.ok) {
+        const qrUrl = await qrResponse.text();
+        console.log('[QR Display] QR response received:', qrUrl);
+        
+        if (qrUrl && qrUrl.trim() && (qrUrl.startsWith('http') || qrUrl.startsWith('data:'))) {
+          console.log('[QR Display] QR code generated successfully:', qrUrl);
+          setQrCodeImageUrl(qrUrl.trim());
+        } else {
+          console.log('[QR Display] Invalid QR URL received:', qrUrl);
+          setGenerationError('Invalid QR code received from server. Please check your email for the QR code.');
+        }
+      } else {
+        console.log('[QR Display] QR request failed with status:', qrResponse.status);
+        const errorText = await qrResponse.text();
+        setGenerationError(`QR generation failed (${qrResponse.status}). Please check your email for the QR code.`);
+      }
+    } catch (error: any) {
+      console.error('[QR Display] QR generation error:', error);
+      if (error.name === 'AbortError') {
+        setGenerationError('QR generation timed out. Please check your email for the QR code.');
+      } else {
+        setGenerationError('Failed to generate QR code. Please check your email for the QR code.');
+      }
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleGoBack = () => {
     router.push('/');
   };
 
   const handleDownloadQr = () => {
-    if (!qrData?.qrCodeImageUrl) return;
+    if (!qrCodeImageUrl) {
+      alert('No QR code available to download. Please check your email for the QR code.');
+      return;
+    }
     
-    // Create a link to download the QR code
-    const link = document.createElement('a');
-    link.href = qrData.qrCodeImageUrl;
-    link.download = `ticket-qr-${qrData.transaction?.id || 'code'}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      // Create a link to download the QR code
+      const link = document.createElement('a');
+      link.href = qrCodeImageUrl;
+      link.download = `ticket-qr-${generationData?.transaction?.id || 'code'}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('[QR Display] Download error:', error);
+      alert('Failed to download QR code. Please try again or check your email.');
+    }
   };
 
   if (loading) {
@@ -106,11 +187,11 @@ export function TicketQrClient() {
     );
   }
 
-  if (!qrData) {
+  if (!generationData) {
     return null;
   }
 
-  const { qrCodeImageUrl, transaction, eventDetails, transactionItems, heroImageUrl } = qrData;
+  const { transaction, eventDetails, transactionItems, heroImageUrl } = generationData;
 
   return (
     <div className="max-w-5xl mx-auto px-8 py-8">
@@ -209,7 +290,19 @@ export function TicketQrClient() {
         <div className="text-center">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Your Entry QR Code</h3>
           
-          {qrCodeImageUrl ? (
+          {generating && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mx-auto max-w-md mb-4">
+              <div className="flex items-center justify-center mb-2">
+                <FaSpinner className="animate-spin text-blue-600 text-2xl mr-2" />
+                <span className="text-blue-800 font-medium">Generating QR Code...</span>
+              </div>
+              <p className="text-sm text-blue-700">
+                Please wait while we generate your QR code. This may take a moment on mobile devices.
+              </p>
+            </div>
+          )}
+          
+          {qrCodeImageUrl && !generating && (
             <>
               <div className="inline-block bg-white p-6 rounded-lg shadow-md border-2 border-dashed border-gray-300">
                 <Image
@@ -225,11 +318,13 @@ export function TicketQrClient() {
                 You can also download it to save on your device.
               </p>
             </>
-          ) : (
+          )}
+          
+          {generationError && !generating && !qrCodeImageUrl && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mx-auto max-w-md">
               <div className="text-yellow-800 mb-2">⚠️ QR Code Generation Issue</div>
               <p className="text-sm text-yellow-700 mb-4">
-                We encountered an issue generating your QR code on mobile. However, your ticket purchase was successful!
+                {generationError}
               </p>
               <div className="text-sm text-gray-600">
                 <p className="font-medium mb-2">Alternative options:</p>
@@ -238,6 +333,18 @@ export function TicketQrClient() {
                   <li>Show your transaction ID: <strong>{transaction?.id}</strong></li>
                   <li>Contact event support if needed</li>
                 </ul>
+              </div>
+            </div>
+          )}
+          
+          {!generating && !qrCodeImageUrl && !generationError && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mx-auto max-w-md">
+              <div className="text-gray-800 mb-2">⏳ QR Code Pending</div>
+              <p className="text-sm text-gray-600 mb-4">
+                Your QR code will appear here shortly. Your ticket purchase was successful!
+              </p>
+              <div className="text-sm text-gray-600">
+                <p>Transaction ID: <strong>{transaction?.id}</strong></p>
               </div>
             </div>
           )}
