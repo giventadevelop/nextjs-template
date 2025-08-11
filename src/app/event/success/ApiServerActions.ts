@@ -502,6 +502,9 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
     }
   });
 
@@ -542,5 +545,11 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
   console.log('[fetchTransactionQrCode] QR code URL type:', typeof url);
   console.log('[fetchTransactionQrCode] QR code URL length:', url?.length);
   
-  return { qrCodeImageUrl: url };
+  // If backend returns empty string, it means QR is not ready yet
+  if (!url || url.trim() === '') {
+    console.log('[fetchTransactionQrCode] Backend returned empty QR URL - QR generation not complete yet');
+    return { qrCodeImageUrl: '' };
+  }
+  
+  return { qrCodeImageUrl: url.trim() };
 }
