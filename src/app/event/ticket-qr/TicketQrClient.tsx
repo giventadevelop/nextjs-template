@@ -39,6 +39,24 @@ export default function TicketQrClient() {
   // Determine which identifier to use
   const identifier = session_id || payment_intent;
 
+  // Debug logging for parameter retrieval
+  console.log('[TicketQrClient] Parameter retrieval debug:', {
+    urlParams: {
+      session_id: searchParams?.get('session_id'),
+      pi: searchParams?.get('pi')
+    },
+    sessionStorage: typeof window !== 'undefined' ? {
+      stripe_session_id: sessionStorage.getItem('stripe_session_id'),
+      stripe_payment_intent: sessionStorage.getItem('stripe_payment_intent')
+    } : null,
+    finalValues: {
+      session_id,
+      payment_intent,
+      identifier
+    },
+    currentUrl: typeof window !== 'undefined' ? window.location.href : 'SSR'
+  });
+
   // Helper to get ticket number
   function getTicketNumber(transaction: any) {
     return (
