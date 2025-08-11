@@ -98,14 +98,76 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
     
-    // For payment intent, we need to process it by session_id (requires conversion)
-    // For now, we'll use the same processStripeSessionServer function which expects session_id
+    // Import the helper functions from server actions
+    const { findTransactionBySessionId, findTransactionByPaymentIntentId } = await import('@/app/event/success/ApiServerActions');
+    
+    // First check if transaction already exists
+    let existingTransaction = null;
+    if (session_id) {
+      console.log('[API POST] Checking for existing transaction by session_id:', session_id);
+      existingTransaction = await findTransactionBySessionId(session_id);
+    } else if (pi) {
+      console.log('[API POST] Checking for existing transaction by payment_intent:', pi);
+      existingTransaction = await findTransactionByPaymentIntentId(pi);
+    }
+    
+    if (existingTransaction) {
+      console.log('[API POST] Transaction already exists:', existingTransaction.id);
+      // Use the existing transaction instead of creating a new one
+      
+      // Get event details
+      let eventDetails = existingTransaction.event;
+      if (!eventDetails?.id && existingTransaction.eventId) {
+        eventDetails = await fetchEventDetailsByIdServer(existingTransaction.eventId);
+      }
+      
+      // Get QR code data
+      let qrCodeData = null;
+      if (existingTransaction.id && eventDetails?.id) {
+        try {
+          qrCodeData = await fetchTransactionQrCode(eventDetails.id, existingTransaction.id);
+        } catch (err) {
+          console.error('[API POST] Failed to fetch QR code:', err);
+          qrCodeData = null;
+        }
+      }
+      
+      // Fetch transaction items and ticket type names
+      let transactionItems = [];
+      if (existingTransaction.id) {
+        transactionItems = await fetchTransactionItemsByTransactionId(existingTransaction.id as number);
+        const ticketTypeCache: Record<number, any> = {};
+        for (const item of transactionItems) {
+          if (!item.ticketTypeName && item.ticketTypeId) {
+            if (!ticketTypeCache[item.ticketTypeId as number]) {
+              const ticketType = await fetchTicketTypeById(item.ticketTypeId as number);
+              ticketTypeCache[item.ticketTypeId as number] = ticketType;
+            }
+            item.ticketTypeName = ticketTypeCache[item.ticketTypeId as number]?.name || `Ticket Type #${item.ticketTypeId}`;
+          }
+        }
+      }
+      
+      // Fetch hero image URL
+      let heroImageUrl = eventDetails?.id ? await getHeroImageUrl(eventDetails.id as number) : null;
+      
+      return NextResponse.json({ 
+        transaction: existingTransaction, 
+        userProfile: null, 
+        eventDetails, 
+        qrCodeData, 
+        transactionItems, 
+        heroImageUrl 
+      });
+    }
+    
+    // If no existing transaction, try to create via Stripe session processing
     let result = null;
     if (session_id) {
       result = await processStripeSessionServer(session_id);
     } else if (pi) {
       // Payment intent processing - convert to session_id first
-      console.log('[API] Processing payment intent:', pi);
+      console.log('[API POST] Processing payment intent:', pi);
       const sessionId = await getSessionIdFromPaymentIntent(pi);
       if (!sessionId) {
         return NextResponse.json({ error: 'Could not find session for payment intent' }, { status: 404 });
@@ -181,35 +243,43 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
     
-    // Only look up, do not create
-    let result = null;
+    // Import the helper functions from server actions
+    const { findTransactionBySessionId, findTransactionByPaymentIntentId } = await import('@/app/event/success/ApiServerActions');
+    
+    // Only look up existing transactions, do not create
+    let transaction = null;
     if (session_id) {
-      result = await processStripeSessionServer(session_id);
+      console.log('[API GET] Looking up transaction by session_id:', session_id);
+      transaction = await findTransactionBySessionId(session_id);
     } else if (pi) {
-      console.log('[API GET] Processing payment intent:', pi);
-      const sessionId = await getSessionIdFromPaymentIntent(pi);
-      if (!sessionId) {
-        return NextResponse.json({ error: 'Could not find session for payment intent' }, { status: 404 });
-      }
-      result = await processStripeSessionServer(sessionId);
+      console.log('[API GET] Looking up transaction by payment_intent:', pi);
+      transaction = await findTransactionByPaymentIntentId(pi);
     }
-    const transaction = result?.transaction;
-    const userProfile = result?.userProfile;
+    
     if (!transaction) {
+      console.log('[API GET] No existing transaction found');
       return NextResponse.json({ transaction: null }, { status: 200 });
     }
+    
+    console.log('[API GET] Found existing transaction:', transaction.id);
+    
+    // Get event details
     let eventDetails = transaction.event;
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
+    
+    // Get QR code data
     let qrCodeData = null;
     if (transaction.id && eventDetails?.id) {
       try {
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
       } catch (err) {
+        console.error('[API GET] Failed to fetch QR code:', err);
         qrCodeData = null;
       }
     }
+    
     // Fetch transaction items and ticket type names
     let transactionItems = [];
     if (transaction.id) {
@@ -225,10 +295,20 @@ export async function GET(req: NextRequest) {
         }
       }
     }
+    
     // Fetch hero image URL
     let heroImageUrl = eventDetails?.id ? await getHeroImageUrl(eventDetails.id as number) : null;
-    return NextResponse.json({ transaction, userProfile, eventDetails, qrCodeData, transactionItems, heroImageUrl });
+    
+    return NextResponse.json({ 
+      transaction, 
+      userProfile: null, // No user profile for GET requests
+      eventDetails, 
+      qrCodeData, 
+      transactionItems, 
+      heroImageUrl 
+    });
   } catch (err: any) {
+    console.error('[API GET] Error:', err);
     return NextResponse.json({ error: err?.message || 'Internal server error' }, { status: 500 });
   }
 }

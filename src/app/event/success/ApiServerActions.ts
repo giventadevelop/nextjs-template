@@ -39,7 +39,7 @@ async function fetchTicketTypeByIdServer(
   return response.json();
 }
 
-async function findTransactionBySessionId(
+export async function findTransactionBySessionId(
   sessionId: string,
 ): Promise<EventTicketTransactionDTO | null> {
   const tenantId = getTenantId();
@@ -64,7 +64,7 @@ async function findTransactionBySessionId(
   return transactions.length > 0 ? transactions[0] : null;
 }
 
-async function findTransactionByPaymentIntentId(
+export async function findTransactionByPaymentIntentId(
   paymentIntentId: string,
 ): Promise<EventTicketTransactionDTO | null> {
   const tenantId = getTenantId();
