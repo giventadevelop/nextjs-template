@@ -87,9 +87,9 @@ export default function TicketQrClient() {
     );
   }
 
-  // Call mobile debug endpoint to verify mobile flow is working
+  // Call mobile debug endpoint to verify mobile flow is working - only after parameters are initialized
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && (session_id || payment_intent)) {
       const debugMobile = async () => {
         try {
           console.log('[MOBILE QR DEBUG] Calling mobile debug endpoint...');
@@ -147,14 +147,23 @@ export default function TicketQrClient() {
           cache: 'no-store'
         });
         
+        console.log('[MOBILE QR DEBUG] GET response status:', getRes.status);
+        
         if (getRes.ok) {
           const data = await getRes.json();
+          console.log('[MOBILE QR DEBUG] GET response data:', data);
+          
           if (data.transaction && !cancelled) {
-            console.log('[TicketQrClient] Transaction data loaded:', data.transaction.id);
+            console.log('[MOBILE QR DEBUG] Transaction data loaded:', data.transaction.id);
             setResult(data);
             setLoading(false);
             return;
+          } else {
+            console.log('[MOBILE QR DEBUG] No transaction in GET response, will try POST');
           }
+        } else {
+          const errorText = await getRes.text();
+          console.error('[MOBILE QR DEBUG] GET request failed:', getRes.status, errorText);
         }
         
         // If not found, POST to create it
