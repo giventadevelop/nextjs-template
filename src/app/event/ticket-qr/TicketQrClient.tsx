@@ -258,15 +258,55 @@ export default function TicketQrClient() {
   }, [result]);
 
   if (loading) {
-    return <LoadingTicket sessionId={identifier || ''} />;
+    return (
+      <div>
+        {/* Debug Banner for Loading State */}
+        <div className="bg-blue-100 border-2 border-blue-400 p-4 m-4 rounded text-sm">
+          <h3 className="font-bold mb-2">🔄 Loading Debug Info:</h3>
+          <div><strong>URL Parameters:</strong></div>
+          <div>pi from URL: {searchParams?.get('pi') || 'NULL'}</div>
+          <div>session_id from URL: {searchParams?.get('session_id') || 'NULL'}</div>
+          
+          <div className="mt-2"><strong>State Values:</strong></div>
+          <div>session_id: {session_id || 'NULL'}</div>
+          <div>payment_intent: {payment_intent || 'NULL'}</div>
+          <div>identifier: {identifier || 'NULL'}</div>
+          
+          <div className="mt-2"><strong>Current URL:</strong></div>
+          <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
+        </div>
+        <LoadingTicket sessionId={identifier || ''} />
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-        <FaInfoCircle className="text-4xl text-red-500 mb-4" />
+        <div className="text-4xl text-red-500 mb-4">❌</div>
         <h1 className="text-2xl font-bold text-gray-800">Error</h1>
         <p className="text-gray-600 mt-2">{error}</p>
+        
+        {/* Visual Debug Information */}
+        <div className="mt-6 p-4 bg-yellow-100 border-2 border-yellow-400 rounded text-left text-sm">
+          <h3 className="font-bold mb-2">🔍 Debug Info:</h3>
+          <div><strong>URL Parameters:</strong></div>
+          <div>pi from URL: {searchParams?.get('pi') || 'NULL'}</div>
+          <div>session_id from URL: {searchParams?.get('session_id') || 'NULL'}</div>
+          
+          <div className="mt-2"><strong>State Values:</strong></div>
+          <div>session_id: {session_id || 'NULL'}</div>
+          <div>payment_intent: {payment_intent || 'NULL'}</div>
+          <div>identifier: {identifier || 'NULL'}</div>
+          
+          <div className="mt-2"><strong>SessionStorage:</strong></div>
+          <div>stripe_session_id: {typeof window !== 'undefined' ? sessionStorage.getItem('stripe_session_id') || 'NULL' : 'SSR'}</div>
+          <div>stripe_payment_intent: {typeof window !== 'undefined' ? sessionStorage.getItem('stripe_payment_intent') || 'NULL' : 'SSR'}</div>
+          
+          <div className="mt-2"><strong>Current URL:</strong></div>
+          <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
+        </div>
+        
         <button 
           onClick={() => router.push('/')}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
