@@ -35,12 +35,15 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
     if (!stripe || !enabled) return;
 
     // Create PR only once per enable window
-    const pr = stripe.paymentRequest({
+    const prConfig = {
       country: 'US',
       currency: 'usd',
       total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 },
       requestPayerEmail: true,
-    });
+    };
+    
+    console.log('[PRB] Creating PaymentRequest with config:', prConfig);
+    const pr = stripe.paymentRequest(prConfig);
 
     pr.canMakePayment().then((result) => {
       console.log('[PRB] canMakePayment() result:', result);
@@ -50,8 +53,40 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         protocol: window.location.protocol,
         isHTTPS: window.location.protocol === 'https:',
         isChrome: /Chrome/.test(navigator.userAgent),
-        stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20) + '...'
+        isEdge: /Edge/.test(navigator.userAgent),
+        isSafari: /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent),
+        isDesktop: !/Mobi|Android/i.test(navigator.userAgent),
+        stripePublishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY?.substring(0, 20) + '...',
+        paymentRequestAmount: prConfig.total.amount,
+        paymentRequestCountry: prConfig.country,
+        paymentRequestCurrency: prConfig.currency
       });
+      
+      // Check native Google Pay API availability
+      if ('PaymentRequest' in window) {
+        try {
+          const testPaymentRequest = new PaymentRequest([{
+            supportedMethods: 'https://google.com/pay',
+            data: {
+              apiVersion: 2,
+              apiVersionMinor: 0,
+              merchantInfo: { merchantName: 'Test' },
+              allowedPaymentMethods: [{
+                type: 'CARD',
+                parameters: { allowedAuthMethods: ['PAN_ONLY'], allowedCardNetworks: ['VISA', 'MASTERCARD'] }
+              }]
+            }
+          }], { total: { label: 'Test', amount: { currency: 'USD', value: '1.00' } } });
+          
+          testPaymentRequest.canMakePayment().then(canPay => {
+            console.log('[PRB] Native Google Pay API canMakePayment:', canPay);
+          }).catch(err => {
+            console.log('[PRB] Native Google Pay API check failed:', err.message);
+          });
+        } catch (err) {
+          console.log('[PRB] Native Google Pay API not available:', err);
+        }
+      }
       
       if (!result) {
         console.warn('[PRB] canMakePayment() returned null - no payment methods available');
@@ -66,6 +101,17 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         googlePay: result.googlePay || (result as any).google_pay,
         link: (result as any).link
       });
+      
+      // Additional debugging for Google Pay specific issues
+      if (!(result.googlePay || (result as any).google_pay)) {
+        console.log('[PRB] Google Pay not available - potential causes:', {
+          amountTooLow: prConfig.total.amount < 50, // Google Pay requires minimum $0.50
+          notSignedIn: 'Check if user is signed into Google account',
+          noCards: 'Check if user has cards saved in Google Pay',
+          countryRestriction: prConfig.country !== 'US' ? 'Country might not support Google Pay' : false,
+          browserIssue: !(/Chrome/.test(navigator.userAgent)) ? 'Google Pay works best in Chrome' : false
+        });
+      }
       
       setCanMakePaymentResult(result);
       pr.on('paymentmethod', async (ev) => {
