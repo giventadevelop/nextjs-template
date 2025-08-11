@@ -80,11 +80,16 @@ export async function POST(req: NextRequest) {
     }
 
     // Build idempotency key to prevent duplicate intents for the same attempt
-    // Include totalCents to ensure new PI when amount changes
+    // Include totalCents and timestamp to ensure new PI when amount changes
     const cartKey = cart
       .map((c) => ({ id: c?.ticketType?.id, q: c?.quantity }))
       .sort((a, b) => (a.id || 0) - (b.id || 0));
-    const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${totalCents}|${JSON.stringify(cartKey)}`;
+    
+    // Include timestamp rounded to 30-second intervals to prevent excessive PI creation
+    // but ensure fresh PIs for wallet payments 
+    const timestampWindow = Math.floor(Date.now() / 30000);
+    
+    const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${totalCents}|${JSON.stringify(cartKey)}|${timestampWindow}`;
     const idempotencyKey = crypto.createHash('sha256').update(idemSource).digest('hex');
     
     console.log('[PI] Creating PaymentIntent:', { 
@@ -92,7 +97,10 @@ export async function POST(req: NextRequest) {
       eventId: eventIdRaw, 
       email, 
       discountCodeId,
-      idempotencyKey: idempotencyKey.substring(0, 8) + '...' 
+      timestampWindow,
+      idempotencyKey: idempotencyKey.substring(0, 8) + '...',
+      cartItems: cart.length,
+      timestamp: new Date().toISOString()
     });
 
     // Create PaymentIntent with automatic payment methods (enables wallets)
@@ -116,10 +124,19 @@ export async function POST(req: NextRequest) {
     console.log('[PI] PaymentIntent created successfully:', { 
       id: pi.id, 
       amount: pi.amount, 
-      status: pi.status 
+      status: pi.status,
+      currency: pi.currency,
+      created: pi.created,
+      automatic_payment_methods: pi.automatic_payment_methods?.enabled 
     });
 
-    return NextResponse.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id, amount: totalCents });
+    return NextResponse.json({ 
+      clientSecret: pi.client_secret, 
+      paymentIntentId: pi.id, 
+      amount: totalCents,
+      currency: 'usd',
+      status: pi.status 
+    });
   } catch (err) {
     console.error('[PI] Error creating PaymentIntent:', err);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
