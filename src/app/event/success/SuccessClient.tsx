@@ -53,36 +53,32 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
     const identifier = session_id || pi;
     if (!identifier) return;
 
-    const visitKey = `success_visited_${identifier}`;
     const completedKey = `success_completed_${identifier}`;
     
     // Check if this transaction was already completed and we're seeing it again
     const wasCompleted = sessionStorage.getItem(completedKey);
-    const hasVisited = sessionStorage.getItem(visitKey);
     
-    if (hasVisited && wasCompleted) {
-      // This means the page was successfully loaded before AND completed
-      // Use multiple methods to detect refresh/reload
-      const isRefresh = (
-        performance.navigation?.type === 1 || // Modern browsers: 1 = TYPE_RELOAD  
-        (performance as any).navigation?.type === 'reload' || // Some browsers use string
-        document.referrer === window.location.href || // Referrer same as current page
-        sessionStorage.getItem('navigationEntries') === window.location.href // Our own tracking
+    // Only redirect if we're sure this is a refresh AND the transaction was previously completed
+    if (wasCompleted) {
+      // Use a more conservative approach - only redirect if it's clearly a refresh
+      const isDefiniteRefresh = (
+        performance.navigation?.type === 1 || // Modern browsers: 1 = TYPE_RELOAD
+        (performance as any).navigation?.type === 'reload' // Some browsers use string
       );
       
-      if (isRefresh) {
+      // Add a delay to ensure it's not just a quick navigation
+      if (isDefiniteRefresh) {
         console.log('Success page refresh detected after completion - redirecting to home');
-        window.location.replace('/?payment=already-processed');
+        setTimeout(() => {
+          window.location.replace('/?payment=already-processed');
+        }, 100);
         return;
+      } else {
+        console.log('Success page revisited but not a refresh - allowing access');
       }
     }
     
-    // Track navigation for refresh detection
-    sessionStorage.setItem('navigationEntries', window.location.href);
-    
-    // Mark this success page as visited (but not yet completed)
-    sessionStorage.setItem(visitKey, 'true');
-    console.log('Success page visited for:', identifier);
+    console.log('Success page accessed for:', identifier);
   }, [session_id]);
 
   // Enhanced back button prevention
