@@ -33,6 +33,23 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Mobile detection and redirect logic
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    window.innerWidth <= 768;
+
+    if (isMobile) {
+      console.log('[SuccessClient] Mobile browser detected - redirecting to QR page');
+      // Store session_id in sessionStorage for QR page
+      sessionStorage.setItem('stripe_session_id', session_id);
+      // Redirect to separate QR page for mobile
+      router.replace(`/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`);
+      return;
+    }
+  }, [session_id, router]);
+
   // Hero image is handled by the HydrationSafeHeroImage component
 
   // Check if we were redirected due to already processed payment
