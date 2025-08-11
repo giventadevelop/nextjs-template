@@ -309,32 +309,69 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       }
       qrPollingStartedRef.current = true;
       
-      console.log('[QR Debug Mobile] Starting background QR generation for mobile');
+      console.log('[QR Debug Mobile] Starting mobile QR workflow - showing immediate success');
       
-      // Show immediate success for mobile users
+      // Show immediate success for mobile users - NO QR generation yet
+      setResult((prev: any) => ({
+        ...(prev || {}),
+        qrCodeData: {
+          showMobileSuccess: true,
+          message: 'Your QR code will be generated shortly. Please wait while we prepare your ticket details.'
+        }
+      }));
+      
+      // Wait longer to ensure success page is fully rendered and user has read content
+      setTimeout(() => {
+        console.log('[QR Debug Mobile] Starting delayed QR generation for mobile after 5 second wait');
+        initiateDelayedQrGeneration();
+      }, 5000); // 5 second delay to let user see and read the success page
+    }
+    
+    function initiateDelayedQrGeneration() {
+      // Update UI to show QR generation is starting
       setResult((prev: any) => ({
         ...(prev || {}),
         qrCodeData: {
           isGenerating: true,
-          message: 'Your QR code is being generated and will be sent to your email shortly.'
+          message: 'Generating your QR code now... This may take a moment.'
         }
       }));
       
-      // Start background QR generation
+      // Wait an additional 3 seconds before making the API call
       setTimeout(async () => {
         try {
+          console.log('[QR Debug Mobile] Making delayed QR generation API call');
           await generateQrCodeForMobile();
         } catch (error) {
-          console.error('[QR Debug Mobile] Background QR generation failed:', error);
-          setResult((prev: any) => ({
-            ...(prev || {}),
-            qrCodeData: {
-              error: 'QR code generation encountered an issue. Please check your email for your ticket.',
-              qrCodeImageUrl: null
-            }
-          }));
+          console.error('[QR Debug Mobile] Delayed QR generation failed:', error);
+          // Instead of showing error, redirect to QR page with parameters
+          redirectToQrPage();
         }
-      }, 2000); // 2 second delay to let success page render
+      }, 3000); // Additional 3 second delay before API call
+    }
+    
+    function redirectToQrPage() {
+      const url = new URL(window.location.href);
+      const pi = url.searchParams.get('pi');
+      const identifier = session_id || pi;
+      
+      console.log('[QR Debug Mobile] Redirecting to QR page for mobile (QR generation failed)');
+      
+      // Store transaction data even if QR generation failed, so user can see ticket details
+      const qrDisplayData = {
+        qrCodeImageUrl: '', // Empty since generation failed
+        transaction: result.transaction,
+        eventDetails: result.eventDetails,
+        transactionItems: result.transactionItems || [],
+        heroImageUrl: result.heroImageUrl || "/images/default_placeholder_hero_image.jpeg",
+        generationFailed: true
+      };
+      
+      sessionStorage.setItem('mobileQrData', JSON.stringify(qrDisplayData));
+      console.log('[QR Debug Mobile] Stored fallback data for failed QR generation:', qrDisplayData);
+      
+      // Redirect to QR display page  
+      window.location.href = '/event/ticket-qr';
     }
     
     async function generateQrCodeForMobile() {
@@ -342,57 +379,82 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
       const pi = url.searchParams.get('pi');
       const identifier = session_id || pi;
       
-      console.log('[QR Debug Mobile] Generating QR code for mobile:', {
+      console.log('[QR Debug Mobile] Generating QR code for mobile after delays:', {
         transactionId: result.transaction.id,
         eventId: result.eventDetails?.id,
-        identifier
+        identifier,
+        totalWaitTime: '8 seconds'
       });
       
-      // Make direct QR code request
+      // Make direct QR code request with additional timeout for mobile
       try {
         const directUrl = `/api/proxy/events/${result.eventDetails.id}/transactions/${result.transaction.id}/emailHostUrlPrefix/${Buffer.from(window.location.origin).toString('base64')}/qrcode`;
-        console.log('[QR Debug Mobile] Making direct QR request:', directUrl);
+        console.log('[QR Debug Mobile] Making delayed direct QR request:', directUrl);
+        
+        // Add longer timeout for mobile QR generation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.log('[QR Debug Mobile] QR request timeout - redirecting to QR page');
+          controller.abort();
+        }, 15000); // 15 second timeout
         
         const qrResponse = await fetch(directUrl, {
+          signal: controller.signal,
           cache: 'no-store',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
-            'Expires': '0'
+            'Expires': '0',
+            'X-Mobile-Request': 'true',
+            'X-Delayed-Generation': 'true'
           }
         });
+        
+        clearTimeout(timeoutId);
         
         if (qrResponse.ok) {
           const qrUrl = await qrResponse.text();
           if (qrUrl && qrUrl.trim() && (qrUrl.startsWith('http') || qrUrl.startsWith('data:'))) {
-            console.log('[QR Debug Mobile] QR code generated successfully for mobile:', qrUrl);
+            console.log('[QR Debug Mobile] QR code generated successfully after delays:', qrUrl);
             
-            setResult((prev: any) => ({
-              ...(prev || {}),
-              qrCodeData: {
-                qrCodeImageUrl: qrUrl.trim(),
-                fromMobileGeneration: true
-              }
-            }));
+            // Instead of updating current page, redirect to QR display page with the QR URL
+            redirectToQrPageWithSuccess(qrUrl.trim());
             
-            // Mark as completed
-            if (identifier) {
-              const completedKey = `success_completed_${identifier}`;
-              sessionStorage.setItem(completedKey, 'true');
-              console.log('[QR Debug Mobile] Marked mobile transaction as completed:', identifier);
-            }
           } else {
-            console.log('[QR Debug Mobile] Invalid QR URL received:', qrUrl);
+            console.log('[QR Debug Mobile] Invalid QR URL received after delays:', qrUrl);
             throw new Error('Invalid QR code URL received');
           }
         } else {
-          console.log('[QR Debug Mobile] QR request failed:', qrResponse.status);
+          console.log('[QR Debug Mobile] QR request failed after delays:', qrResponse.status);
           throw new Error(`QR generation failed with status ${qrResponse.status}`);
         }
       } catch (error) {
-        console.error('[QR Debug Mobile] QR generation error:', error);
+        console.error('[QR Debug Mobile] QR generation error after delays:', error);
         throw error;
       }
+    }
+    
+    function redirectToQrPageWithSuccess(qrUrl: string) {
+      const url = new URL(window.location.href);
+      const pi = url.searchParams.get('pi');
+      const identifier = session_id || pi;
+      
+      console.log('[QR Debug Mobile] Redirecting to QR success page with generated QR');
+      
+      // Store complete QR data for the QR display page in the format it expects
+      const qrDisplayData = {
+        qrCodeImageUrl: qrUrl,
+        transaction: result.transaction,
+        eventDetails: result.eventDetails,
+        transactionItems: result.transactionItems || [],
+        heroImageUrl: result.heroImageUrl || "/images/default_placeholder_hero_image.jpeg"
+      };
+      
+      sessionStorage.setItem('mobileQrData', JSON.stringify(qrDisplayData));
+      console.log('[QR Debug Mobile] Stored QR data for redirect:', qrDisplayData);
+      
+      // Redirect to QR display page  
+      window.location.href = '/event/ticket-qr';
     }
     
     async function handleDesktopQrPolling() {
@@ -757,17 +819,28 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
           {qrCodeData && (
             <>
               <div className="flex flex-col items-center justify-center gap-4">
-                {/* Mobile: Show generating message */}
-                {qrCodeData.isGenerating && (
+                {/* Mobile: Show initial success message */}
+                {qrCodeData.showMobileSuccess && !qrCodeData.isGenerating && (
                   <>
-                    <div className="text-lg font-semibold text-teal-700">QR Code Being Generated</div>
-                    <FaTicketAlt className="animate-bounce text-3xl text-teal-500" />
-                    <div className="text-gray-600 max-w-md">{qrCodeData.message}</div>
+                    <div className="text-lg font-semibold text-blue-700">📱 Mobile Ticket Processing</div>
+                    <FaTicketAlt className="animate-pulse text-3xl text-blue-500" />
+                    <div className="text-gray-600 max-w-md text-center">{qrCodeData.message}</div>
+                    <div className="text-sm text-gray-500 mt-2">You can review your transaction details below while we prepare your QR code.</div>
                   </>
                 )}
                 
-                {/* Show QR code when available */}
-                {qrCodeData.qrCodeImageUrl && (
+                {/* Mobile: Show generating message */}
+                {qrCodeData.isGenerating && (
+                  <>
+                    <div className="text-lg font-semibold text-teal-700">🔄 Generating QR Code</div>
+                    <FaTicketAlt className="animate-bounce text-3xl text-teal-500" />
+                    <div className="text-gray-600 max-w-md text-center">{qrCodeData.message}</div>
+                    <div className="text-sm text-gray-500 mt-2">This process may take a moment on mobile devices...</div>
+                  </>
+                )}
+                
+                {/* Show QR code when available (Desktop mostly) */}
+                {qrCodeData.qrCodeImageUrl && !qrCodeData.showMobileSuccess && !qrCodeData.isGenerating && (
                   <>
                     <div className="text-lg font-semibold text-gray-800">
                       Your Ticket QR Code
@@ -783,16 +856,16 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
                   </>
                 )}
                 
-                {/* Show QR data if no image URL */}
-                {!qrCodeData.qrCodeImageUrl && qrCodeData.qrCodeData && !qrCodeData.isGenerating && (
+                {/* Show QR data if no image URL (Desktop fallback) */}
+                {!qrCodeData.qrCodeImageUrl && qrCodeData.qrCodeData && !qrCodeData.isGenerating && !qrCodeData.showMobileSuccess && (
                   <>
                     <div className="text-lg font-semibold text-gray-800">Your Ticket QR Code</div>
                     <div className="bg-gray-100 p-4 rounded text-xs break-all max-w-full">{qrCodeData.qrCodeData}</div>
                   </>
                 )}
                 
-                {/* Show error or fallback message */}
-                {!qrCodeData.qrCodeImageUrl && !qrCodeData.qrCodeData && !qrCodeData.isGenerating && (
+                {/* Show error or fallback message (Desktop) */}
+                {!qrCodeData.qrCodeImageUrl && !qrCodeData.qrCodeData && !qrCodeData.isGenerating && !qrCodeData.showMobileSuccess && (
                   <div className="text-gray-500">
                     {qrCodeData.error || "QR code not available at this time. Please check your email for your ticket."}
                   </div>
