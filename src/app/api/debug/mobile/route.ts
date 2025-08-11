@@ -18,14 +18,19 @@ export async function GET(req: NextRequest) {
       isIosViewer: headers['cloudfront-is-ios-viewer'],
       isAndroidViewer: headers['cloudfront-is-android-viewer'],
       isTabletViewer: headers['cloudfront-is-tablet-viewer']
-    }
+    },
+    note: 'This endpoint was called to test mobile flow debugging'
   };
   
-  console.log('[DEBUG MOBILE] Mobile debug request:', debugInfo);
+  // Multiple console.log attempts to ensure visibility
+  console.log('[DEBUG MOBILE] ===== MOBILE DEBUG ENDPOINT CALLED =====');
+  console.log('[DEBUG MOBILE] Mobile debug request:', JSON.stringify(debugInfo, null, 2));
+  console.log('[DEBUG MOBILE] ===== END MOBILE DEBUG =====');
   
   return NextResponse.json({
-    message: 'Mobile debug endpoint',
-    debug: debugInfo
+    message: 'Mobile debug endpoint working',
+    debug: debugInfo,
+    instructions: 'Check logs for [DEBUG MOBILE] entries'
   });
 }
 
