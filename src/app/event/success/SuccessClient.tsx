@@ -170,7 +170,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
               // Hero image is handled by HydrationSafeHeroImage component
               
               // Mark as completed if we have QR code already
-              if (data.qrCodeData && data.qrCodeData.qrCodeImageUrl) {
+              if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
                 const url = new URL(window.location.href);
                 const pi = url.searchParams.get('pi');
                 const identifier = session_id || pi;
@@ -200,7 +200,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
                   setResult(data);
                   
                   // Mark as completed if we have QR code
-                  if (data.qrCodeData && data.qrCodeData.qrCodeImageUrl) {
+              if (data.qrCodeData && (data.qrCodeData.qrCodeImageUrl || data.qrCodeData.qrCodeData)) {
                     const completedKey = `success_completed_${pi}`;
                     sessionStorage.setItem(completedKey, 'true');
                     console.log('[Success Debug] Marked PI transaction as completed with QR:', pi);
@@ -228,7 +228,7 @@ export default function SuccessClient({ session_id }: SuccessClientProps) {
             // Hero image is handled by HydrationSafeHeroImage component
             
             // Mark as completed if we have QR code
-            if (postData.qrCodeData && postData.qrCodeData.qrCodeImageUrl) {
+            if (postData.qrCodeData && (postData.qrCodeData.qrCodeImageUrl || postData.qrCodeData.qrCodeData)) {
               const completedKey = `success_completed_${session_id}`;
               sessionStorage.setItem(completedKey, 'true');
               console.log('[Success Debug] Marked session transaction as completed with QR:', session_id);

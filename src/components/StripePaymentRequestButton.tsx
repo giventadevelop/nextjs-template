@@ -168,13 +168,13 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           });
           if (error) {
             // Enhanced error logging for production debugging
-            const errorDetails = {
+            const errorDetails: any = {
               message: error.message,
               type: (error as any)?.type,
               code: (error as any)?.code,
               decline_code: (error as any)?.decline_code,
               payment_intent: (error as any)?.payment_intent,
-              piId: paymentIntent?.id || (error as any)?.payment_intent?.id,
+              piId: (paymentIntent as any)?.id || (error as any)?.payment_intent?.id,
               // Additional context for debugging
               piAmount: data.amount,
               walletTotal: (ev as any).total?.amount,
@@ -290,7 +290,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
       <PaymentRequestButtonElement
         options={{
           paymentRequest,
-          style: { paymentRequestButton: { theme: 'dark', height: '48px' } },
+          style: { paymentRequestButton: { theme: 'dark', height: '48px', type: 'default' } },
         }}
       />
     </div>
