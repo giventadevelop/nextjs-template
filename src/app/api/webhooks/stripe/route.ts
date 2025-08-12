@@ -733,81 +733,91 @@ export async function POST(req: NextRequest) {
                 
                 console.log('[STRIPE-WEBHOOK] Raw cart data from payment intent metadata:', JSON.stringify(cart, null, 2));
                 
-                // Build transaction items payload (EXACT same logic as processStripeSessionServer)
-                const itemsPayload = cart
-                  .filter((item: any) => {
-                    // Debug each item structure
-                    console.log('[STRIPE-WEBHOOK] Examining cart item:', {
-                      item: JSON.stringify(item, null, 2),
-                      hasTicketTypeId: !!item.ticketTypeId,
-                      ticketTypeIdType: typeof item.ticketTypeId,
-                      hasQuantity: typeof item.quantity === 'number',
-                      quantityValue: item.quantity,
-                      hasPrice: typeof item.price === 'number',
-                      priceValue: item.price,
-                      hasTicketType: !!item.ticketType,
-                      ticketTypeStructure: item.ticketType ? Object.keys(item.ticketType) : null
-                    });
-                    
+                // CRITICAL FIX: Mobile cart is missing price data, need to fetch from ticket types
+                // First, fetch price data for each cart item
+                const cartWithPrices = [];
+                for (const item of cart) {
+                  try {
                     // Handle both direct ticketTypeId and nested ticketType.id structures
                     let ticketTypeId = item.ticketTypeId;
                     if (!ticketTypeId && item.ticketType && item.ticketType.id) {
                       ticketTypeId = item.ticketType.id;
                     }
                     
-                    const hasRequiredFields = ticketTypeId && 
-                                            typeof item.quantity === 'number' && 
-                                            typeof item.price === 'number' &&
-                                            item.quantity > 0 &&
-                                            item.price >= 0;
-                    
-                    if (!hasRequiredFields) {
-                      console.warn('[STRIPE-WEBHOOK] Skipping invalid cart item - missing fields:', {
-                        item,
-                        ticketTypeId,
-                        quantity: item.quantity,
-                        price: item.price,
-                        hasTicketTypeId: !!ticketTypeId,
-                        hasQuantity: typeof item.quantity === 'number',
-                        hasPrice: typeof item.price === 'number'
-                      });
+                    if (!ticketTypeId || typeof item.quantity !== 'number' || item.quantity <= 0) {
+                      console.warn('[STRIPE-WEBHOOK] Skipping invalid cart item - missing basic data:', item);
+                      continue;
                     }
                     
-                    return hasRequiredFields;
-                  })
-                  .map((item: any) => {
-                    // Extract values the same way as desktop flow - handle nested structure
-                    let ticketTypeId = item.ticketTypeId;
-                    if (!ticketTypeId && item.ticketType && item.ticketType.id) {
-                      ticketTypeId = item.ticketType.id;
+                    // Fetch ticket type to get price data
+                    console.log('[STRIPE-WEBHOOK] Fetching price for ticket type:', ticketTypeId);
+                    const ticketTypeRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`);
+                    
+                    if (!ticketTypeRes.ok) {
+                      console.error('[STRIPE-WEBHOOK] Failed to fetch ticket type:', ticketTypeId, ticketTypeRes.status);
+                      continue;
                     }
                     
-                    const parsedTicketTypeId = parseInt(ticketTypeId, 10);
-                    const quantity = item.quantity;
-                    const pricePerUnit = parseFloat(item.price.toString());
-                    const totalAmount = pricePerUnit * quantity;
+                    const ticketType = await ticketTypeRes.json();
+                    const price = ticketType.price;
                     
-                    console.log('[STRIPE-WEBHOOK] Processing valid cart item:', {
-                      originalItem: item,
-                      extractedTicketTypeId: ticketTypeId,
-                      parsedTicketTypeId,
-                      quantity,
-                      pricePerUnit,
-                      totalAmount,
-                      transactionId: created.id
+                    if (typeof price !== 'number' || price < 0) {
+                      console.error('[STRIPE-WEBHOOK] Invalid price from ticket type:', { ticketTypeId, price, ticketType });
+                      continue;
+                    }
+                    
+                    console.log('[STRIPE-WEBHOOK] Successfully fetched price for ticket type:', {
+                      ticketTypeId,
+                      price,
+                      quantity: item.quantity,
+                      total: price * item.quantity
                     });
                     
-                    return withTenantId({
-                      transactionId: created.id as number,
-                      ticketTypeId: parsedTicketTypeId,
-                      quantity,
-                      pricePerUnit,
-                      totalAmount,
-                      // Add discountAmount, serviceFee, etc. if available (match desktop)
-                      createdAt: now,
-                      updatedAt: now,
+                    // Add price to cart item
+                    cartWithPrices.push({
+                      ...item,
+                      ticketTypeId,
+                      price,
+                      ticketType
                     });
+                    
+                  } catch (error) {
+                    console.error('[STRIPE-WEBHOOK] Error fetching price for cart item:', item, error);
+                  }
+                }
+                
+                console.log('[STRIPE-WEBHOOK] Cart items with prices fetched:', {
+                  originalCount: cart.length,
+                  withPricesCount: cartWithPrices.length,
+                  cartWithPrices: JSON.stringify(cartWithPrices, null, 2)
+                });
+                
+                // Now build transaction items payload with complete data
+                const itemsPayload = cartWithPrices.map((item: any) => {
+                  const parsedTicketTypeId = parseInt(item.ticketTypeId, 10);
+                  const quantity = item.quantity;
+                  const pricePerUnit = parseFloat(item.price.toString());
+                  const totalAmount = pricePerUnit * quantity;
+                  
+                  console.log('[STRIPE-WEBHOOK] Creating transaction item with complete data:', {
+                    ticketTypeId: parsedTicketTypeId,
+                    quantity,
+                    pricePerUnit,
+                    totalAmount,
+                    transactionId: created.id
                   });
+                  
+                  return withTenantId({
+                    transactionId: created.id as number,
+                    ticketTypeId: parsedTicketTypeId,
+                    quantity,
+                    pricePerUnit,
+                    totalAmount,
+                    // Add required fields to match backend validation
+                    createdAt: now,
+                    updatedAt: now,
+                  });
+                });
 
                 if (itemsPayload.length > 0) {
                   await createTransactionItemsBulkServer(itemsPayload);
