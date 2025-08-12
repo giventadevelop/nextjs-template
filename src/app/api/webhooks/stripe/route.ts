@@ -11,6 +11,7 @@ import { createEventTicketTransactionServer, updateTicketTypeInventoryServer } f
 import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 import { getTenantId } from '@/lib/env';
 import { withTenantId } from '@/lib/withTenantId';
+import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 
 // Force Node.js runtime
 export const runtime = 'nodejs';
@@ -751,14 +752,31 @@ export async function POST(req: NextRequest) {
                     
                     // Fetch ticket type to get price data
                     console.log('[STRIPE-WEBHOOK] Fetching price for ticket type:', ticketTypeId);
-                    const ticketTypeRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`);
+                    console.log('[STRIPE-WEBHOOK] Making API call to:', `${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`);
+                    
+                    const ticketTypeRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`, {
+                      method: 'GET',
+                      headers: { 'Content-Type': 'application/json' }
+                    });
                     
                     if (!ticketTypeRes.ok) {
-                      console.error('[STRIPE-WEBHOOK] Failed to fetch ticket type:', ticketTypeId, ticketTypeRes.status);
+                      const errorText = await ticketTypeRes.text();
+                      console.error('[STRIPE-WEBHOOK] Failed to fetch ticket type:', {
+                        ticketTypeId,
+                        status: ticketTypeRes.status,
+                        statusText: ticketTypeRes.statusText,
+                        errorText,
+                        url: `${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`
+                      });
                       continue;
                     }
                     
                     const ticketType = await ticketTypeRes.json();
+                    console.log('[STRIPE-WEBHOOK] Received ticket type data:', {
+                      ticketTypeId,
+                      ticketType: JSON.stringify(ticketType, null, 2)
+                    });
+                    
                     const price = ticketType.price;
                     
                     if (typeof price !== 'number' || price < 0) {
