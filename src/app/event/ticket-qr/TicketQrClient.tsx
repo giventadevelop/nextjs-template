@@ -64,8 +64,8 @@ class QrFetchSingleton {
     this.fetchInProgress = true;
     
     try {
-      console.log(`[QR SINGLETON] Making SINGLE QR API call for ${key}`);
-      addApiLog(`Making SINGLE QR API call for ${key}`);
+      console.log(`[QR SINGLETON] Making SINGLE QR API call for ${key} - THIS IS THE ONLY EMAIL-TRIGGERING CALL`);
+      addApiLog(`Making SINGLE QR API call for ${key} - THIS IS THE ONLY EMAIL-TRIGGERING CALL`);
       
       const baseUrl = window.location.origin;
       const emailHostUrlPrefix = baseUrl;
@@ -242,7 +242,8 @@ export default function TicketQrClient() {
         }
         queryParams.set('_t', Date.now().toString());
         
-        // Add skip_qr parameter to prevent desktop QR fetching
+        // Add skip_qr parameter to prevent BOTH desktop QR fetching AND API route QR fetching
+        // This prevents duplicate emails by ensuring QR is only fetched by mobile client
         queryParams.set('skip_qr', 'true');
         const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
         console.log('[TicketQrClient] Making GET request to:', apiUrl);
@@ -272,6 +273,8 @@ export default function TicketQrClient() {
             setLoading(false);
             
             // Immediately fetch QR code using singleton - NO useEffect, NO setTimeout
+            // This is the ONLY place QR code should be fetched in mobile flow to prevent duplicate emails
+            addApiLog('Mobile client will now fetch QR code (this is the ONLY QR fetch for mobile)');
             fetchQrCodeViaSingleton(data);
             return;
           } else {

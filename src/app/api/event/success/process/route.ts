@@ -139,7 +139,7 @@ export async function POST(req: NextRequest) {
           qrCodeData = null;
         }
       } else if (skip_qr) {
-        console.log('[API POST] Skipping QR code fetch - mobile flow detected');
+        console.log('[API POST] Skipping QR code fetch - mobile flow detected (prevents duplicate emails)');
       }
       
       // Fetch transaction items and ticket type names
@@ -204,6 +204,7 @@ export async function POST(req: NextRequest) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
     // Check if this is a mobile request that should skip QR fetching (mobile uses separate QR flow)
+    // The skip_qr parameter prevents duplicate emails by ensuring QR is only fetched once
     const skipQr = req.nextUrl.searchParams.get('skip_qr') === 'true';
     
     let qrCodeData = null;
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
         qrCodeData = null;
       }
     } else if (skipQr) {
-      console.log('[QR Code Debug] Skipping QR code fetch - mobile flow detected');
+      console.log('[QR Code Debug] Skipping QR code fetch - mobile flow detected (prevents duplicate emails)');
     } else {
       console.log('[QR Code Debug] Skipping QR code fetch - missing IDs:', {
         transactionId: transaction.id,
@@ -313,6 +314,7 @@ export async function GET(req: NextRequest) {
     }
     
     // Check if this is a mobile request that should skip QR fetching
+    // The skip_qr parameter prevents duplicate emails by ensuring QR is only fetched once
     const skipQr = searchParams.get('skip_qr') === 'true';
     
     // Get QR code data - skip for mobile flows
@@ -339,7 +341,7 @@ export async function GET(req: NextRequest) {
         qrCodeData = null;
       }
     } else if (skipQr) {
-      console.log('[API GET] Skipping QR code fetch - mobile flow detected');
+      console.log('[API GET] Skipping QR code fetch - mobile flow detected (prevents duplicate emails)');
     } else {
       console.log('[API GET] Skipping QR code fetch - missing required IDs:', {
         hasTransactionId: !!transaction.id,
