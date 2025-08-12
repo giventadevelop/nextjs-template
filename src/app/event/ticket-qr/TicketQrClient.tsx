@@ -267,98 +267,182 @@ export default function TicketQrClient() {
     globalQrFetchInProgress = true;
 
     let cancelled = false;
-    let retryCount = 0;
-    const maxRetries = 2; // Reduced from 5 to prevent spam - webhook should be fast
-    const retryDelay = 5000; // Increased to 5 seconds between retries
 
-    async function fetchQrCodeWithRetry() {
-      while (retryCount < maxRetries && !cancelled) {
-        try {
-          console.log(`[MOBILE QR DEBUG] Fetching QR code (attempt ${retryCount + 1}/${maxRetries})`);
-          addApiLog(`Fetching QR code (attempt ${retryCount + 1}/${maxRetries})`);
+    async function fetchQrCodeOnce() {
+      try {
+        console.log('[MOBILE QR DEBUG] Fetching QR code (single attempt)');
+        addApiLog('Fetching QR code (single attempt)');
+        
+        const baseUrl = window.location.origin;
+        const emailHostUrlPrefix = baseUrl;
+        const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
+        const qrUrl = `/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+        
+        console.log('[MOBILE QR DEBUG] QR URL:', qrUrl);
+        addApiLog(`Making QR request to: ${qrUrl}`);
+        
+        const qrRes = await fetch(qrUrl, {
+          method: 'GET',
+          cache: 'no-store',
+        });
+        
+        console.log('[MOBILE QR DEBUG] QR response status:', qrRes.status);
+        addApiLog(`QR response status: ${qrRes.status}`);
+        
+        if (qrRes.ok) {
+          const qrUrlResponse = await qrRes.text();
+          console.log('[MOBILE QR DEBUG] QR URL length:', qrUrlResponse.length);
+          addApiLog(`QR URL received: ${qrUrlResponse.length} characters`);
           
-          const baseUrl = window.location.origin;
-          const emailHostUrlPrefix = baseUrl;
-          const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
-          const qrUrl = `/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+          // SUCCESS: QR code received - STOP immediately
+          if (qrUrlResponse && qrUrlResponse.trim().length > 0) {
+            console.log('[MOBILE QR DEBUG] QR code fetched successfully on first attempt');
+            addApiLog('QR code fetched successfully on first attempt');
+            setQrCodeData({ qrCodeImageUrl: qrUrlResponse.trim() });
+            setQrFetching(false);
+            globalQrFetchInProgress = false;
+            return;
+          } 
           
-          console.log('[MOBILE QR DEBUG] QR URL:', qrUrl);
-          addApiLog(`Making QR request to: ${qrUrl}`);
+          // EMPTY RESPONSE: Transaction items may not be ready yet - try ONE more time
+          console.log('[MOBILE QR DEBUG] QR URL empty, will retry once in 5 seconds...');
+          addApiLog('QR URL empty, will retry once in 5 seconds...');
           
-          const qrRes = await fetch(qrUrl, {
-            method: 'GET',
-            cache: 'no-store',
-          });
-          
-          console.log('[MOBILE QR DEBUG] QR response status:', qrRes.status);
-          addApiLog(`QR response status: ${qrRes.status}`);
-          
-          if (qrRes.ok) {
-            const qrUrl = await qrRes.text();
-            console.log('[MOBILE QR DEBUG] QR URL length:', qrUrl.length);
-            addApiLog(`QR URL received: ${qrUrl.length} characters`);
+          if (!cancelled) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
             
-            // Check if QR URL is empty (indicates transaction items not created yet)
-            if (!qrUrl || qrUrl.trim().length === 0) {
-              retryCount++;
-              console.log(`[MOBILE QR DEBUG] QR URL empty, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`);
-              addApiLog(`QR URL empty, retrying in ${retryDelay}ms (attempt ${retryCount}/${maxRetries})`);
+            // RETRY ATTEMPT (max 1 retry)
+            console.log('[MOBILE QR DEBUG] Retrying QR fetch (final attempt)');
+            addApiLog('Retrying QR fetch (final attempt)');
+            
+            const retryRes = await fetch(qrUrl, {
+              method: 'GET',
+              cache: 'no-store',
+            });
+            
+            if (retryRes.ok) {
+              const retryQrUrl = await retryRes.text();
               
-              if (retryCount < maxRetries) {
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-                continue; // Retry
+              if (retryQrUrl && retryQrUrl.trim().length > 0) {
+                console.log('[MOBILE QR DEBUG] QR code fetched successfully on retry');
+                addApiLog('QR code fetched successfully on retry');
+                setQrCodeData({ qrCodeImageUrl: retryQrUrl.trim() });
+                setQrFetching(false);
+                globalQrFetchInProgress = false;
+                return;
               } else {
-                console.error('[MOBILE QR DEBUG] Max retries exceeded, QR code generation failed');
-                addApiLog('Max retries exceeded, QR code generation failed');
+                console.error('[MOBILE QR DEBUG] QR URL still empty after retry');
+                addApiLog('QR URL still empty after retry');
                 setQrError('QR code generation failed - transaction items may not be ready yet');
                 setQrFetching(false);
                 globalQrFetchInProgress = false;
                 return;
               }
             } else {
-              // Success - QR code received
-              console.log('[MOBILE QR DEBUG] QR code fetched successfully');
-              addApiLog('QR code fetched successfully');
-              setQrCodeData({ qrCodeImageUrl: qrUrl.trim() });
-              setQrFetching(false);
-              globalQrFetchInProgress = false;
-              return;
-            }
-          } else {
-            const errorText = await qrRes.text();
-            console.error(`[MOBILE QR DEBUG] QR fetch failed (attempt ${retryCount + 1}):`, qrRes.status, errorText);
-            addApiLog(`QR fetch failed (attempt ${retryCount + 1}): ${qrRes.status} - ${errorText.substring(0, 100)}`);
-            
-            retryCount++;
-            if (retryCount < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              continue; // Retry on error too
-            } else {
-              setQrError(`Failed to fetch QR code: ${errorText}`);
+              const retryErrorText = await retryRes.text();
+              console.error('[MOBILE QR DEBUG] Retry failed:', retryRes.status, retryErrorText);
+              addApiLog(`Retry failed: ${retryRes.status} - ${retryErrorText.substring(0, 100)}`);
+              setQrError(`Failed to fetch QR code on retry: ${retryErrorText}`);
               setQrFetching(false);
               globalQrFetchInProgress = false;
               return;
             }
           }
-        } catch (error: any) {
-          console.error(`[MOBILE QR DEBUG] QR fetch error (attempt ${retryCount + 1}):`, error);
-          addApiLog(`QR fetch error (attempt ${retryCount + 1}): ${error.message}`);
+        } else {
+          // HTTP ERROR: Try once more
+          const errorText = await qrRes.text();
+          console.error('[MOBILE QR DEBUG] First attempt failed:', qrRes.status, errorText);
+          addApiLog(`First attempt failed: ${qrRes.status} - ${errorText.substring(0, 100)}`);
           
-          retryCount++;
-          if (retryCount < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, retryDelay));
-            continue; // Retry on exception
-          } else {
+          if (!cancelled) {
+            console.log('[MOBILE QR DEBUG] Retrying after HTTP error...');
+            addApiLog('Retrying after HTTP error...');
+            
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            const retryRes = await fetch(qrUrl, {
+              method: 'GET',
+              cache: 'no-store',
+            });
+            
+            if (retryRes.ok) {
+              const retryQrUrl = await retryRes.text();
+              
+              if (retryQrUrl && retryQrUrl.trim().length > 0) {
+                console.log('[MOBILE QR DEBUG] QR code fetched successfully on retry after error');
+                addApiLog('QR code fetched successfully on retry after error');
+                setQrCodeData({ qrCodeImageUrl: retryQrUrl.trim() });
+                setQrFetching(false);
+                globalQrFetchInProgress = false;
+                return;
+              } else {
+                setQrError('QR code generation failed - empty response on retry');
+                setQrFetching(false);
+                globalQrFetchInProgress = false;
+                return;
+              }
+            } else {
+              const retryErrorText = await retryRes.text();
+              setQrError(`Failed to fetch QR code: ${retryErrorText}`);
+              setQrFetching(false);
+              globalQrFetchInProgress = false;
+              return;
+            }
+          }
+        }
+      } catch (error: any) {
+        console.error('[MOBILE QR DEBUG] QR fetch error:', error);
+        addApiLog(`QR fetch error: ${error.message}`);
+        
+        // Try once more on exception
+        if (!cancelled) {
+          console.log('[MOBILE QR DEBUG] Retrying after exception...');
+          addApiLog('Retrying after exception...');
+          
+          try {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            const baseUrl = window.location.origin;
+            const emailHostUrlPrefix = baseUrl;
+            const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
+            const qrUrl = `/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+            
+            const retryRes = await fetch(qrUrl, {
+              method: 'GET',
+              cache: 'no-store',
+            });
+            
+            if (retryRes.ok) {
+              const retryQrUrl = await retryRes.text();
+              
+              if (retryQrUrl && retryQrUrl.trim().length > 0) {
+                console.log('[MOBILE QR DEBUG] QR code fetched successfully on retry after exception');
+                addApiLog('QR code fetched successfully on retry after exception');
+                setQrCodeData({ qrCodeImageUrl: retryQrUrl.trim() });
+                setQrFetching(false);
+                globalQrFetchInProgress = false;
+                return;
+              }
+            }
+            
+            // Final failure
             setQrError(error.message || 'Failed to fetch QR code');
             setQrFetching(false);
             globalQrFetchInProgress = false;
-            return;
+          } catch (retryError: any) {
+            setQrError(retryError.message || 'Failed to fetch QR code');
+            setQrFetching(false);
+            globalQrFetchInProgress = false;
           }
+        } else {
+          setQrError(error.message || 'Failed to fetch QR code');
+          setQrFetching(false);
+          globalQrFetchInProgress = false;
         }
       }
     }
 
-    fetchQrCodeWithRetry();
+    fetchQrCodeOnce();
     return () => { 
       cancelled = true; 
       setQrFetching(false);
