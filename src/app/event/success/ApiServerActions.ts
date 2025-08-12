@@ -488,33 +488,64 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
   // Backend expects Base64 encoded emailHostUrlPrefix in URL path
   const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
 
-  console.log('[fetchTransactionQrCode] Starting QR code fetch:', {
-    eventId,
-    transactionId,
-    emailHostUrlPrefix,
-    encodedEmailHostUrlPrefix,
-    baseUrl
+  const fullApiUrl = `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+
+  console.log('[fetchTransactionQrCode] DETAILED QR code fetch debug:', {
+    eventId: eventId,
+    transactionId: transactionId,
+    emailHostUrlPrefix: emailHostUrlPrefix,
+    encodedEmailHostUrlPrefix: encodedEmailHostUrlPrefix,
+    baseUrl: baseUrl,
+    fullApiUrl: fullApiUrl,
+    decodedBack: Buffer.from(encodedEmailHostUrlPrefix, 'base64').toString()
   });
 
-  const response = await fetchWithJwtRetry(
-    `${baseUrl}/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`,
-    {
+  console.log('[fetchTransactionQrCode] About to call fetchWithJwtRetry with URL:', fullApiUrl);
+
+  try {
+    const response = await fetchWithJwtRetry(fullApiUrl, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       }
+    });
+
+    console.log('[fetchTransactionQrCode] Response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      url: response.url
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[fetchTransactionQrCode] ERROR Response body:', errorBody);
+      console.error('[fetchTransactionQrCode] Full error details:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: fullApiUrl,
+        eventId,
+        transactionId,
+        errorBody
+      });
+      throw new Error(`QR code fetch failed: ${response.status} - ${errorBody}`);
     }
-  );
-
-  console.log('[fetchTransactionQrCode] Response status:', response.status);
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    console.error('Failed to fetch QR code:', response.status, errorBody);
-    throw new Error(`Failed to fetch QR code: ${errorBody}`);
+    
+    // Always treat as plain text URL
+    const url = await response.text();
+    console.log('[fetchTransactionQrCode] SUCCESS - QR code URL received:', url);
+    console.log('[fetchTransactionQrCode] QR URL length:', url.length);
+    console.log('[fetchTransactionQrCode] QR URL starts with:', url.substring(0, 100));
+    
+    return { qrCodeImageUrl: url.trim() };
+  } catch (error: any) {
+    console.error('[fetchTransactionQrCode] EXCEPTION during QR fetch:', {
+      message: error.message,
+      stack: error.stack,
+      eventId,
+      transactionId,
+      fullApiUrl
+    });
+    throw error;
   }
-  // Always treat as plain text URL
-  const url = await response.text();
-  console.log('[fetchTransactionQrCode] QR code URL received:', url);
-  return { qrCodeImageUrl: url };
 }

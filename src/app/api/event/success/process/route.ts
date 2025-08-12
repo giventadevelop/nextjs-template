@@ -261,23 +261,55 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ transaction: null }, { status: 200 });
     }
     
-    console.log('[API GET] Found existing transaction:', transaction.id);
+    console.log('[API GET] Found existing transaction:', {
+      id: transaction.id,
+      eventId: transaction.eventId,
+      paymentReference: transaction.paymentReference,
+      stripePaymentIntentId: transaction.stripePaymentIntentId,
+      email: transaction.email
+    });
     
     // Get event details
     let eventDetails = transaction.event;
     if (!eventDetails?.id && transaction.eventId) {
+      console.log('[API GET] Fetching event details for eventId:', transaction.eventId);
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
+      console.log('[API GET] Event details fetched:', {
+        id: eventDetails?.id,
+        title: eventDetails?.title
+      });
     }
     
     // Get QR code data
     let qrCodeData = null;
     if (transaction.id && eventDetails?.id) {
+      console.log('[API GET] Attempting to fetch QR code:', {
+        transactionId: transaction.id,
+        eventId: eventDetails.id,
+        hasRequiredIds: true
+      });
       try {
         qrCodeData = await fetchTransactionQrCode(eventDetails.id, transaction.id);
-      } catch (err) {
-        console.error('[API GET] Failed to fetch QR code:', err);
+        console.log('[API GET] QR code fetch SUCCESS:', {
+          hasQrCodeData: !!qrCodeData,
+          qrCodeImageUrl: qrCodeData?.qrCodeImageUrl?.substring(0, 100) + '...'
+        });
+      } catch (err: any) {
+        console.error('[API GET] QR code fetch FAILED:', {
+          error: err.message,
+          transactionId: transaction.id,
+          eventId: eventDetails.id,
+          stack: err.stack
+        });
         qrCodeData = null;
       }
+    } else {
+      console.log('[API GET] Skipping QR code fetch - missing required IDs:', {
+        hasTransactionId: !!transaction.id,
+        hasEventId: !!eventDetails?.id,
+        transactionId: transaction.id,
+        eventId: eventDetails?.id
+      });
     }
     
     // Fetch transaction items and ticket type names

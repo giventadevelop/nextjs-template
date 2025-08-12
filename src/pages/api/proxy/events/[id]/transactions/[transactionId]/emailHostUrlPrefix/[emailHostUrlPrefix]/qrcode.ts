@@ -63,6 +63,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   });
 
   try {
+    console.log('[QR Code Proxy] Calling fetchWithJwtRetry with:', {
+      url: apiUrl,
+      method: req.method
+    });
+
     const response = await fetchWithJwtRetry(apiUrl, {
       method: req.method,
       headers: {
@@ -70,14 +75,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     }, 'event-transaction-qrcode');
     
+    console.log('[QR Code Proxy] Backend response received:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries()),
+      ok: response.ok
+    });
+    
     // Handle response as text since backend returns S3 URL as plain text
     const data = await response.text();
-    console.log('[QR Code Proxy] Backend response status:', response.status);
-    console.log('[QR Code Proxy] S3 URL received:', data);
+    console.log('[QR Code Proxy] S3 URL received:', {
+      dataLength: data.length,
+      dataPreview: data.substring(0, 100),
+      fullData: data
+    });
+    
+    if (!response.ok) {
+      console.error('[QR Code Proxy] Backend returned error:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData: data
+      });
+    }
     
     res.status(response.status).send(data);
-  } catch (error) {
-    console.error('Error in event transaction QR code proxy:', error);
-    res.status(500).json({ error: 'Failed to fetch QR code' });
+  } catch (error: any) {
+    console.error('[QR Code Proxy] EXCEPTION during QR proxy:', {
+      message: error.message,
+      stack: error.stack,
+      apiUrl,
+      eventId: id,
+      transactionId,
+      emailHostUrlPrefix: decodedEmailHostUrlPrefix
+    });
+    res.status(500).json({ error: 'Failed to fetch QR code', details: error.message });
   }
 }
