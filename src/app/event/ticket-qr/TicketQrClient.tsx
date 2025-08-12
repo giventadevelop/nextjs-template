@@ -21,6 +21,9 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
+// Global flag to prevent any possibility of multiple QR fetches across component instances
+let globalQrFetchInProgress = false;
+
 export default function TicketQrClient() {
   // Add immediate debug logging to see if component is even instantiated
   console.log('[QR CLIENT DEBUG] TicketQrClient function called - component starting');
@@ -247,8 +250,8 @@ export default function TicketQrClient() {
       return;
     }
 
-    if (qrCodeData || qrFetching) {
-      console.log('[MOBILE QR DEBUG] QR code already exists or fetch in progress, skipping');
+    if (qrCodeData || qrFetching || qrError || globalQrFetchInProgress) {
+      console.log('[MOBILE QR DEBUG] QR code already exists, fetch in progress, or error occurred - skipping');
       return;
     }
 
@@ -261,11 +264,12 @@ export default function TicketQrClient() {
     }
 
     setQrFetching(true);
+    globalQrFetchInProgress = true;
 
     let cancelled = false;
     let retryCount = 0;
-    const maxRetries = 5; // Give webhook more time to create transaction items
-    const retryDelay = 3000; // 3 seconds between retries
+    const maxRetries = 2; // Reduced from 5 to prevent spam - webhook should be fast
+    const retryDelay = 5000; // Increased to 5 seconds between retries
 
     async function fetchQrCodeWithRetry() {
       while (retryCount < maxRetries && !cancelled) {
@@ -308,6 +312,7 @@ export default function TicketQrClient() {
                 addApiLog('Max retries exceeded, QR code generation failed');
                 setQrError('QR code generation failed - transaction items may not be ready yet');
                 setQrFetching(false);
+                globalQrFetchInProgress = false;
                 return;
               }
             } else {
@@ -316,6 +321,7 @@ export default function TicketQrClient() {
               addApiLog('QR code fetched successfully');
               setQrCodeData({ qrCodeImageUrl: qrUrl.trim() });
               setQrFetching(false);
+              globalQrFetchInProgress = false;
               return;
             }
           } else {
@@ -330,6 +336,7 @@ export default function TicketQrClient() {
             } else {
               setQrError(`Failed to fetch QR code: ${errorText}`);
               setQrFetching(false);
+              globalQrFetchInProgress = false;
               return;
             }
           }
@@ -344,6 +351,7 @@ export default function TicketQrClient() {
           } else {
             setQrError(error.message || 'Failed to fetch QR code');
             setQrFetching(false);
+            globalQrFetchInProgress = false;
             return;
           }
         }
@@ -354,8 +362,9 @@ export default function TicketQrClient() {
     return () => { 
       cancelled = true; 
       setQrFetching(false);
+      globalQrFetchInProgress = false;
     };
-  }, [result, qrCodeData, qrFetching]); // Only trigger when result changes and QR not already fetching/fetched
+  }, [result]); // Only trigger when result changes
 
   if (loading) {
     return (
