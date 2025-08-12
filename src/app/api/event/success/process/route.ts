@@ -104,8 +104,15 @@ export async function POST(req: NextRequest) {
     // First check if transaction already exists
     let existingTransaction = null;
     if (session_id) {
-      console.log('[API POST] Checking for existing transaction by session_id:', session_id);
-      existingTransaction = await findTransactionBySessionId(session_id);
+      // Check if session_id is actually a payment intent ID (starts with 'pi_')
+      if (session_id.startsWith('pi_')) {
+        console.log('[API POST] session_id parameter is actually a payment intent ID:', session_id);
+        console.log('[API POST] Checking for existing transaction by payment_intent instead of session_id');
+        existingTransaction = await findTransactionByPaymentIntentId(session_id);
+      } else {
+        console.log('[API POST] Checking for existing transaction by session_id:', session_id);
+        existingTransaction = await findTransactionBySessionId(session_id);
+      }
     } else if (pi) {
       console.log('[API POST] Checking for existing transaction by payment_intent:', pi);
       existingTransaction = await findTransactionByPaymentIntentId(pi);
@@ -164,7 +171,17 @@ export async function POST(req: NextRequest) {
     // If no existing transaction, try to create via Stripe session processing
     let result = null;
     if (session_id) {
-      result = await processStripeSessionServer(session_id);
+      if (session_id.startsWith('pi_')) {
+        // Payment intent processing - convert to session_id first
+        console.log('[API POST] Processing payment intent from session_id parameter:', session_id);
+        const sessionId = await getSessionIdFromPaymentIntent(session_id);
+        if (!sessionId) {
+          return NextResponse.json({ error: 'Could not find session for payment intent' }, { status: 404 });
+        }
+        result = await processStripeSessionServer(sessionId);
+      } else {
+        result = await processStripeSessionServer(session_id);
+      }
     } else if (pi) {
       // Payment intent processing - convert to session_id first
       console.log('[API POST] Processing payment intent:', pi);
@@ -249,8 +266,15 @@ export async function GET(req: NextRequest) {
     // Only look up existing transactions, do not create
     let transaction = null;
     if (session_id) {
-      console.log('[API GET] Looking up transaction by session_id:', session_id);
-      transaction = await findTransactionBySessionId(session_id);
+      // Check if session_id is actually a payment intent ID (starts with 'pi_')
+      if (session_id.startsWith('pi_')) {
+        console.log('[API GET] session_id parameter is actually a payment intent ID:', session_id);
+        console.log('[API GET] Looking up transaction by payment_intent instead of session_id');
+        transaction = await findTransactionByPaymentIntentId(session_id);
+      } else {
+        console.log('[API GET] Looking up transaction by session_id:', session_id);
+        transaction = await findTransactionBySessionId(session_id);
+      }
     } else if (pi) {
       console.log('[API GET] Looking up transaction by payment_intent:', pi);
       transaction = await findTransactionByPaymentIntentId(pi);
