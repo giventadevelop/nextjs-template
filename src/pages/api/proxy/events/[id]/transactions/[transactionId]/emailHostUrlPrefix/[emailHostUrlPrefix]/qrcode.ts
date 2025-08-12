@@ -96,6 +96,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         statusText: response.statusText,
         errorData: data
       });
+    } else {
+      // Log successful response details
+      console.log('[QR Code Proxy] Backend response SUCCESS details:', {
+        status: response.status,
+        dataLength: data.length,
+        isEmpty: !data || data.trim().length === 0,
+        isS3Url: data.includes('amazonaws.com') || data.includes('.s3.'),
+        dataStart: data.substring(0, 50)
+      });
+      
+      // If backend returns empty string, that's a critical issue
+      if (!data || data.trim().length === 0) {
+        console.error('[QR Code Proxy] CRITICAL: Backend returned HTTP 200 but empty QR URL!', {
+          eventId: id,
+          transactionId,
+          decodedEmailHostUrlPrefix,
+          backendApiUrl: apiUrl,
+          responseHeaders: Object.fromEntries(response.headers.entries())
+        });
+      }
     }
     
     res.status(response.status).send(data);

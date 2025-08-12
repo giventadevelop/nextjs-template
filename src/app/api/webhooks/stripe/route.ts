@@ -723,6 +723,31 @@ export async function POST(req: NextRequest) {
             // If transaction creation failed (id = -1), log but continue
             if (created?.id === -1) {
               console.warn('[STRIPE-WEBHOOK] Transaction creation failed, but webhook will succeed to prevent infinite retries');
+            } else if (created?.id && Array.isArray(cart)) {
+              // CRITICAL FIX: Create transaction items for mobile flow (just like desktop)
+              console.log('[STRIPE-WEBHOOK] Creating transaction items for mobile payment intent flow...');
+              
+              try {
+                // Import the bulk creation function
+                const { createTransactionItemsBulkServer } = await import('./ApiServerActions');
+                
+                // Build transaction items payload (same logic as processStripeSessionServer)
+                const itemsPayload = cart.map((item: any) => withTenantId({
+                  transactionId: created.id as number,
+                  ticketTypeId: parseInt(item.ticketTypeId || item.ticketType?.id, 10),
+                  quantity: item.quantity,
+                  pricePerUnit: item.price,
+                  totalAmount: item.price * item.quantity,
+                  createdAt: now,
+                  updatedAt: now,
+                }));
+
+                await createTransactionItemsBulkServer(itemsPayload);
+                console.log('[STRIPE-WEBHOOK] Successfully created transaction items for mobile payment:', itemsPayload.length);
+              } catch (itemsError) {
+                console.error('[STRIPE-WEBHOOK] Failed to create transaction items for mobile payment:', itemsError);
+                // Continue anyway - main transaction was created
+              }
             }
 
             // Update inventory for each ticket type in the cart

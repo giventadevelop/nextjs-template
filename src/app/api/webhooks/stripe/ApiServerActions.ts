@@ -53,6 +53,44 @@ export async function createEventTicketTransactionServer(transaction: Omit<Event
   return result;
 }
 
+// Helper to bulk create transaction items
+export async function createTransactionItemsBulkServer(items: any[]): Promise<any[]> {
+  const url = `${API_BASE_URL}/api/event-ticket-transaction-items/bulk`;
+  
+  console.log('[WEBHOOK DEBUG] Creating bulk transaction items:', {
+    url,
+    itemCount: items.length,
+    items: items.map(item => ({
+      transactionId: item.transactionId,
+      ticketTypeId: item.ticketTypeId,
+      quantity: item.quantity,
+      pricePerUnit: item.pricePerUnit
+    }))
+  });
+
+  const res = await fetchWithJwtRetry(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(items),
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    console.error('[WEBHOOK ERROR] Failed to bulk create transaction items:', {
+      status: res.status,
+      statusText: res.statusText,
+      url,
+      errorBody,
+      itemsPayload: items
+    });
+    throw new Error(`Failed to bulk create transaction items: ${errorBody}`);
+  }
+
+  const result = await res.json();
+  console.log('[WEBHOOK DEBUG] Bulk transaction items created successfully:', result.length);
+  return result;
+}
+
 export async function updateTicketTypeInventoryServer(ticketTypeId: number, quantityPurchased: number): Promise<void> {
   const getUrl = `${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`;
 

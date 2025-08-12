@@ -278,7 +278,19 @@ export default function TicketQrClient() {
           const qrUrl = await qrRes.text();
           if (!cancelled) {
             console.log('[MOBILE QR DEBUG] QR code received:', qrUrl);
-            setQrCodeData({ qrCodeImageUrl: qrUrl });
+            console.log('[MOBILE QR DEBUG] QR URL length:', qrUrl.length);
+            console.log('[MOBILE QR DEBUG] QR URL is empty?', !qrUrl || qrUrl.trim().length === 0);
+            
+            if (!qrUrl || qrUrl.trim().length === 0) {
+              console.error('[MOBILE QR DEBUG] Backend returned empty QR URL!', {
+                rawUrl: JSON.stringify(qrUrl),
+                transaction: { id: transaction.id, eventId: eventDetails.id },
+                apiUrl: qrApiUrl
+              });
+              setQrError('QR code generation failed: Backend returned empty URL');
+            } else {
+              setQrCodeData({ qrCodeImageUrl: qrUrl.trim() });
+            }
           }
         } else {
           const errorText = await qrRes.text();

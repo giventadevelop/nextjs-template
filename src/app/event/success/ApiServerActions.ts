@@ -537,6 +537,21 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
     console.log('[fetchTransactionQrCode] QR URL length:', url.length);
     console.log('[fetchTransactionQrCode] QR URL starts with:', url.substring(0, 100));
     
+    // Check for empty response from backend
+    if (!url || url.trim().length === 0) {
+      console.error('[fetchTransactionQrCode] CRITICAL: Backend returned empty QR URL!', {
+        rawUrl: JSON.stringify(url),
+        urlLength: url.length,
+        eventId,
+        transactionId,
+        fullApiUrl: fullApiUrl,
+        emailHostUrlPrefix,
+        encodedEmailHostUrlPrefix
+      });
+      // Still return the empty string but log the critical issue
+      return { qrCodeImageUrl: '' };
+    }
+    
     return { qrCodeImageUrl: url.trim() };
   } catch (error: any) {
     console.error('[fetchTransactionQrCode] EXCEPTION during QR fetch:', {
