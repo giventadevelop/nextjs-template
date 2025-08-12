@@ -731,19 +731,57 @@ export async function POST(req: NextRequest) {
                 // Import the bulk creation function
                 const { createTransactionItemsBulkServer } = await import('./ApiServerActions');
                 
-                // Build transaction items payload (same logic as processStripeSessionServer)
-                const itemsPayload = cart.map((item: any) => withTenantId({
-                  transactionId: created.id as number,
-                  ticketTypeId: parseInt(item.ticketTypeId || item.ticketType?.id, 10),
-                  quantity: item.quantity,
-                  pricePerUnit: item.price,
-                  totalAmount: item.price * item.quantity,
-                  createdAt: now,
-                  updatedAt: now,
-                }));
+                // Build transaction items payload (EXACT same logic as processStripeSessionServer)
+                const itemsPayload = cart
+                  .filter((item: any) => {
+                    // Only include items with valid data (prevent null validation errors)
+                    const hasRequiredFields = item.ticketTypeId && 
+                                            typeof item.quantity === 'number' && 
+                                            typeof item.price === 'number' &&
+                                            item.quantity > 0 &&
+                                            item.price >= 0;
+                    
+                    if (!hasRequiredFields) {
+                      console.warn('[STRIPE-WEBHOOK] Skipping invalid cart item:', item);
+                    }
+                    
+                    return hasRequiredFields;
+                  })
+                  .map((item: any) => {
+                    // Extract values the same way as desktop flow  
+                    const ticketTypeId = parseInt(item.ticketTypeId, 10);
+                    const quantity = item.quantity;
+                    const pricePerUnit = parseFloat(item.price.toString());
+                    const totalAmount = pricePerUnit * quantity;
+                    
+                    console.log('[STRIPE-WEBHOOK] Processing valid cart item:', {
+                      originalItem: item,
+                      ticketTypeId,
+                      quantity,
+                      pricePerUnit,
+                      totalAmount,
+                      transactionId: created.id
+                    });
+                    
+                    return withTenantId({
+                      transactionId: created.id as number,
+                      ticketTypeId,
+                      quantity,
+                      pricePerUnit,
+                      totalAmount,
+                      // Add discountAmount, serviceFee, etc. if available (match desktop)
+                      createdAt: now,
+                      updatedAt: now,
+                    });
+                  });
 
-                await createTransactionItemsBulkServer(itemsPayload);
-                console.log('[STRIPE-WEBHOOK] Successfully created transaction items for mobile payment:', itemsPayload.length);
+                if (itemsPayload.length > 0) {
+                  await createTransactionItemsBulkServer(itemsPayload);
+                  console.log('[STRIPE-WEBHOOK] Successfully created transaction items for mobile payment:', itemsPayload.length);
+                } else {
+                  console.error('[STRIPE-WEBHOOK] No valid cart items to create - all items were filtered out');
+                  console.error('[STRIPE-WEBHOOK] Original cart data:', JSON.stringify(cart, null, 2));
+                }
               } catch (itemsError) {
                 console.error('[STRIPE-WEBHOOK] Failed to create transaction items for mobile payment:', itemsError);
                 // Continue anyway - main transaction was created

@@ -57,21 +57,38 @@ export async function createEventTicketTransactionServer(transaction: Omit<Event
 export async function createTransactionItemsBulkServer(items: any[]): Promise<any[]> {
   const url = `${API_BASE_URL}/api/event-ticket-transaction-items/bulk`;
   
+  // Validate all items have required non-null fields before sending to backend
+  const validatedItems = items.map(item => {
+    if (!item.transactionId || !item.ticketTypeId || 
+        typeof item.quantity !== 'number' || typeof item.pricePerUnit !== 'number' ||
+        typeof item.totalAmount !== 'number') {
+      throw new Error(`Invalid transaction item: ${JSON.stringify(item)}`);
+    }
+    
+    return {
+      ...item,
+      // Ensure BigDecimal-compatible numbers (backend expects precision)
+      pricePerUnit: Number(item.pricePerUnit.toFixed(2)),
+      totalAmount: Number(item.totalAmount.toFixed(2))
+    };
+  });
+  
   console.log('[WEBHOOK DEBUG] Creating bulk transaction items:', {
     url,
-    itemCount: items.length,
-    items: items.map(item => ({
+    itemCount: validatedItems.length,
+    items: validatedItems.map(item => ({
       transactionId: item.transactionId,
       ticketTypeId: item.ticketTypeId,
       quantity: item.quantity,
-      pricePerUnit: item.pricePerUnit
+      pricePerUnit: item.pricePerUnit,
+      totalAmount: item.totalAmount
     }))
   });
 
   const res = await fetchWithJwtRetry(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(items),
+    body: JSON.stringify(validatedItems),
   });
 
   if (!res.ok) {
@@ -81,7 +98,7 @@ export async function createTransactionItemsBulkServer(items: any[]): Promise<an
       statusText: res.statusText,
       url,
       errorBody,
-      itemsPayload: items
+      itemsPayload: validatedItems
     });
     throw new Error(`Failed to bulk create transaction items: ${errorBody}`);
   }
