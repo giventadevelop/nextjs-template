@@ -21,8 +21,107 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
-// Global flag to prevent any possibility of multiple QR fetches across component instances
-let globalQrFetchInProgress = false;
+// CRITICAL: Absolutely prevent any duplicate QR API calls using singleton pattern
+class QrFetchSingleton {
+  private static instance: QrFetchSingleton;
+  private fetchInProgress = false;
+  private fetchedTransactions = new Set<string>();
+  private qrResults = new Map<string, any>();
+
+  static getInstance(): QrFetchSingleton {
+    if (!QrFetchSingleton.instance) {
+      QrFetchSingleton.instance = new QrFetchSingleton();
+    }
+    return QrFetchSingleton.instance;
+  }
+
+  async fetchQrCodeOnce(eventId: number, transactionId: number, addApiLog: (msg: string) => void): Promise<any> {
+    const key = `${eventId}-${transactionId}`;
+    
+    // If already fetched, return cached result
+    if (this.qrResults.has(key)) {
+      console.log(`[QR SINGLETON] Returning cached QR result for ${key}`);
+      addApiLog(`Returning cached QR result for ${key}`);
+      return this.qrResults.get(key);
+    }
+    
+    // If already marked as fetched but no result yet, return error
+    if (this.fetchedTransactions.has(key)) {
+      console.log(`[QR SINGLETON] QR already attempted for ${key} - BLOCKING`);
+      addApiLog(`QR already attempted for ${key} - BLOCKING`);
+      return { error: 'QR fetch already attempted' };
+    }
+    
+    // If fetch in progress, return error
+    if (this.fetchInProgress) {
+      console.log(`[QR SINGLETON] QR fetch already in progress - BLOCKING`);
+      addApiLog(`QR fetch already in progress - BLOCKING`);
+      return { error: 'QR fetch in progress' };
+    }
+    
+    // Mark as being fetched IMMEDIATELY to prevent any race conditions
+    this.fetchedTransactions.add(key);
+    this.fetchInProgress = true;
+    
+    try {
+      console.log(`[QR SINGLETON] Making SINGLE QR API call for ${key}`);
+      addApiLog(`Making SINGLE QR API call for ${key}`);
+      
+      const baseUrl = window.location.origin;
+      const emailHostUrlPrefix = baseUrl;
+      const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
+      const qrUrl = `/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
+      
+      console.log(`[QR SINGLETON] QR URL: ${qrUrl}`);
+      addApiLog(`QR URL: ${qrUrl}`);
+      
+      const qrRes = await fetch(qrUrl, {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      
+      console.log(`[QR SINGLETON] QR response status: ${qrRes.status}`);
+      addApiLog(`QR response status: ${qrRes.status}`);
+      
+      let result;
+      if (qrRes.ok) {
+        const qrUrlResponse = await qrRes.text();
+        console.log(`[QR SINGLETON] QR URL length: ${qrUrlResponse.length}`);
+        addApiLog(`QR URL received: ${qrUrlResponse.length} characters`);
+        
+        if (qrUrlResponse && qrUrlResponse.trim().length > 0) {
+          result = { qrCodeImageUrl: qrUrlResponse.trim() };
+          console.log(`[QR SINGLETON] QR fetch SUCCESS - cached for ${key}`);
+          addApiLog('QR code fetched successfully - DONE');
+        } else {
+          result = { error: 'QR URL empty' };
+          console.log(`[QR SINGLETON] QR URL empty for ${key}`);
+          addApiLog('QR URL empty');
+        }
+      } else {
+        const errorText = await qrRes.text();
+        result = { error: `QR fetch failed: ${qrRes.status}` };
+        console.error(`[QR SINGLETON] QR fetch failed for ${key}:`, qrRes.status, errorText);
+        addApiLog(`QR fetch failed: ${qrRes.status}`);
+      }
+      
+      // Cache the result
+      this.qrResults.set(key, result);
+      return result;
+      
+    } catch (error: any) {
+      const result = { error: `QR fetch exception: ${error.message}` };
+      this.qrResults.set(key, result);
+      console.error(`[QR SINGLETON] QR fetch exception for ${key}:`, error);
+      addApiLog(`QR fetch exception: ${error.message}`);
+      return result;
+    } finally {
+      this.fetchInProgress = false;
+    }
+  }
+}
+
+const qrSingleton = QrFetchSingleton.getInstance();
 
 export default function TicketQrClient() {
   // Add immediate debug logging to see if component is even instantiated
@@ -169,6 +268,9 @@ export default function TicketQrClient() {
             addApiLog(`Transaction data loaded successfully: ID ${data.transaction.id}`);
             setResult(data);
             setLoading(false);
+            
+            // Immediately fetch QR code using singleton - NO useEffect, NO setTimeout
+            fetchQrCodeViaSingleton(data);
             return;
           } else {
             console.log('[MOBILE QR DEBUG] No transaction in GET response, will try POST');
@@ -243,96 +345,50 @@ export default function TicketQrClient() {
     return () => { cancelled = true; };
   }, [identifier, session_id, payment_intent]);
 
-  // Second, once transaction is loaded, fetch QR code (with retry logic for mobile webhook timing)
-  useEffect(() => {
-    if (!result || !result.transaction || !result.eventDetails) {
-      console.log('[MOBILE QR DEBUG] Waiting for transaction data before fetching QR code');
+  // SINGLETON QR FETCH - Absolutely prevents any duplicate calls
+  const fetchQrCodeViaSingleton = async (transactionResult: any) => {
+    console.log('[SINGLETON FETCH] fetchQrCodeViaSingleton called');
+    
+    if (!transactionResult?.transaction || !transactionResult?.eventDetails) {
+      console.log('[SINGLETON FETCH] Missing transaction or event details - skipping');
       return;
     }
 
-    if (qrCodeData || qrFetching || qrError || globalQrFetchInProgress) {
-      console.log('[MOBILE QR DEBUG] QR code already exists, fetch in progress, or error occurred - skipping');
+    if (qrCodeData || qrError) {
+      console.log('[SINGLETON FETCH] QR already exists or error occurred - skipping');
       return;
     }
 
-    const transaction = result.transaction;
-    const eventDetails = result.eventDetails;
+    const transaction = transactionResult.transaction;
+    const eventDetails = transactionResult.eventDetails;
 
     if (!transaction.id || !eventDetails.id) {
-      console.log('[MOBILE QR DEBUG] Missing transaction or event ID for QR generation');
+      console.log('[SINGLETON FETCH] Missing transaction or event ID - skipping');
       return;
     }
 
     setQrFetching(true);
-    globalQrFetchInProgress = true;
-
-    let cancelled = false;
-
-    async function fetchQrCodeOnce() {
-      try {
-        console.log('[MOBILE QR DEBUG] Fetching QR code (SINGLE CALL ONLY - NO RETRIES)');
-        addApiLog('Fetching QR code (SINGLE CALL ONLY - NO RETRIES)');
-        
-        const baseUrl = window.location.origin;
-        const emailHostUrlPrefix = baseUrl;
-        const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
-        const qrUrl = `/api/proxy/events/${eventDetails.id}/transactions/${transaction.id}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
-        
-        console.log('[MOBILE QR DEBUG] QR URL:', qrUrl);
-        addApiLog(`Making QR request to: ${qrUrl}`);
-        
-        const qrRes = await fetch(qrUrl, {
-          method: 'GET',
-          cache: 'no-store',
-        });
-        
-        console.log('[MOBILE QR DEBUG] QR response status:', qrRes.status);
-        addApiLog(`QR response status: ${qrRes.status}`);
-        
-        if (qrRes.ok) {
-          const qrUrlResponse = await qrRes.text();
-          console.log('[MOBILE QR DEBUG] QR URL length:', qrUrlResponse.length);
-          addApiLog(`QR URL received: ${qrUrlResponse.length} characters`);
-          
-          // Accept ANY response - even empty (webhook is working now)
-          if (qrUrlResponse && qrUrlResponse.trim().length > 0) {
-            console.log('[MOBILE QR DEBUG] QR code fetched successfully - DONE');
-            addApiLog('QR code fetched successfully - DONE');
-            setQrCodeData({ qrCodeImageUrl: qrUrlResponse.trim() });
-          } else {
-            console.log('[MOBILE QR DEBUG] QR URL empty but will NOT retry - webhook should have created items');
-            addApiLog('QR URL empty but will NOT retry - webhook should have created items');
-            setQrError('QR code not available - transaction items may not be ready yet. Please check your email.');
-          }
-        } else {
-          // Even on HTTP error, do NOT retry - just show error
-          const errorText = await qrRes.text();
-          console.error('[MOBILE QR DEBUG] QR fetch failed - NO RETRIES:', qrRes.status, errorText);
-          addApiLog(`QR fetch failed - NO RETRIES: ${qrRes.status} - ${errorText.substring(0, 100)}`);
-          setQrError(`QR code not available: ${qrRes.status} error. Please check your email for the QR code.`);
-        }
-        
-        // Always clean up after single attempt
-        setQrFetching(false);
-        globalQrFetchInProgress = false;
-        
-      } catch (error: any) {
-        // Even on exception, do NOT retry - just show error
-        console.error('[MOBILE QR DEBUG] QR fetch exception - NO RETRIES:', error);
-        addApiLog(`QR fetch exception - NO RETRIES: ${error.message}`);
-        setQrError('QR code fetch failed. Please check your email for the QR code.');
-        setQrFetching(false);
-        globalQrFetchInProgress = false;
+    
+    try {
+      const result = await qrSingleton.fetchQrCodeOnce(eventDetails.id, transaction.id, addApiLog);
+      
+      if (result.error) {
+        console.log('[SINGLETON FETCH] QR fetch error:', result.error);
+        setQrError('QR code not available. Please check your email.');
+      } else if (result.qrCodeImageUrl) {
+        console.log('[SINGLETON FETCH] QR code fetched successfully via singleton');
+        setQrCodeData(result);
+      } else {
+        console.log('[SINGLETON FETCH] Unexpected result from singleton');
+        setQrError('QR code not available. Please check your email.');
       }
-    }
-
-    fetchQrCodeOnce();
-    return () => { 
-      cancelled = true; 
+    } catch (error: any) {
+      console.error('[SINGLETON FETCH] Exception:', error);
+      setQrError('QR code fetch failed. Please check your email.');
+    } finally {
       setQrFetching(false);
-      globalQrFetchInProgress = false;
-    };
-  }, [result]); // Only trigger when result changes
+    }
+  };
 
   if (loading) {
     return (
