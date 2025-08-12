@@ -31,6 +31,7 @@ export default function TicketQrClient() {
   const [qrCodeData, setQrCodeData] = useState<any>(null);
   const [qrError, setQrError] = useState<string | null>(null);
   const [apiLogs, setApiLogs] = useState<string[]>([]);
+  const [qrFetching, setQrFetching] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -42,15 +43,8 @@ export default function TicketQrClient() {
 
   console.log('[QR CLIENT DEBUG] State and hooks initialized');
 
-  // Component initialization debug
-  console.log('[MOBILE QR DEBUG] TicketQrClient component mounted');
-  console.log('[MOBILE QR DEBUG] User Agent:', typeof window !== 'undefined' ? navigator.userAgent : 'SSR');
-  console.log('[MOBILE QR DEBUG] Window dimensions:', typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : 'SSR');
-  console.log('[MOBILE QR DEBUG] Referrer:', typeof window !== 'undefined' ? document.referrer : 'SSR');
-  console.log('[MOBILE QR DEBUG] Session storage data:', typeof window !== 'undefined' ? {
-    stripe_session_id: sessionStorage.getItem('stripe_session_id'),
-    stripe_payment_intent: sessionStorage.getItem('stripe_payment_intent')
-  } : 'SSR');
+  // Component initialization
+  console.log('[MOBILE QR] TicketQrClient mounted');
 
   // Get session_id or payment_intent from URL params or sessionStorage
   const [session_id, setSessionId] = useState<string | null>(null);
@@ -253,6 +247,11 @@ export default function TicketQrClient() {
       return;
     }
 
+    if (qrCodeData || qrFetching) {
+      console.log('[MOBILE QR DEBUG] QR code already exists or fetch in progress, skipping');
+      return;
+    }
+
     const transaction = result.transaction;
     const eventDetails = result.eventDetails;
 
@@ -260,6 +259,8 @@ export default function TicketQrClient() {
       console.log('[MOBILE QR DEBUG] Missing transaction or event ID for QR generation');
       return;
     }
+
+    setQrFetching(true);
 
     let cancelled = false;
     let retryCount = 0;
@@ -306,6 +307,7 @@ export default function TicketQrClient() {
                 console.error('[MOBILE QR DEBUG] Max retries exceeded, QR code generation failed');
                 addApiLog('Max retries exceeded, QR code generation failed');
                 setQrError('QR code generation failed - transaction items may not be ready yet');
+                setQrFetching(false);
                 return;
               }
             } else {
@@ -313,6 +315,7 @@ export default function TicketQrClient() {
               console.log('[MOBILE QR DEBUG] QR code fetched successfully');
               addApiLog('QR code fetched successfully');
               setQrCodeData({ qrCodeImageUrl: qrUrl.trim() });
+              setQrFetching(false);
               return;
             }
           } else {
@@ -326,6 +329,7 @@ export default function TicketQrClient() {
               continue; // Retry on error too
             } else {
               setQrError(`Failed to fetch QR code: ${errorText}`);
+              setQrFetching(false);
               return;
             }
           }
@@ -339,6 +343,7 @@ export default function TicketQrClient() {
             continue; // Retry on exception
           } else {
             setQrError(error.message || 'Failed to fetch QR code');
+            setQrFetching(false);
             return;
           }
         }
@@ -346,41 +351,15 @@ export default function TicketQrClient() {
     }
 
     fetchQrCodeWithRetry();
-    return () => { cancelled = true; };
-  }, [result]); // Only trigger when result changes
+    return () => { 
+      cancelled = true; 
+      setQrFetching(false);
+    };
+  }, [result, qrCodeData, qrFetching]); // Only trigger when result changes and QR not already fetching/fetched
 
   if (loading) {
     return (
       <div>
-        {/* Debug Banner for Loading State */}
-        <div className="bg-blue-100 border-2 border-blue-400 p-4 m-4 rounded text-sm">
-          <h3 className="font-bold mb-2">🔄 Loading Debug Info:</h3>
-          <div><strong>URL Parameters:</strong></div>
-          <div>pi from URL: {searchParams?.get('pi') || 'NULL'}</div>
-          <div>session_id from URL: {searchParams?.get('session_id') || 'NULL'}</div>
-          
-          <div className="mt-2"><strong>State Values:</strong></div>
-          <div>session_id: {session_id || 'NULL'}</div>
-          <div>payment_intent: {payment_intent || 'NULL'}</div>
-          <div>identifier: {identifier || 'NULL'}</div>
-          
-          <div className="mt-2"><strong>Current URL:</strong></div>
-          <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
-          
-          {/* API Logs Section for Loading State */}
-          {apiLogs.length > 0 && (
-            <div className="mt-4">
-              <strong>Live API Logs:</strong>
-              <div className="mt-1 max-h-40 overflow-y-auto bg-white p-2 rounded border text-xs">
-                {apiLogs.map((log, index) => (
-                  <div key={index} className="mb-1 font-mono">
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
         <LoadingTicket sessionId={identifier || ''} />
       </div>
     );
@@ -389,44 +368,9 @@ export default function TicketQrClient() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 text-center p-4">
-        <div className="text-4xl text-red-500 mb-4">❌</div>
+        <FaInfoCircle className="text-4xl text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-800">Error</h1>
         <p className="text-gray-600 mt-2">{error}</p>
-        
-        {/* Visual Debug Information */}
-        <div className="mt-6 p-4 bg-yellow-100 border-2 border-yellow-400 rounded text-left text-sm">
-          <h3 className="font-bold mb-2">🔍 Debug Info:</h3>
-          <div><strong>URL Parameters:</strong></div>
-          <div>pi from URL: {searchParams?.get('pi') || 'NULL'}</div>
-          <div>session_id from URL: {searchParams?.get('session_id') || 'NULL'}</div>
-          
-          <div className="mt-2"><strong>State Values:</strong></div>
-          <div>session_id: {session_id || 'NULL'}</div>
-          <div>payment_intent: {payment_intent || 'NULL'}</div>
-          <div>identifier: {identifier || 'NULL'}</div>
-          
-          <div className="mt-2"><strong>SessionStorage:</strong></div>
-          <div>stripe_session_id: {typeof window !== 'undefined' ? sessionStorage.getItem('stripe_session_id') || 'NULL' : 'SSR'}</div>
-          <div>stripe_payment_intent: {typeof window !== 'undefined' ? sessionStorage.getItem('stripe_payment_intent') || 'NULL' : 'SSR'}</div>
-          
-          <div className="mt-2"><strong>Current URL:</strong></div>
-          <div className="break-all">{typeof window !== 'undefined' ? window.location.href : 'SSR'}</div>
-          
-          {/* API Logs Section */}
-          {apiLogs.length > 0 && (
-            <div className="mt-4">
-              <strong>API Call Logs:</strong>
-              <div className="mt-1 max-h-60 overflow-y-auto bg-white p-2 rounded border text-xs">
-                {apiLogs.map((log, index) => (
-                  <div key={index} className="mb-1 font-mono">
-                    {log}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        
         <button 
           onClick={() => router.push('/')}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
