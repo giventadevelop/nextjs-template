@@ -242,6 +242,8 @@ export default function TicketQrClient() {
         }
         queryParams.set('_t', Date.now().toString());
         
+        // Add skip_qr parameter to prevent desktop QR fetching
+        queryParams.set('skip_qr', 'true');
         const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
         console.log('[TicketQrClient] Making GET request to:', apiUrl);
         addApiLog(`Making GET request to: ${apiUrl}`);
@@ -283,7 +285,7 @@ export default function TicketQrClient() {
         }
         
         // If not found, POST to create it
-        const postBody: any = {};
+        const postBody: any = { skip_qr: true }; // Prevent desktop QR fetching
         if (session_id) {
           postBody.session_id = session_id;
           console.log('[TicketQrClient] POST body with session_id:', postBody);

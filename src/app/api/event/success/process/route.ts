@@ -85,11 +85,12 @@ async function getSessionIdFromPaymentIntent(paymentIntentId: string): Promise<s
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { session_id, pi } = body;
+    const { session_id, pi, skip_qr } = body;
     
     console.log('[API POST] Received body:', {
       session_id,
       pi,
+      skip_qr,
       body
     });
     
@@ -128,15 +129,17 @@ export async function POST(req: NextRequest) {
         eventDetails = await fetchEventDetailsByIdServer(existingTransaction.eventId);
       }
       
-      // Get QR code data
+      // Get QR code data - skip for mobile flows
       let qrCodeData = null;
-      if (existingTransaction.id && eventDetails?.id) {
+      if (!skip_qr && existingTransaction.id && eventDetails?.id) {
         try {
           qrCodeData = await fetchTransactionQrCode(eventDetails.id, existingTransaction.id);
         } catch (err) {
           console.error('[API POST] Failed to fetch QR code:', err);
           qrCodeData = null;
         }
+      } else if (skip_qr) {
+        console.log('[API POST] Skipping QR code fetch - mobile flow detected');
       }
       
       // Fetch transaction items and ticket type names
@@ -200,8 +203,11 @@ export async function POST(req: NextRequest) {
     if (!eventDetails?.id && transaction.eventId) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
+    // Check if this is a mobile request that should skip QR fetching (mobile uses separate QR flow)
+    const skipQr = req.nextUrl.searchParams.get('skip_qr') === 'true';
+    
     let qrCodeData = null;
-    if (transaction.id && eventDetails?.id) {
+    if (!skipQr && transaction.id && eventDetails?.id) {
       try {
         console.log('[QR Code Debug] Attempting to fetch QR code for:', {
           eventId: eventDetails.id,
@@ -213,6 +219,8 @@ export async function POST(req: NextRequest) {
         console.error('[QR Code Debug] Failed to fetch QR code:', err);
         qrCodeData = null;
       }
+    } else if (skipQr) {
+      console.log('[QR Code Debug] Skipping QR code fetch - mobile flow detected');
     } else {
       console.log('[QR Code Debug] Skipping QR code fetch - missing IDs:', {
         transactionId: transaction.id,
@@ -304,9 +312,12 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    // Get QR code data
+    // Check if this is a mobile request that should skip QR fetching
+    const skipQr = searchParams.get('skip_qr') === 'true';
+    
+    // Get QR code data - skip for mobile flows
     let qrCodeData = null;
-    if (transaction.id && eventDetails?.id) {
+    if (!skipQr && transaction.id && eventDetails?.id) {
       console.log('[API GET] Attempting to fetch QR code:', {
         transactionId: transaction.id,
         eventId: eventDetails.id,
@@ -327,6 +338,8 @@ export async function GET(req: NextRequest) {
         });
         qrCodeData = null;
       }
+    } else if (skipQr) {
+      console.log('[API GET] Skipping QR code fetch - mobile flow detected');
     } else {
       console.log('[API GET] Skipping QR code fetch - missing required IDs:', {
         hasTransactionId: !!transaction.id,
