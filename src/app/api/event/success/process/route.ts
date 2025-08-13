@@ -51,29 +51,29 @@ async function getHeroImageUrl(eventId: number) {
 async function getSessionIdFromPaymentIntent(paymentIntentId: string): Promise<string | null> {
   try {
     console.log('[Payment Intent] Looking up session for payment intent:', paymentIntentId);
-    
+
     // Get the payment intent from Stripe
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    
+
     // The session ID should be in the metadata or we need to search for it
     if (paymentIntent.metadata?.session_id) {
       console.log('[Payment Intent] Found session_id in metadata:', paymentIntent.metadata.session_id);
       return paymentIntent.metadata.session_id;
     }
-    
+
     // If not in metadata, we need to search checkout sessions
     // This is more expensive but necessary for mobile flows
     const sessions = await stripe.checkout.sessions.list({
       payment_intent: paymentIntentId,
       limit: 1
     });
-    
+
     if (sessions.data.length > 0) {
       const sessionId = sessions.data[0].id;
       console.log('[Payment Intent] Found session_id via lookup:', sessionId);
       return sessionId;
     }
-    
+
     console.log('[Payment Intent] No session found for payment intent:', paymentIntentId);
     return null;
   } catch (error) {
@@ -86,22 +86,22 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { session_id, pi, skip_qr } = body;
-    
+
     console.log('[API POST] Received body:', {
       session_id,
       pi,
       skip_qr,
       body
     });
-    
+
     if (!session_id && !pi) {
       console.log('[API POST] Missing both session_id and pi parameters');
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
-    
+
     // Import the helper functions from server actions
     const { findTransactionBySessionId, findTransactionByPaymentIntentId } = await import('@/app/event/success/ApiServerActions');
-    
+
     // First check if transaction already exists
     let existingTransaction = null;
     if (session_id) {
@@ -118,17 +118,17 @@ export async function POST(req: NextRequest) {
       console.log('[API POST] Checking for existing transaction by payment_intent:', pi);
       existingTransaction = await findTransactionByPaymentIntentId(pi);
     }
-    
+
     if (existingTransaction) {
       console.log('[API POST] Transaction already exists:', existingTransaction.id);
       // Use the existing transaction instead of creating a new one
-      
+
       // Get event details
       let eventDetails = existingTransaction.event;
       if (!eventDetails?.id && existingTransaction.eventId) {
         eventDetails = await fetchEventDetailsByIdServer(existingTransaction.eventId);
       }
-      
+
       // Get QR code data - skip for mobile flows
       let qrCodeData = null;
       if (!skip_qr && existingTransaction.id && eventDetails?.id) {
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
       } else if (skip_qr) {
         console.log('[API POST] Skipping QR code fetch - mobile flow detected (prevents duplicate emails)');
       }
-      
+
       // Fetch transaction items and ticket type names
       let transactionItems = [];
       if (existingTransaction.id) {
@@ -157,20 +157,20 @@ export async function POST(req: NextRequest) {
           }
         }
       }
-      
+
       // Fetch hero image URL
       let heroImageUrl = eventDetails?.id ? await getHeroImageUrl(eventDetails.id as number) : null;
-      
-      return NextResponse.json({ 
-        transaction: existingTransaction, 
-        userProfile: null, 
-        eventDetails, 
-        qrCodeData, 
-        transactionItems, 
-        heroImageUrl 
+
+      return NextResponse.json({
+        transaction: existingTransaction,
+        userProfile: null,
+        eventDetails,
+        qrCodeData,
+        transactionItems,
+        heroImageUrl
       });
     }
-    
+
     // If no existing transaction, try to create via Stripe session processing
     let result = null;
     if (session_id) {
@@ -204,9 +204,10 @@ export async function POST(req: NextRequest) {
       eventDetails = await fetchEventDetailsByIdServer(transaction.eventId);
     }
     // Check if this is a mobile request that should skip QR fetching (mobile uses separate QR flow)
-    // The skip_qr parameter prevents duplicate emails by ensuring QR is only fetched once
-    const skipQr = req.nextUrl.searchParams.get('skip_qr') === 'true';
-    
+    // IMPORTANT: Respect the POST body flag as sent by TicketQrClient
+    // Using URL searchParams here caused duplicate emails because body flag was ignored
+    const skipQr = !!skip_qr;
+
     let qrCodeData = null;
     if (!skipQr && transaction.id && eventDetails?.id) {
       try {
@@ -256,22 +257,22 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const session_id = searchParams.get('session_id');
     const pi = searchParams.get('pi');
-    
+
     console.log('[API GET] Received parameters:', {
       session_id,
       pi,
       url: req.url,
       searchParams: Object.fromEntries(searchParams.entries())
     });
-    
+
     if (!session_id && !pi) {
       console.log('[API GET] Missing both session_id and pi parameters');
       return NextResponse.json({ error: 'Missing session_id or pi (payment_intent)' }, { status: 400 });
     }
-    
+
     // Import the helper functions from server actions
     const { findTransactionBySessionId, findTransactionByPaymentIntentId } = await import('@/app/event/success/ApiServerActions');
-    
+
     // Only look up existing transactions, do not create
     let transaction = null;
     if (session_id) {
@@ -288,12 +289,12 @@ export async function GET(req: NextRequest) {
       console.log('[API GET] Looking up transaction by payment_intent:', pi);
       transaction = await findTransactionByPaymentIntentId(pi);
     }
-    
+
     if (!transaction) {
       console.log('[API GET] No existing transaction found');
       return NextResponse.json({ transaction: null }, { status: 200 });
     }
-    
+
     console.log('[API GET] Found existing transaction:', {
       id: transaction.id,
       eventId: transaction.eventId,
@@ -301,7 +302,7 @@ export async function GET(req: NextRequest) {
       stripePaymentIntentId: transaction.stripePaymentIntentId,
       email: transaction.email
     });
-    
+
     // Get event details
     let eventDetails = transaction.event;
     if (!eventDetails?.id && transaction.eventId) {
@@ -312,11 +313,11 @@ export async function GET(req: NextRequest) {
         title: eventDetails?.title
       });
     }
-    
+
     // Check if this is a mobile request that should skip QR fetching
     // The skip_qr parameter prevents duplicate emails by ensuring QR is only fetched once
     const skipQr = searchParams.get('skip_qr') === 'true';
-    
+
     // Get QR code data - skip for mobile flows
     let qrCodeData = null;
     if (!skipQr && transaction.id && eventDetails?.id) {
@@ -350,7 +351,7 @@ export async function GET(req: NextRequest) {
         eventId: eventDetails?.id
       });
     }
-    
+
     // Fetch transaction items and ticket type names
     let transactionItems = [];
     if (transaction.id) {
@@ -366,17 +367,17 @@ export async function GET(req: NextRequest) {
         }
       }
     }
-    
+
     // Fetch hero image URL
     let heroImageUrl = eventDetails?.id ? await getHeroImageUrl(eventDetails.id as number) : null;
-    
-    return NextResponse.json({ 
-      transaction, 
+
+    return NextResponse.json({
+      transaction,
       userProfile: null, // No user profile for GET requests
-      eventDetails, 
-      qrCodeData, 
-      transactionItems, 
-      heroImageUrl 
+      eventDetails,
+      qrCodeData,
+      transactionItems,
+      heroImageUrl
     });
   } catch (err: any) {
     console.error('[API GET] Error:', err);
