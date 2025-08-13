@@ -37,58 +37,58 @@ class QrFetchSingleton {
 
   async fetchQrCodeOnce(eventId: number, transactionId: number, addApiLog: (msg: string) => void): Promise<any> {
     const key = `${eventId}-${transactionId}`;
-    
+
     // If already fetched, return cached result
     if (this.qrResults.has(key)) {
       console.log(`[QR SINGLETON] Returning cached QR result for ${key}`);
       addApiLog(`Returning cached QR result for ${key}`);
       return this.qrResults.get(key);
     }
-    
+
     // If already marked as fetched but no result yet, return error
     if (this.fetchedTransactions.has(key)) {
       console.log(`[QR SINGLETON] QR already attempted for ${key} - BLOCKING`);
       addApiLog(`QR already attempted for ${key} - BLOCKING`);
       return { error: 'QR fetch already attempted' };
     }
-    
+
     // If fetch in progress, return error
     if (this.fetchInProgress) {
       console.log(`[QR SINGLETON] QR fetch already in progress - BLOCKING`);
       addApiLog(`QR fetch already in progress - BLOCKING`);
       return { error: 'QR fetch in progress' };
     }
-    
+
     // Mark as being fetched IMMEDIATELY to prevent any race conditions
     this.fetchedTransactions.add(key);
     this.fetchInProgress = true;
-    
+
     try {
       console.log(`[QR SINGLETON] Making SINGLE QR API call for ${key} - THIS IS THE ONLY EMAIL-TRIGGERING CALL`);
       addApiLog(`Making SINGLE QR API call for ${key} - THIS IS THE ONLY EMAIL-TRIGGERING CALL`);
-      
+
       const baseUrl = window.location.origin;
       const emailHostUrlPrefix = baseUrl;
       const encodedEmailHostUrlPrefix = btoa(emailHostUrlPrefix);
       const qrUrl = `/api/proxy/events/${eventId}/transactions/${transactionId}/emailHostUrlPrefix/${encodedEmailHostUrlPrefix}/qrcode`;
-      
+
       console.log(`[QR SINGLETON] QR URL: ${qrUrl}`);
       addApiLog(`QR URL: ${qrUrl}`);
-      
+
       const qrRes = await fetch(qrUrl, {
         method: 'GET',
         cache: 'no-store',
       });
-      
+
       console.log(`[QR SINGLETON] QR response status: ${qrRes.status}`);
       addApiLog(`QR response status: ${qrRes.status}`);
-      
+
       let result;
       if (qrRes.ok) {
         const qrUrlResponse = await qrRes.text();
         console.log(`[QR SINGLETON] QR URL length: ${qrUrlResponse.length}`);
         addApiLog(`QR URL received: ${qrUrlResponse.length} characters`);
-        
+
         if (qrUrlResponse && qrUrlResponse.trim().length > 0) {
           result = { qrCodeImageUrl: qrUrlResponse.trim() };
           console.log(`[QR SINGLETON] QR fetch SUCCESS - cached for ${key}`);
@@ -104,11 +104,11 @@ class QrFetchSingleton {
         console.error(`[QR SINGLETON] QR fetch failed for ${key}:`, qrRes.status, errorText);
         addApiLog(`QR fetch failed: ${qrRes.status}`);
       }
-      
+
       // Cache the result
       this.qrResults.set(key, result);
       return result;
-      
+
     } catch (error: any) {
       const result = { error: `QR fetch exception: ${error.message}` };
       this.qrResults.set(key, result);
@@ -126,7 +126,7 @@ const qrSingleton = QrFetchSingleton.getInstance();
 export default function TicketQrClient() {
   // Add immediate debug logging to see if component is even instantiated
   console.log('[QR CLIENT DEBUG] TicketQrClient function called - component starting');
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
@@ -214,7 +214,7 @@ export default function TicketQrClient() {
       console.log('[MOBILE QR DEBUG] Parameters not initialized yet, waiting...');
       return;
     }
-    
+
     if (!identifier) {
       console.error('[MOBILE QR DEBUG] Missing identifier after initialization - session_id:', session_id, 'payment_intent:', payment_intent);
       setError('Missing session ID or payment intent');
@@ -228,7 +228,7 @@ export default function TicketQrClient() {
         addApiLog('Starting transaction fetch');
         addApiLog(`Fetching for identifier: ${identifier}`);
         addApiLog(`session_id: ${session_id}, payment_intent: ${payment_intent}`);
-        
+
         // Build the appropriate query parameters
         const queryParams = new URLSearchParams();
         if (session_id) {
@@ -241,22 +241,22 @@ export default function TicketQrClient() {
           addApiLog('Added payment_intent to query params');
         }
         queryParams.set('_t', Date.now().toString());
-        
+
         // Add skip_qr parameter to prevent BOTH desktop QR fetching AND API route QR fetching
         // This prevents duplicate emails by ensuring QR is only fetched by mobile client
         queryParams.set('skip_qr', 'true');
         const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
         console.log('[TicketQrClient] Making GET request to:', apiUrl);
         addApiLog(`Making GET request to: ${apiUrl}`);
-        
+
         // Try to GET the transaction
         const getRes = await fetch(apiUrl, {
           cache: 'no-store'
         });
-        
+
         console.log('[MOBILE QR DEBUG] GET response status:', getRes.status);
         addApiLog(`GET response status: ${getRes.status}`);
-        
+
         if (getRes.ok) {
           const data = await getRes.json();
           console.log('[MOBILE QR DEBUG] GET response data:', data);
@@ -265,13 +265,13 @@ export default function TicketQrClient() {
             transactionId: data.transaction?.id,
             error: data.error
           })}`);
-          
+
           if (data.transaction && !cancelled) {
             console.log('[MOBILE QR DEBUG] Transaction data loaded:', data.transaction.id);
             addApiLog(`Transaction data loaded successfully: ID ${data.transaction.id}`);
             setResult(data);
             setLoading(false);
-            
+
             // Immediately fetch QR code using singleton - NO useEffect, NO setTimeout
             // This is the ONLY place QR code should be fetched in mobile flow to prevent duplicate emails
             addApiLog('Mobile client will now fetch QR code (this is the ONLY QR fetch for mobile)');
@@ -286,7 +286,7 @@ export default function TicketQrClient() {
           console.error('[MOBILE QR DEBUG] GET request failed:', getRes.status, errorText);
           addApiLog(`GET request failed: ${getRes.status} - ${errorText.substring(0, 200)}`);
         }
-        
+
         // If not found, POST to create it
         const postBody: any = { skip_qr: true }; // Prevent desktop QR fetching
         if (session_id) {
@@ -298,7 +298,7 @@ export default function TicketQrClient() {
           console.log('[TicketQrClient] POST body with pi:', postBody);
           addApiLog(`POST body prepared with payment_intent: ${payment_intent}`);
         }
-        
+
         console.log('[TicketQrClient] Making POST request to create transaction');
         addApiLog('Making POST request to create transaction');
         const postRes = await fetch("/api/event/success/process", {
@@ -306,22 +306,22 @@ export default function TicketQrClient() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(postBody),
         });
-        
+
         addApiLog(`POST response status: ${postRes.status}`);
-        
+
         if (!postRes.ok) {
           const errorText = await postRes.text();
           addApiLog(`POST request failed: ${postRes.status} - ${errorText.substring(0, 200)}`);
           throw new Error(errorText);
         }
-        
+
         const postData = await postRes.json();
         addApiLog(`POST response received: ${JSON.stringify({
           hasTransaction: !!postData.transaction,
           transactionId: postData.transaction?.id,
           error: postData.error
         })}`);
-        
+
         if (!cancelled) {
           console.log('[MOBILE QR DEBUG] Transaction created:', postData.transaction.id);
           addApiLog(`Transaction created successfully: ID ${postData.transaction.id}`);
@@ -345,7 +345,7 @@ export default function TicketQrClient() {
         }
       }
     }
-    
+
     fetchTransactionData();
     return () => { cancelled = true; };
   }, [identifier, session_id, payment_intent]);
@@ -353,7 +353,7 @@ export default function TicketQrClient() {
   // SINGLETON QR FETCH - Absolutely prevents any duplicate calls
   const fetchQrCodeViaSingleton = async (transactionResult: any) => {
     console.log('[SINGLETON FETCH] fetchQrCodeViaSingleton called');
-    
+
     if (!transactionResult?.transaction || !transactionResult?.eventDetails) {
       console.log('[SINGLETON FETCH] Missing transaction or event details - skipping');
       return;
@@ -372,11 +372,27 @@ export default function TicketQrClient() {
       return;
     }
 
+    // Extra mobile idempotency: prevent duplicate calls across reloads in same tab
+    try {
+      if (typeof window !== 'undefined') {
+        const storageKey = `qr_fetched_${eventDetails.id}_${transaction.id}`;
+        const alreadyFetched = sessionStorage.getItem(storageKey);
+        if (alreadyFetched) {
+          console.log('[SINGLETON FETCH] sessionStorage indicates QR already fetched - skipping');
+          return;
+        }
+        // Mark as fetched before the network call to prevent races
+        sessionStorage.setItem(storageKey, '1');
+      }
+    } catch (e) {
+      // Non-fatal if sessionStorage unavailable
+    }
+
     setQrFetching(true);
-    
+
     try {
       const result = await qrSingleton.fetchQrCodeOnce(eventDetails.id, transaction.id, addApiLog);
-      
+
       if (result.error) {
         console.log('[SINGLETON FETCH] QR fetch error:', result.error);
         setQrError('QR code not available. Please check your email.');
@@ -409,7 +425,7 @@ export default function TicketQrClient() {
         <FaInfoCircle className="text-4xl text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-800">Error</h1>
         <p className="text-gray-600 mt-2">{error}</p>
-        <button 
+        <button
           onClick={() => router.push('/')}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
@@ -427,7 +443,7 @@ export default function TicketQrClient() {
         <FaInfoCircle className="text-4xl text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-800">Transaction Not Found</h1>
         <p className="text-gray-600 mt-2">We could not find the details for your transaction.</p>
-        <button 
+        <button
           onClick={() => router.push('/')}
           className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
@@ -439,7 +455,7 @@ export default function TicketQrClient() {
 
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
-      
+
       {/* HERO SECTION */}
       <section className="hero-section" style={{
         position: 'relative',
@@ -472,7 +488,7 @@ export default function TicketQrClient() {
 
       {/* Main content container */}
       <div className="max-w-5xl mx-auto px-8 py-8" style={{ marginTop: '80px' }}>
-        
+
         {/* Payment Success Card */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="text-center">
@@ -533,10 +549,10 @@ export default function TicketQrClient() {
               <div className="flex flex-col items-center justify-center gap-4">
                 <div className="text-lg font-semibold text-gray-800">Your Ticket QR Code</div>
                 {qrCodeData.qrCodeImageUrl ? (
-                  <img 
-                    src={qrCodeData.qrCodeImageUrl} 
-                    alt="Ticket QR Code" 
-                    className="mx-auto w-48 h-48 object-contain border border-gray-300 rounded-lg shadow" 
+                  <img
+                    src={qrCodeData.qrCodeImageUrl}
+                    alt="Ticket QR Code"
+                    className="mx-auto w-48 h-48 object-contain border border-gray-300 rounded-lg shadow"
                   />
                 ) : (
                   <div className="text-gray-500">QR code not available.</div>
@@ -582,7 +598,7 @@ export default function TicketQrClient() {
 
         {/* Back to Home */}
         <div className="text-center">
-          <button 
+          <button
             onClick={() => router.push('/')}
             className="px-8 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
           >

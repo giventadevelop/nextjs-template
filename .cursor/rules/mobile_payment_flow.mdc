@@ -1,3 +1,17 @@
+---
+description: Rules for implementing mobile payment flow (Apple Pay/Google Pay PRB), success handling, and QR generation without duplicates
+globs: src/**/*
+alwaysApply: false
+---
+
+- **Main Points in Bold**
+  - Use Payment Intent (pi_) for mobile PRB; redirect with `?pi=` and support it everywhere
+  - Create PI only on button click; use idempotency; sync PaymentRequest total to PI amount
+  - Webhooks must create transactions on `payment_intent.succeeded`; `tenantId` injected
+  - Success flow must poll/backoff and treat empty QR as not-ready; mobile redirects to `ticket-qr`
+  - Avoid duplicate QR/emails with singleton/poll guards and `skip_qr=true`
+  - Follow AWS Amplify env rules; use `getAppUrl()` for absolute URLs
+
 # Mobile Payment Flow Architecture
 
 This document outlines the comprehensive mobile payment flow architecture for the MCEFEE event management application, detailing the critical differences between mobile and desktop payment processing.
@@ -31,7 +45,7 @@ The mobile payment flow is fundamentally different from the desktop flow due to 
      payment_method: ev.paymentMethod.id,
      receipt_email: ev.payerEmail || email,
    });
-   
+
    // Redirect using Payment Intent ID
    const piId = paymentIntent?.id;
    window.location.href = piId ? `/event/success?pi=${encodeURIComponent(piId)}` : '/event/success';
@@ -39,13 +53,13 @@ The mobile payment flow is fundamentally different from the desktop flow due to 
 
 #### Implementation Details:
 
-**Payment Intent Creation** (`/api/stripe/payment-intent`):
+**Payment Intent Creation** ([route](mdc:src/app/api/stripe/payment-intent/route.ts)):
 - Creates Payment Intent with `automatic_payment_methods: { enabled: true }`
 - Includes metadata for cart, eventId, and discountCodeId
 - Uses idempotency keys to prevent duplicate intents
 - Returns `clientSecret` for mobile wallet confirmation
 
-**Payment Intent Processing** (`/app/event/success/ApiServerActions.ts`):
+**Payment Intent Processing** ([ApiServerActions](mdc:src/app/event/success/ApiServerActions.ts)):
 - `findTransactionByPaymentIntentId()` - Looks up existing transactions
 - Handles conversion from Payment Intent to Session ID when needed
 - Backend lookups use `stripePaymentIntentId.equals` parameter
@@ -114,7 +128,7 @@ Provides comprehensive device detection debugging:
 
 ### PRB Implementation Details
 
-#### Component Structure (`StripePaymentRequestButton.tsx`)
+#### Component Structure ([StripePaymentRequestButton.tsx](mdc:src/components/StripePaymentRequestButton.tsx))
 
 **Eligibility Detection**:
 ```typescript
@@ -124,7 +138,7 @@ pr.canMakePayment().then((result) => {
     googlePay: result.googlePay || (result as any).google_pay,
     link: (result as any).link
   });
-  
+
   if (result) {
     setEligible(true);
     setReady(true);
@@ -169,26 +183,26 @@ if (typeof data.amount === 'number' && pr) {
 
 ### Desktop Flow
 ```
-User fills form → 
-Stripe Checkout Session created → 
-Hosted payment page → 
-Payment completion → 
-Redirect to /event/success?session_id=cs_xxx → 
-SuccessClient detects desktop → 
-Stays on success page → 
+User fills form →
+Stripe Checkout Session created →
+Hosted payment page →
+Payment completion →
+Redirect to /event/success?session_id=cs_xxx →
+SuccessClient detects desktop →
+Stays on success page →
 Fetches transaction data + QR inline
 ```
 
 ### Mobile Flow
 ```
-User taps PRB → 
-Native wallet sheet opens → 
-Payment Intent created → 
-Payment confirmed with PI → 
-Redirect to /event/success?pi=pi_xxx → 
-SuccessClient detects mobile → 
-Shows brief success (2 seconds) → 
-Redirect to /event/ticket-qr?pi=pi_xxx → 
+User taps PRB →
+Native wallet sheet opens →
+Payment Intent created →
+Payment confirmed with PI →
+Redirect to /event/success?pi=pi_xxx →
+SuccessClient detects mobile →
+Shows brief success (2 seconds) →
+Redirect to /event/ticket-qr?pi=pi_xxx →
 Dedicated QR page with singleton fetch
 ```
 
@@ -241,17 +255,17 @@ class QrFetchSingleton {
 
   async fetchQrCodeOnce(eventId: number, transactionId: number): Promise<any> {
     const key = `${eventId}-${transactionId}`;
-    
+
     // Return cached result if available
     if (this.qrResults.has(key)) {
       return this.qrResults.get(key);
     }
-    
+
     // Prevent duplicate calls
     if (this.fetchedTransactions.has(key) || this.fetchInProgress) {
       return { error: 'QR fetch already attempted' };
     }
-    
+
     // Single API call with caching
     this.fetchedTransactions.add(key);
     this.fetchInProgress = true;
@@ -262,7 +276,7 @@ class QrFetchSingleton {
 
 ## API Endpoint Adjustments
 
-### 1. Success Processing Route (`/api/event/success/process`)
+### 1. Success Processing Route ([route](mdc:src/app/api/event/success/process/route.ts))
 
 **GET Method**:
 - Looks up existing transactions only
@@ -275,7 +289,7 @@ class QrFetchSingleton {
 - Processes both session IDs and payment intents
 - Includes mobile-specific optimizations
 
-### 2. QR Code Proxy Route
+### 2. QR Code Proxy Route ([SuccessClient](mdc:src/app/event/success/SuccessClient.tsx))
 
 **Enhanced Logging**:
 ```typescript
