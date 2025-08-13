@@ -327,6 +327,9 @@ export default function TicketQrClient() {
           addApiLog(`Transaction created successfully: ID ${postData.transaction.id}`);
           setResult(postData);
           setLoading(false);
+          // IMPORTANT: Trigger the single QR fetch after POST success as well (credit-card mobile flow)
+          addApiLog('Mobile client will now fetch QR code after POST (credit card flow)');
+          fetchQrCodeViaSingleton(postData);
         }
       } catch (err: any) {
         if (!cancelled) {

@@ -512,20 +512,34 @@ export default function TicketingPage() {
 
               {/* Wallets (Apple Pay / Google Pay) visible immediately; disabled overlay until valid */}
               <div className="mt-4">
-                <StripePaymentRequestButton
-                  cart={Object.entries(selectedTickets)
-                    .filter(([, quantity]) => quantity > 0)
-                    .map(([ticketId, quantity]) => ({
-                      ticketType: { id: parseInt(ticketId) },
-                      quantity,
-                    }))}
-                  eventId={String(eventId)}
-                  email={email}
-                  discountCodeId={appliedDiscount?.id ?? null}
-                  enabled={Object.values(selectedTickets).some(q => q > 0) && emailIsValid}
-                  showPlaceholder
-                  amountCents={Math.round(totalAmount * 100)}
-                />
+                {/* Wallets: clickable even when disabled to show validation messages */}
+                <div
+                  onClick={() => {
+                    if (!(Object.values(selectedTickets).some(q => q > 0) && emailIsValid)) {
+                      if (!emailIsValid) setEmailError(true);
+                      if (Object.values(selectedTickets).every(q => q === 0)) {
+                        alert('Please select at least one ticket.');
+                      }
+                    }
+                  }}
+                  role="button"
+                  aria-label="Apple Pay / Google Pay"
+                >
+                  <StripePaymentRequestButton
+                    cart={Object.entries(selectedTickets)
+                      .filter(([, quantity]) => quantity > 0)
+                      .map(([ticketId, quantity]) => ({
+                        ticketType: { id: parseInt(ticketId) },
+                        quantity,
+                      }))}
+                    eventId={String(eventId)}
+                    email={email}
+                    discountCodeId={appliedDiscount?.id ?? null}
+                    enabled={Object.values(selectedTickets).some(q => q > 0) && emailIsValid}
+                    showPlaceholder
+                    amountCents={Math.round(totalAmount * 100)}
+                  />
+                </div>
                 <div className="text-xs text-gray-700 mt-2">Apple/Google Pay</div>
               </div>
 
@@ -534,7 +548,17 @@ export default function TicketingPage() {
                 <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
                 <button
                   type="button"
-                  onClick={handleCheckout}
+                  onClick={() => {
+                    if (!(Object.values(selectedTickets).some(q => q > 0) && emailIsValid)) {
+                      if (!emailIsValid) setEmailError(true);
+                      if (Object.values(selectedTickets).every(q => q === 0)) {
+                        alert('Please select at least one ticket.');
+                        return;
+                      }
+                      return;
+                    }
+                    handleCheckout();
+                  }}
                   className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0) || !emailIsValid}
                 >

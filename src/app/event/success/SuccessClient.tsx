@@ -52,7 +52,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     if (typeof window === 'undefined') return;
 
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                    window.innerWidth <= 768;
+      window.innerWidth <= 768;
 
     console.log('[DESKTOP SUCCESS DEBUG] Mobile detection result:', {
       isMobile,
@@ -66,50 +66,66 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
 
     if (isMobile) {
       console.log('[SuccessClient] Mobile browser detected - will show brief success then redirect');
-      
-      // Determine which identifier to use and store
-      const identifier = session_id || payment_intent;
+
+      // Determine which identifier to use and store, with robust URL/sessionStorage fallbacks
+      let identifier: string | null = session_id || payment_intent || null;
+      if (!identifier) {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          identifier = urlParams.get('session_id') || urlParams.get('pi') || null;
+        } catch { }
+      }
+      if (!identifier) {
+        try {
+          identifier = sessionStorage.getItem('stripe_session_id') || sessionStorage.getItem('stripe_payment_intent') || null;
+        } catch { }
+      }
       if (!identifier) {
         console.log('[SuccessClient] ERROR: Missing both session_id and payment_intent');
         setError('Missing session ID or payment intent');
         setLoading(false);
         return;
       }
-      
+
       // Show brief success message then redirect after 2 seconds
       setLoading(false);
-      setResult({ 
-        isMobileBrief: true, 
+      const resolvedSessionId: string | undefined = session_id || (typeof identifier === 'string' && identifier.startsWith('cs_') ? (identifier as string) : undefined);
+      const resolvedPi: string | undefined = payment_intent || (typeof identifier === 'string' && identifier.startsWith('pi_') ? (identifier as string) : undefined);
+
+      setResult({
+        isMobileBrief: true,
         identifier,
-        session_id,
-        payment_intent 
+        session_id: resolvedSessionId,
+        payment_intent: resolvedPi
       });
-      
+
       setTimeout(() => {
         // Store the identifier in sessionStorage for QR page
-        if (session_id) {
-          const redirectUrl = `/event/ticket-qr?session_id=${encodeURIComponent(session_id)}`;
+        if (session_id || (identifier && (identifier as string).startsWith('cs_'))) {
+          const sid = session_id || (identifier as string);
+          const redirectUrl = `/event/ticket-qr?session_id=${encodeURIComponent(sid)}`;
           console.log('[SuccessClient] Redirecting with session_id:', {
-            session_id,
+            session_id: sid,
             redirectUrl,
             currentUrl: window.location.href
           });
-          sessionStorage.setItem('stripe_session_id', session_id);
+          sessionStorage.setItem('stripe_session_id', sid);
           router.replace(redirectUrl);
-        } else if (payment_intent) {
-          const redirectUrl = `/event/ticket-qr?pi=${encodeURIComponent(payment_intent)}`;
+        } else if (payment_intent || (identifier && (identifier as string).startsWith('pi_'))) {
+          const pid = payment_intent || (identifier as string);
+          const redirectUrl = `/event/ticket-qr?pi=${encodeURIComponent(pid)}`;
           console.log('[SuccessClient] Redirecting with payment_intent:', {
-            payment_intent,
+            payment_intent: pid,
             redirectUrl,
             currentUrl: window.location.href
           });
-          sessionStorage.setItem('stripe_payment_intent', payment_intent);
+          sessionStorage.setItem('stripe_payment_intent', pid);
           router.replace(redirectUrl);
         } else {
           console.error('[SuccessClient] ERROR: No session_id or payment_intent to redirect with!');
         }
       }, 2000);
-      
+
       return;
     } else {
       console.log('[DESKTOP SUCCESS DEBUG] Desktop browser detected - staying on success page');
@@ -248,13 +264,13 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     // Skip data fetching for mobile users - they get the brief success page
     if (typeof window !== 'undefined') {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                      window.innerWidth <= 768;
+        window.innerWidth <= 768;
       if (isMobile) {
         console.log('[SuccessClient] Skipping data fetch for mobile user');
         return;
       }
     }
-    
+
     // Desktop data fetching logic
     let cancelled = false;
     async function fetchData() {
@@ -266,17 +282,17 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         // 1. Try to GET the transaction by session_id (idempotency)
         const getUrl = `/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`;
         console.log('[DESKTOP SUCCESS DEBUG] GET request URL:', getUrl);
-        
+
         const getRes = await fetch(getUrl, {
           cache: 'no-store'
         });
-        
+
         console.log('[DESKTOP SUCCESS DEBUG] GET response status:', getRes.status);
-        
+
         if (getRes.ok) {
           const data = await getRes.json();
           console.log('[DESKTOP SUCCESS DEBUG] GET response data:', data);
-          
+
           if (data.transaction) {
             console.log('[DESKTOP SUCCESS DEBUG] Transaction found in GET response:', data.transaction.id);
             if (!cancelled) {
@@ -295,24 +311,24 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         console.log('[DESKTOP SUCCESS DEBUG] Making POST request to create transaction');
         const postBody = { session_id };
         console.log('[DESKTOP SUCCESS DEBUG] POST body:', postBody);
-        
+
         const postRes = await fetch("/api/event/success/process", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(postBody),
         });
-        
+
         console.log('[DESKTOP SUCCESS DEBUG] POST response status:', postRes.status);
-        
+
         if (!postRes.ok) {
           const errorText = await postRes.text();
           console.error('[DESKTOP SUCCESS DEBUG] POST request failed:', postRes.status, errorText);
           throw new Error(errorText);
         }
-        
+
         const postData = await postRes.json();
         console.log('[DESKTOP SUCCESS DEBUG] POST response data:', postData);
-        
+
         if (!cancelled) {
           console.log('[DESKTOP SUCCESS DEBUG] Setting result data:', postData);
           setResult(postData);
@@ -333,7 +349,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         }
       }
     }
-    
+
     fetchData();
     return () => { cancelled = true; };
   }, [session_id]);
