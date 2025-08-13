@@ -648,9 +648,13 @@ export default function TicketingPage() {
                     eventId={String(eventId)}
                     email={email}
                     discountCodeId={appliedDiscount?.id ?? null}
-                    enabled={Object.values(selectedTickets).some(q => q > 0) && emailIsValid}
+                    enabled={canCheckout}
                     showPlaceholder
                     amountCents={Math.round(totalAmount * 100)}
+                    onInvalidClick={() => {
+                      if (!emailIsValid) setEmailError(true);
+                      if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                    }}
                   />
                 </div>
                 <div className="text-xs text-gray-700 mt-2">Apple/Google Pay</div>

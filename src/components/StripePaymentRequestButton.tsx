@@ -17,11 +17,12 @@ type Props = {
   enabled: boolean; // whether fields are valid; when false, we show disabled overlay/placeholder
   showPlaceholder?: boolean; // show a disabled-looking placeholder if not eligible yet
   amountCents?: number; // optional current total for display
+  onInvalidClick?: () => void; // called when user clicks placeholder/disabled state to surface validation
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
-function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlaceholder, amountCents }: Props) {
+function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlaceholder, amountCents, onInvalidClick }: Props) {
   const stripe = useStripe();
   const [paymentRequest, setPaymentRequest] = useState<StripePaymentRequest | null>(null);
   const [ready, setReady] = useState(false);
@@ -41,7 +42,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
       total: { label: 'Tickets', amount: typeof amountCents === 'number' ? amountCents : 0 },
       requestPayerEmail: true,
     };
-    
+
     console.log('[PRB] Creating PaymentRequest with config:', prConfig);
     const pr = stripe.paymentRequest(prConfig);
 
@@ -61,7 +62,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         paymentRequestCountry: prConfig.country,
         paymentRequestCurrency: prConfig.currency
       });
-      
+
       // Check native Google Pay API availability
       if ('PaymentRequest' in window) {
         try {
@@ -77,7 +78,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
               }]
             }
           }], { total: { label: 'Test', amount: { currency: 'USD', value: '1.00' } } });
-          
+
           testPaymentRequest.canMakePayment().then(canPay => {
             console.log('[PRB] Native Google Pay API canMakePayment:', canPay);
           }).catch(err => {
@@ -87,7 +88,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           console.log('[PRB] Native Google Pay API not available:', err);
         }
       }
-      
+
       if (!result) {
         console.warn('[PRB] canMakePayment() returned null - no payment methods available');
         setPaymentRequest(null);
@@ -95,13 +96,13 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
         setEligible(false);
         return;
       }
-      
+
       console.log('[PRB] Payment methods available:', {
         applePay: result.applePay || (result as any).apple_pay,
         googlePay: result.googlePay || (result as any).google_pay,
         link: (result as any).link
       });
-      
+
       // Additional debugging for Google Pay specific issues
       if (!(result.googlePay || (result as any).google_pay)) {
         console.log('[PRB] Google Pay not available - potential causes:', {
@@ -112,7 +113,7 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           browserIssue: !(/Chrome/.test(navigator.userAgent)) ? 'Google Pay works best in Chrome' : false
         });
       }
-      
+
       setCanMakePaymentResult(result);
       pr.on('paymentmethod', async (ev) => {
         if (processing) {
@@ -159,8 +160,8 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
             payment_method: ev.paymentMethod.id,
             receipt_email: ev.payerEmail || email,
           });
-          
-          console.log('[PRB] Confirmation attempt:', { 
+
+          console.log('[PRB] Confirmation attempt:', {
             piId: paymentIntent?.id || 'unknown',
             status: paymentIntent?.status,
             amount: paymentIntent?.amount,
@@ -182,9 +183,9 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
               paymentMethodId: ev.paymentMethod.id,
               timestamp: new Date().toISOString()
             };
-            
+
             console.error('[PRB] confirmCardPayment error:', errorDetails);
-            
+
             // Log to help identify specific Stripe 400 causes
             if (error.code === 'amount_mismatch') {
               console.error('[PRB] AMOUNT_MISMATCH: PI amount differs from wallet total');
@@ -226,15 +227,15 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   useEffect(() => {
     if (!paymentRequest) return;
     const currentAmount = typeof amountCents === 'number' ? amountCents : 0;
-    
+
     // Always sync PaymentRequest total with current amount
-    try { 
-      paymentRequest.update({ total: { label: 'Tickets', amount: currentAmount } }); 
+    try {
+      paymentRequest.update({ total: { label: 'Tickets', amount: currentAmount } });
       console.log('[PRB] Updated PaymentRequest total:', { amount: currentAmount });
     } catch (e) {
       console.warn('[PRB] Failed to update PaymentRequest total:', e);
     }
-    
+
     // Clear cached PI if amount changed to prevent stale reuse
     if (cachedAmount !== null && cachedAmount !== currentAmount) {
       console.log('[PRB] Amount changed, clearing cached PI:', { old: cachedAmount, new: currentAmount });
@@ -246,12 +247,18 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   // If not ready yet or not enabled, show branded static image placeholder
   const renderPlaceholderImage = (
     <div
+      role="button"
+      aria-label="Apple Pay / Google Pay (disabled)"
+      onClick={() => {
+        if (onInvalidClick) onInvalidClick();
+      }}
       style={{
         position: 'relative',
         borderRadius: 8,
         border: '1px solid #e5e7eb',
         background: '#fff',
         padding: 6,
+        cursor: 'not-allowed',
       }}
       aria-disabled
     >
@@ -266,13 +273,13 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
           display: 'block',
         }}
       />
-      {/* Non-clickable overlay to indicate disabled state */}
+      {/* Click-capturing overlay to surface validation */}
       <div
+        onClick={() => { if (onInvalidClick) onInvalidClick(); }}
         style={{
           position: 'absolute',
           inset: 0,
           background: 'transparent',
-          cursor: 'not-allowed',
           borderRadius: 8,
         }}
       />
