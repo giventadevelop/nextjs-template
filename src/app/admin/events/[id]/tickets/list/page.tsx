@@ -1,4 +1,4 @@
-import { EventTicketTransactionDTO, EventTicketTransactionStatisticsDTO } from '@/types';
+import { EventTicketTransactionDTO, EventTicketTransactionStatisticsDTO, EventDetailsDTO } from '@/types';
 import { FaSearch, FaTicketAlt, FaEnvelope, FaUser, FaHashtag, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaUsers, FaPhotoVideo, FaTags, FaPercent, FaHome } from 'react-icons/fa';
 import Link from 'next/link';
 import React, { useState, useRef } from 'react';
@@ -6,6 +6,8 @@ import { Pagination } from '@/components/Pagination';
 import TicketPaginationClient from './TicketPaginationClient';
 import ReactDOM from 'react-dom';
 import TicketTableClient from './TicketTableClient';
+import { fetchEventDetailsServer } from '@/app/admin/ApiServerActions';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface SearchParams {
   page?: string;
@@ -89,11 +91,13 @@ export default async function TicketListPage({ params, searchParams }: { params:
   let totalCount = 0;
   let error: string | null = null;
   let statistics: EventTicketTransactionStatisticsDTO | null = null;
+  let eventDetails: EventDetailsDTO | null = null;
   try {
     const result = await fetchTickets(eventId, { page: page.toString(), pageSize: pageSize.toString(), email, transactionId, name });
     rows = Array.isArray(result.rows) ? result.rows : [];
     totalCount = result.totalCount;
     statistics = await fetchStatistics(eventId);
+    eventDetails = await fetchEventDetailsServer(Number(eventId));
   } catch (err: any) {
     error = err.message || 'Failed to load tickets';
   }
@@ -125,6 +129,18 @@ export default async function TicketListPage({ params, searchParams }: { params:
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-32 pb-8">
+      {/* Concise Event Summary */}
+      {eventDetails && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-gray-700">
+            <div><span className="font-semibold text-gray-600">Event ID:</span> {eventDetails.id}</div>
+            <div className="sm:col-span-2"><span className="font-semibold text-gray-600">Title:</span> {eventDetails.title}</div>
+            <div><span className="font-semibold text-gray-600">Start Date:</span> {formatInTimeZone(eventDetails.startDate, eventDetails.timezone, 'EEEE, MMMM d, yyyy')}</div>
+            <div><span className="font-semibold text-gray-600">End Date:</span> {formatInTimeZone(eventDetails.endDate || eventDetails.startDate, eventDetails.timezone, 'EEEE, MMMM d, yyyy')}</div>
+            <div><span className="font-semibold text-gray-600">Time:</span> {eventDetails.startTime} {eventDetails.endTime ? `- ${eventDetails.endTime}` : ''} ({formatInTimeZone(eventDetails.startDate, eventDetails.timezone, 'zzz')})</div>
+          </div>
+        </div>
+      )}
       {/* Responsive Button Group */}
       <div className="w-full">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1 sm:gap-2 mb-8 justify-items-stretch max-w-[280px] sm:max-w-4xl sm:mx-auto">
