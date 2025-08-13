@@ -37,7 +37,7 @@ async function fetchTickets(eventId: string, searchParams: SearchParams) {
   const pageSize = parseInt(searchParams.pageSize || PAGE_SIZE.toString(), 10);
   const query: Record<string, any> = {
     'eventId.equals': eventId,
-    _sort: 'createdAt,desc', // Use createdAt for proper sorting
+    sort: 'createdAt,desc', // Use createdAt for proper sorting
     page,
     size: pageSize,
   };
@@ -56,10 +56,10 @@ async function fetchTickets(eventId: string, searchParams: SearchParams) {
     createdAt: row.createdAt
   })));
 
-  // Fallback: Sort by purchaseDate descending if backend sorting doesn't work
+  // Fallback: Sort consistently by createdAt (descending) if backend sorting doesn't work
   const sortedRows = Array.isArray(rows) ? rows.sort((a: any, b: any) => {
-    const dateA = new Date(a.purchaseDate || a.createdAt || 0);
-    const dateB = new Date(b.purchaseDate || b.createdAt || 0);
+    const dateA = new Date(a.createdAt || 0);
+    const dateB = new Date(b.createdAt || 0);
     return dateB.getTime() - dateA.getTime(); // Descending order
   }) : [];
 
@@ -216,6 +216,7 @@ export default async function TicketListPage({ params, searchParams }: { params:
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Email</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Quantity</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Total</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-r border-gray-300">Date</th>
               <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-300">Status</th>
             </tr>
           </thead>
