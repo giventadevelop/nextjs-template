@@ -242,9 +242,7 @@ export default function TicketQrClient() {
         }
         queryParams.set('_t', Date.now().toString());
 
-        // Add skip_qr parameter to prevent BOTH desktop QR fetching AND API route QR fetching
-        // This prevents duplicate emails by ensuring QR is only fetched by mobile client
-        queryParams.set('skip_qr', 'true');
+        // Allow server to also fetch QR code (may send duplicate email, accepted for now)
         const apiUrl = `/api/event/success/process?${queryParams.toString()}`;
         console.log('[TicketQrClient] Making GET request to:', apiUrl);
         addApiLog(`Making GET request to: ${apiUrl}`);
@@ -289,7 +287,7 @@ export default function TicketQrClient() {
 
         // If not found, POST to create it
         // IMPORTANT: keep skip_qr=true to prevent server route from fetching and emailing
-        const postBody: any = { skip_qr: true };
+        const postBody: any = {};
         if (session_id) {
           postBody.session_id = session_id;
           console.log('[TicketQrClient] POST body with session_id:', postBody);

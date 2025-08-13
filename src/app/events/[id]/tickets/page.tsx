@@ -149,6 +149,9 @@ export default function TicketingPage() {
 
     if (newQuantity >= 0) {
       setSelectedTickets(prev => ({ ...prev, [ticketId]: newQuantity }));
+      // Clear email to force re-validation and PRB recalculation with new total
+      setEmail('');
+      if (emailError) setEmailError(false);
     }
   };
 
@@ -164,6 +167,10 @@ export default function TicketingPage() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   }, [email]);
+
+  // Derived flags used for validations and enabling/disabling actions
+  const hasTicketsSelected = Object.values(selectedTickets).some(q => q > 0);
+  const canCheckout = hasTicketsSelected && emailIsValid;
 
   const validateAndApplyDiscount = (code: string) => {
     if (Object.values(selectedTickets).every(q => q === 0)) {
@@ -652,25 +659,31 @@ export default function TicketingPage() {
               <div className="mt-6">
                 <div className="text-base font-extrabold text-gray-800 mb-3">OR</div>
                 <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
-                <button
-                  type="button"
+                {/* Wrapper captures clicks even when the button is disabled to surface validation errors */}
+                <div
+                  role="button"
+                  aria-label="Pay with credit card"
                   onClick={() => {
-                    if (!(Object.values(selectedTickets).some(q => q > 0) && emailIsValid)) {
+                    if (!canCheckout) {
                       if (!emailIsValid) setEmailError(true);
-                      if (Object.values(selectedTickets).every(q => q === 0)) {
-                        alert('Please select at least one ticket.');
-                        return;
-                      }
+                      if (!hasTicketsSelected) alert('Please select at least one ticket.');
                       return;
                     }
-                    handleCheckout();
                   }}
-                  className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isProcessing || Object.values(selectedTickets).every(q => q === 0) || !emailIsValid}
                 >
-                  <FaCreditCard className="mr-3" size={22} />
-                  Pay with credit card
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!canCheckout) return; // Guard (should be handled by wrapper)
+                      handleCheckout();
+                    }}
+                    className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isProcessing || !canCheckout}
+                  >
+                    <FaCreditCard className="mr-3" size={22} />
+                    Pay with credit card
+                  </button>
+                </div>
               </div>
             </div>
           </div>
