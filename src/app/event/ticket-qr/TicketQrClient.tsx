@@ -459,7 +459,7 @@ export default function TicketQrClient() {
   return (
     <div className="min-h-screen bg-gray-100" style={{ overflowX: 'hidden' }}>
 
-      {/* HERO SECTION */}
+      {/* HERO SECTION - styled to merge with header like success/tickets pages */}
       <section className="hero-section" style={{
         position: 'relative',
         marginTop: '0',
@@ -487,6 +487,7 @@ export default function TicketQrClient() {
             borderRadius: '0'
           }}
         />
+        <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
       </section>
 
       {/* Main content container */}
@@ -596,6 +597,25 @@ export default function TicketQrClient() {
               <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaMoneyBillWave /> Amount Paid</label>
               <p className="text-lg text-gray-800 font-medium">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</p>
             </div>
+            {transaction.discountAmount && transaction.discountAmount > 0 && (
+              <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Price Breakdown</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Original Amount:</span>
+                    <span className="text-gray-800">${(transaction.totalAmount ?? 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Discount:</span>
+                    <span className="text-green-600">-${transaction.discountAmount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-1">
+                    <span className="text-gray-800 font-semibold">Final Amount:</span>
+                    <span className="text-gray-800 font-semibold">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
