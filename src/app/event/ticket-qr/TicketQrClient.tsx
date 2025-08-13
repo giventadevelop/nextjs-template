@@ -288,7 +288,8 @@ export default function TicketQrClient() {
         }
 
         // If not found, POST to create it
-        const postBody: any = { skip_qr: true }; // Prevent desktop QR fetching
+        // IMPORTANT: keep skip_qr=true to prevent server route from fetching and emailing
+        const postBody: any = { skip_qr: true };
         if (session_id) {
           postBody.session_id = session_id;
           console.log('[TicketQrClient] POST body with session_id:', postBody);
@@ -327,9 +328,12 @@ export default function TicketQrClient() {
           addApiLog(`Transaction created successfully: ID ${postData.transaction.id}`);
           setResult(postData);
           setLoading(false);
-          // IMPORTANT: Trigger the single QR fetch after POST success as well (credit-card mobile flow)
-          addApiLog('Mobile client will now fetch QR code after POST (credit card flow)');
-          fetchQrCodeViaSingleton(postData);
+          // Trigger the single QR fetch after POST success (credit card / fallback)
+          // Guard with small delay to give backend a moment to finish QR prereqs
+          setTimeout(() => {
+            addApiLog('Mobile client will now fetch QR code after POST (credit card flow)');
+            fetchQrCodeViaSingleton(postData);
+          }, 300);
         }
       } catch (err: any) {
         if (!cancelled) {
@@ -597,7 +601,13 @@ export default function TicketQrClient() {
               <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaMoneyBillWave /> Amount Paid</label>
               <p className="text-lg text-gray-800 font-medium">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</p>
             </div>
-            {transaction.discountAmount && transaction.discountAmount > 0 && (
+            {(transaction.discountAmount ?? 0) > 0 && (
+              <div className="flex flex-col">
+                <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaTags /> Discount Applied</label>
+                <p className="text-lg text-green-600 font-medium">-${transaction.discountAmount.toFixed(2)}</p>
+              </div>
+            )}
+            {(transaction.discountAmount ?? 0) > 0 && (
               <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Price Breakdown</h3>
                 <div className="space-y-1 text-sm">

@@ -622,13 +622,13 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
               <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaMoneyBillWave /> Amount Paid</label>
               <p className="text-lg text-gray-800 font-medium">${(transaction.finalAmount ?? transaction.totalAmount ?? 0).toFixed(2)}</p>
             </div>
-            {transaction.discountAmount && transaction.discountAmount > 0 && (
+            {(transaction.discountAmount ?? 0) > 0 && (
               <div className="flex flex-col">
                 <label className="text-sm font-medium text-gray-500 flex items-center gap-2 mb-1"><FaTags /> Discount Applied</label>
                 <p className="text-lg text-green-600 font-medium">-${transaction.discountAmount.toFixed(2)}</p>
               </div>
             )}
-            {transaction.discountAmount && transaction.discountAmount > 0 && (
+            {(transaction.discountAmount ?? 0) > 0 && (
               <div className="col-span-1 md:col-span-2 bg-gray-50 p-4 rounded-lg">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Price Breakdown</h3>
                 <div className="space-y-1 text-sm">

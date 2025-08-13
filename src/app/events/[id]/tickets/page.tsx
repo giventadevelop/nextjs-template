@@ -32,7 +32,7 @@ export default function TicketingPage() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
+  const defaultHeroImageUrl = '/images/default_placeholder_hero_image.jpeg';
 
   useEffect(() => {
     async function fetchData() {
@@ -278,7 +278,113 @@ export default function TicketingPage() {
   };
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center text-xl">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col" style={{ overflowX: 'hidden' }}>
+        {/* HERO SECTION - Full width bleeding to header */}
+        <section className="hero-section" style={{
+          position: 'relative',
+          marginTop: '0',
+          backgroundColor: 'transparent',
+          minHeight: '400px',
+          overflow: 'hidden',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '80px 0 0 0'
+        }}>
+          <Image
+            src={heroImageUrl || defaultHeroImageUrl}
+            alt="Event Hero"
+            width={1200}
+            height={400}
+            className="hero-image object-cover"
+            style={{
+              margin: '0 auto',
+              padding: '0',
+              display: 'block',
+              width: '100%',
+              maxWidth: '100%',
+              height: 'auto',
+              objectFit: 'cover',
+              borderRadius: '0'
+            }}
+            priority
+          />
+          <div className="hero-overlay" style={{ opacity: 0.1, height: '5px', padding: '20' }}></div>
+        </section>
+
+        {/* Responsive Hero Image CSS */}
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .hero-image {
+              width: 100%;
+              max-width: 100%;
+              height: auto;
+              object-fit: cover;
+              object-position: center;
+              display: block;
+              margin: 0 auto;
+              padding: 0;
+              border-radius: 0;
+            }
+
+            .hero-section {
+              min-height: 15vh;
+              background-color: transparent !important;
+              padding: 80px 0 0 0 !important;
+              width: 100% !important;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              overflow: hidden;
+            }
+
+            @media (max-width: 768px) {
+              .hero-image {
+                width: 100%;
+                max-width: 100%;
+                height: auto;
+                padding: 0;
+                border-radius: 0;
+              }
+
+              .hero-section {
+                padding: 95px 0 15px 0 !important;
+                min-height: 12vh !important;
+              }
+            }
+
+            @media (max-width: 480px) {
+              .hero-image {
+                width: 100%;
+                padding: 0;
+                border-radius: 0;
+              }
+
+              .hero-section {
+                padding: 90px 0 10px 0 !important;
+                min-height: 10vh !important;
+              }
+            }
+          `
+        }} />
+
+        {/* Loading content - flex-grow to push footer down */}
+        <div className="flex-grow flex flex-col items-center justify-center min-h-[200px] p-6 animate-pulse" style={{ marginTop: '150px', paddingTop: '60px' }}>
+          <Image
+            src="/images/selling-tickets-vector-loading-image.jpg"
+            alt="Ticket Loading"
+            width={180}
+            height={180}
+            className="mb-4 rounded shadow-lg"
+            priority
+          />
+          <div className="text-xl font-bold text-teal-700 mb-2">Please wait while your tickets are being loaded...</div>
+          <div className="text-gray-600 text-base text-center">This may take a few moments.<br />Please do not close or refresh this page.</div>
+        </div>
+      </div>
+    );
   }
   if (!event) {
     return <div className="min-h-screen flex items-center justify-center text-xl text-red-600">Event not found.</div>;
