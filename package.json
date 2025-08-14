@@ -78,6 +78,7 @@
     "openai": "^4.95.0",
     "ora": "^8.2.0",
     "postcss": "^8.4.35",
+    "sharp": "^0.34.3",
     "tailwind-merge": "^3.2.0",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
