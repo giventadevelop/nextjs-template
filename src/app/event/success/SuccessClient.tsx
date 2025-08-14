@@ -278,9 +278,18 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       setError(null);
       try {
         console.log('[DESKTOP SUCCESS DEBUG] Desktop - starting data fetch');
-        console.log('[DESKTOP SUCCESS DEBUG] Fetching with session_id:', session_id);
-        // 1. Try to GET the transaction by session_id (idempotency)
-        const getUrl = `/api/event/success/process?session_id=${encodeURIComponent(session_id)}&_t=${Date.now()}`;
+        console.log('[DESKTOP SUCCESS DEBUG] Fetching with identifiers:', { session_id, payment_intent });
+        // 1. Try to GET the transaction by session_id or payment_intent (PRB/mobile style)
+        if (!session_id && !payment_intent) {
+          console.error('[DESKTOP SUCCESS DEBUG] Missing both session_id and payment_intent');
+          setError('Missing session ID or payment intent');
+          setLoading(false);
+          return;
+        }
+        const getQuery = session_id
+          ? `session_id=${encodeURIComponent(session_id)}`
+          : `pi=${encodeURIComponent(payment_intent as string)}`;
+        const getUrl = `/api/event/success/process?${getQuery}&_t=${Date.now()}`;
         console.log('[DESKTOP SUCCESS DEBUG] GET request URL:', getUrl);
 
         const getRes = await fetch(getUrl, {
@@ -309,7 +318,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
         }
         // 2. If not found, POST to create it
         console.log('[DESKTOP SUCCESS DEBUG] Making POST request to create transaction');
-        const postBody = { session_id };
+        const postBody = session_id ? { session_id } : { pi: payment_intent } as any;
         console.log('[DESKTOP SUCCESS DEBUG] POST body:', postBody);
 
         const postRes = await fetch("/api/event/success/process", {

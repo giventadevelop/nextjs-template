@@ -628,11 +628,12 @@ export default function TicketingPage() {
                 {/* Wallets: clickable even when disabled to show validation messages */}
                 <div
                   onClick={() => {
-                    if (!(Object.values(selectedTickets).some(q => q > 0) && emailIsValid)) {
-                      if (!emailIsValid) setEmailError(true);
-                      if (Object.values(selectedTickets).every(q => q === 0)) {
-                        alert('Please select at least one ticket.');
-                      }
+                    const hasTickets = Object.values(selectedTickets).some(q => q > 0);
+                    const validEmail = emailIsValid;
+                    console.log('[PRB VALIDATION] Placeholder clicked', { hasTickets, validEmail });
+                    if (!(hasTickets && validEmail)) {
+                      if (!validEmail) setEmailError(true);
+                      if (!hasTickets) alert('Please select at least one ticket.');
                     }
                   }}
                   role="button"
@@ -652,6 +653,7 @@ export default function TicketingPage() {
                     showPlaceholder
                     amountCents={Math.round(totalAmount * 100)}
                     onInvalidClick={() => {
+                      console.log('[PRB VALIDATION] onInvalidClick fired');
                       if (!emailIsValid) setEmailError(true);
                       if (!hasTicketsSelected) alert('Please select at least one ticket.');
                     }}

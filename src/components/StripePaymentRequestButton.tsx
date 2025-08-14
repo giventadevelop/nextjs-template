@@ -32,6 +32,19 @@ function InnerPRB({ cart, eventId, email, discountCodeId, enabled, showPlacehold
   const [processing, setProcessing] = useState(false);
   const [canMakePaymentResult, setCanMakePaymentResult] = useState<any>(null);
 
+  // When validations become invalid, tear down the live PaymentRequest so we render the placeholder that surfaces validation
+  useEffect(() => {
+    if (!enabled) {
+      console.log('[PRB VALIDATION] Disabling PRB due to invalid form. Tearing down PaymentRequest.');
+      setReady(false);
+      setEligible(false);
+      setPaymentRequest(null);
+      setClientSecret(null);
+      setCachedAmount(null);
+      setProcessing(false);
+    }
+  }, [enabled]);
+
   useEffect(() => {
     if (!stripe || !enabled) return;
 
