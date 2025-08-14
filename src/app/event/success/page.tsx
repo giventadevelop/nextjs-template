@@ -99,18 +99,19 @@ function formatTime(time: string): string {
   return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
 }
 
-export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string; pi?: string }> | { session_id?: string; pi?: string } }) {
+export default async function SuccessPage({ searchParams }: { searchParams: Promise<{ session_id?: string; pi?: string; payment_intent?: string; payment_intent_client_secret?: string; redirect_status?: string }> | { session_id?: string; pi?: string; payment_intent?: string; payment_intent_client_secret?: string; redirect_status?: string } }) {
   // Await searchParams for Next.js 15+ compatibility
   const resolvedParams = typeof searchParams.then === 'function' ? await searchParams : searchParams;
   const session_id = resolvedParams.session_id;
-  const pi = (resolvedParams as any).pi as string | undefined;
-  
+  // Support Stripe redirect params from Link/3DS: payment_intent, payment_intent_client_secret, redirect_status
+  const pi = (resolvedParams as any).pi || (resolvedParams as any).payment_intent as string | undefined;
+
   console.log('[SuccessPage SERVER] Received parameters:', {
     session_id,
     pi,
     resolvedParams
   });
-  
+
   if (!session_id && !pi) {
     console.log('[SuccessPage SERVER] Missing both session_id and pi - showing error');
     return (
@@ -118,7 +119,7 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         <div className="text-4xl text-red-500 mb-4">⚠️</div>
         <h1 className="text-2xl font-bold text-gray-800">Missing session ID or payment intent</h1>
         <p className="text-gray-600 mt-2">No session ID or payment intent was provided. Please check your payment link or contact support.</p>
-        <p className="text-gray-500 text-sm mt-2">Debug: session_id={session_id}, pi={pi}</p>
+        <p className="text-gray-500 text-sm mt-2">Debug: session_id={String(session_id || '')}, pi={String(pi || '')}</p>
       </div>
     );
   }
