@@ -86,6 +86,38 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
     }
   };
 
+  // Handle cancellation more robustly
+  const handleCancel = () => {
+    console.log('[DESKTOP ECE] Payment cancelled by user');
+
+    // Clear any pending payment state
+    if (elements) {
+      try {
+        elements.clear();
+        console.log('[DESKTOP ECE] Elements cleared after cancellation');
+      } catch (e) {
+        console.log('[DESKTOP ECE] Error clearing elements:', e);
+      }
+    }
+
+    // Reset confirmation state
+    setConfirming(false);
+
+    // Prevent any redirects by updating the URL without navigation
+    if (typeof window !== 'undefined') {
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.set('cancelled', 'true');
+      currentUrl.searchParams.set('timestamp', Date.now().toString());
+
+      // Update URL without triggering navigation
+      window.history.replaceState({}, '', currentUrl.toString());
+      console.log('[DESKTOP ECE] URL updated to prevent redirect after cancellation');
+    }
+
+    // Optionally show a message to the user
+    console.log('[DESKTOP ECE] Payment cancelled - user can try again');
+  };
+
   // Render Express Checkout Element if available; provide a fallback Pay button using PaymentElement
   return (
     <div className="w-full relative">
@@ -134,9 +166,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           // Now proceed with the Express Checkout confirmation
           await handleConfirm();
         }}
-        onCancel={() => {
-          console.log('[DESKTOP ECE] Express Checkout cancelled');
-        }}
+        onCancel={handleCancel}
         onError={(error) => {
           console.error('[DESKTOP ECE] Express Checkout error:', error);
           // Show user-friendly error message for Cash App and other wallet issues

@@ -11,6 +11,35 @@ import SuccessClient from './SuccessClient';
 import { getTenantId, getAppUrl } from '@/lib/env';
 import { fetchWithJwtRetry } from '@/lib/proxyHandler';
 
+// Function to verify payment intent status with Stripe
+async function verifyPaymentIntentStatus(paymentIntentId: string): Promise<{ status: string; succeeded: boolean }> {
+  try {
+    // Call our Stripe API to check the payment intent status
+    const response = await fetch(`${getAppUrl()}/api/stripe/verify-payment-intent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paymentIntentId }),
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to verify payment intent ${paymentIntentId}:`, await response.text());
+      return { status: 'unknown', succeeded: false };
+    }
+
+    const data = await response.json();
+    console.log(`Payment intent ${paymentIntentId} status:`, data.status);
+
+    return {
+      status: data.status,
+      succeeded: data.status === 'succeeded'
+    };
+  } catch (error) {
+    console.error('Error verifying payment intent status:', error);
+    return { status: 'error', succeeded: false };
+  }
+}
+
 // Function to check if transaction already exists on server side
 async function checkTransactionExistsServer(sessionId: string): Promise<{ exists: boolean; transaction?: any }> {
   try {
@@ -122,6 +151,20 @@ export default async function SuccessPage({ searchParams }: { searchParams: Prom
         <p className="text-gray-500 text-sm mt-2">Debug: session_id={String(session_id || '')}, pi={String(pi || '')}</p>
       </div>
     );
+  }
+
+  // If we have a payment intent, verify its status with Stripe
+  if (pi) {
+    console.log('[SuccessPage SERVER] Verifying payment intent status with Stripe...');
+    const { status, succeeded } = await verifyPaymentIntentStatus(pi);
+
+    if (!succeeded) {
+      console.log(`[SuccessPage SERVER] Payment intent ${pi} not succeeded (status: ${status}) - redirecting to tickets page`);
+      // Redirect back to tickets page if payment wasn't completed
+      redirect(`/events/3/tickets?payment_cancelled=true&pi=${pi}&status=${status}`);
+    }
+
+    console.log(`[SuccessPage SERVER] Payment intent ${pi} verified as succeeded`);
   }
 
   // Check if transaction already exists on server side

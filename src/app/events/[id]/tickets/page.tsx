@@ -30,8 +30,33 @@ export default function TicketingPage() {
   const [savedAmount, setSavedAmount] = useState(0);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showCancelledMessage, setShowCancelledMessage] = useState(false);
+  const [cancelledPaymentInfo, setCancelledPaymentInfo] = useState<any>(null);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Check for cancelled payment parameters
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const cancelled = urlParams.get('payment_cancelled');
+      const pi = urlParams.get('pi');
+      const status = urlParams.get('status');
+
+      if (cancelled === 'true' && pi) {
+        console.log('[TICKETS] Payment cancelled detected:', { pi, status });
+        setCancelledPaymentInfo({ pi, status });
+        setShowCancelledMessage(true);
+
+        // Clear the URL parameters to prevent showing the message again on refresh
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('payment_cancelled');
+        newUrl.searchParams.delete('pi');
+        newUrl.searchParams.delete('status');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+    }
+  }, []);
 
   const defaultHeroImageUrl = '/images/default_placeholder_hero_image.jpeg';
 
@@ -487,6 +512,44 @@ export default function TicketingPage() {
           }
         `
       }} />
+
+      {/* Cancelled Payment Message */}
+      {showCancelledMessage && (
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Payment Cancelled
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>Your payment was cancelled. You can try again with a different payment method.</p>
+                  {cancelledPaymentInfo && (
+                    <p className="mt-1 text-xs text-yellow-600">
+                      Payment ID: {cancelledPaymentInfo.pi} (Status: {cancelledPaymentInfo.status})
+                    </p>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelledMessage(false)}
+                    className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-md text-sm font-medium hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Event Details Card */}
         <div className="bg-teal-50 rounded-xl shadow-lg p-6 md:p-8 mb-8">
