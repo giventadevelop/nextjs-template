@@ -48,8 +48,22 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
   const handleConfirm = async () => {
     if (!stripe || !elements || !clientSecret) return;
     setConfirming(true);
+
     try {
+      // CRITICAL: Call elements.submit() first for validation
+      console.log('[DESKTOP ECE] Submitting elements for validation...');
+      const { error: submitError } = await elements.submit();
+
+      if (submitError) {
+        console.error("[DESKTOP ECE] Elements validation failed:", submitError);
+        alert(submitError.message || "Please check your payment details and try again.");
+        setConfirming(false);
+        return;
+      }
+
+      console.log('[DESKTOP ECE] Elements validation successful, confirming payment...');
       const returnUrl = typeof window !== 'undefined' ? `${window.location.origin}/event/success` : '/event/success';
+
       const result = await stripe.confirmPayment({
         elements,
         clientSecret,
@@ -57,9 +71,12 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           return_url: returnUrl, // absolute URL for redirect-based wallets (Link, 3DS)
         },
       });
+
       if ((result as any)?.error) {
         console.error("[DESKTOP ECE] confirmPayment error:", (result as any).error || result);
         alert((result as any).error?.message || "Payment failed. Please try again.");
+      } else {
+        console.log("[DESKTOP ECE] Payment confirmed successfully:", result);
       }
     } catch (e: any) {
       console.error("[DESKTOP ECE] confirmPayment threw:", e);
@@ -87,12 +104,34 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
       <div className="text-xs text-gray-500 mt-2 text-center">
         <p>💳 Available: Credit Card, Link, Cash App</p>
         <p>📱 Apple Pay & Google Pay require domain verification</p>
+        <p>✅ All payments validate form data before processing</p>
       </div>
 
       {/* @ts-ignore - element may lack TS in some versions */}
       <ExpressCheckoutElement
         onConfirm={async () => {
-          // With a prepared PI, ExpressCheckout can confirm via confirmPayment on our elements
+          console.log('[DESKTOP ECE] Express Checkout onConfirm triggered');
+          // For Express Checkout (Cash App, Link, etc.), we still need to validate elements
+          if (elements) {
+            try {
+              console.log('[DESKTOP ECE] Validating elements before Express Checkout confirmation...');
+              const { error: submitError } = await elements.submit();
+
+              if (submitError) {
+                console.error("[DESKTOP ECE] Elements validation failed for Express Checkout:", submitError);
+                alert(submitError.message || "Please check your payment details and try again.");
+                return;
+              }
+
+              console.log('[DESKTOP ECE] Elements validation successful for Express Checkout');
+            } catch (e) {
+              console.error("[DESKTOP ECE] Elements validation error for Express Checkout:", e);
+              alert("Payment validation failed. Please try again.");
+              return;
+            }
+          }
+
+          // Now proceed with the Express Checkout confirmation
           await handleConfirm();
         }}
         onCancel={() => {
@@ -128,7 +167,14 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
       />
 
       <div className="mt-3 bg-white border rounded-lg p-3">
-        <PaymentElement />
+        <PaymentElement
+          onReady={() => {
+            console.log('[DESKTOP ECE] PaymentElement ready');
+          }}
+          onChange={(event) => {
+            console.log('[DESKTOP ECE] PaymentElement changed:', event);
+          }}
+        />
         <button
           type="button"
           onClick={handleConfirm}
