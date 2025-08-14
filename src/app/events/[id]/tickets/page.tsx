@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { FaTags, FaCreditCard, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaMapPin, FaTicketAlt, FaUser, FaEnvelope, FaMoneyBillWave, FaReceipt } from 'react-icons/fa';
 import { Modal } from '@/components/Modal';
 import { StripePaymentRequestButton } from '@/components/StripePaymentRequestButton';
+import StripeDesktopCheckout from '@/components/StripeDesktopCheckout';
 import { formatInTimeZone } from 'date-fns-tz';
 import LocationDisplay from '@/components/LocationDisplay';
 
@@ -623,23 +624,11 @@ export default function TicketingPage() {
                 {emailError && <p className="text-red-500 text-xs mt-1">Please enter a valid email address.</p>}
               </div>
 
-              {/* Wallets (Apple Pay / Google Pay) visible immediately; disabled overlay until valid */}
+              {/* Wallets: Desktop uses Express Checkout (Apple/Google/Link); Mobile uses PRB */}
               <div className="mt-4">
-                {/* Wallets: clickable even when disabled to show validation messages */}
-                <div
-                  onClick={() => {
-                    const hasTickets = Object.values(selectedTickets).some(q => q > 0);
-                    const validEmail = emailIsValid;
-                    console.log('[PRB VALIDATION] Placeholder clicked', { hasTickets, validEmail });
-                    if (!(hasTickets && validEmail)) {
-                      if (!validEmail) setEmailError(true);
-                      if (!hasTickets) alert('Please select at least one ticket.');
-                    }
-                  }}
-                  role="button"
-                  aria-label="Apple Pay / Google Pay"
-                >
-                  <StripePaymentRequestButton
+                {/* Simple viewport check; SSR-safe since this is a client component */}
+                {typeof window !== 'undefined' && window.innerWidth > 768 ? (
+                  <StripeDesktopCheckout
                     cart={Object.entries(selectedTickets)
                       .filter(([, quantity]) => quantity > 0)
                       .map(([ticketId, quantity]) => ({
@@ -650,16 +639,48 @@ export default function TicketingPage() {
                     email={email}
                     discountCodeId={appliedDiscount?.id ?? null}
                     enabled={canCheckout}
-                    showPlaceholder
                     amountCents={Math.round(totalAmount * 100)}
                     onInvalidClick={() => {
-                      console.log('[PRB VALIDATION] onInvalidClick fired');
                       if (!emailIsValid) setEmailError(true);
                       if (!hasTicketsSelected) alert('Please select at least one ticket.');
                     }}
                   />
-                </div>
-                <div className="text-xs text-gray-700 mt-2">Apple/Google Pay</div>
+                ) : (
+                  <div
+                    onClick={() => {
+                      const hasTickets = Object.values(selectedTickets).some(q => q > 0);
+                      const validEmail = emailIsValid;
+                      console.log('[PRB VALIDATION] Placeholder clicked', { hasTickets, validEmail });
+                      if (!(hasTickets && validEmail)) {
+                        if (!validEmail) setEmailError(true);
+                        if (!hasTickets) alert('Please select at least one ticket.');
+                      }
+                    }}
+                    role="button"
+                    aria-label="Apple Pay / Google Pay"
+                  >
+                    <StripePaymentRequestButton
+                      cart={Object.entries(selectedTickets)
+                        .filter(([, quantity]) => quantity > 0)
+                        .map(([ticketId, quantity]) => ({
+                          ticketType: { id: parseInt(ticketId) },
+                          quantity,
+                        }))}
+                      eventId={String(eventId)}
+                      email={email}
+                      discountCodeId={appliedDiscount?.id ?? null}
+                      enabled={canCheckout}
+                      showPlaceholder
+                      amountCents={Math.round(totalAmount * 100)}
+                      onInvalidClick={() => {
+                        console.log('[PRB VALIDATION] onInvalidClick fired');
+                        if (!emailIsValid) setEmailError(true);
+                        if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                      }}
+                    />
+                  </div>
+                )}
+                <div className="text-xs text-gray-700 mt-2">Apple/Google/Link</div>
               </div>
 
               <div className="mt-6">
