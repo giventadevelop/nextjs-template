@@ -480,11 +480,17 @@ export async function processStripeSessionServer(
 }
 
 export async function fetchTransactionQrCode(eventId: number, transactionId: number): Promise<{ qrCodeImageUrl: string }> {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const baseUrl = getAppUrl();
 
   // Get the current domain/host URL prefix for email context
   const emailHostUrlPrefix = getEmailHostUrlPrefix();
-  
+
+  // Validate that we have a valid email host URL prefix
+  if (!emailHostUrlPrefix) {
+    console.error('[fetchTransactionQrCode] No emailHostUrlPrefix available');
+    throw new Error('Email host URL prefix is required for QR code generation');
+  }
+
   // Backend expects Base64 encoded emailHostUrlPrefix in URL path
   const encodedEmailHostUrlPrefix = Buffer.from(emailHostUrlPrefix).toString('base64');
 
@@ -530,13 +536,13 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
       });
       throw new Error(`QR code fetch failed: ${response.status} - ${errorBody}`);
     }
-    
+
     // Always treat as plain text URL
     const url = await response.text();
     console.log('[fetchTransactionQrCode] SUCCESS - QR code URL received:', url);
     console.log('[fetchTransactionQrCode] QR URL length:', url.length);
     console.log('[fetchTransactionQrCode] QR URL starts with:', url.substring(0, 100));
-    
+
     // Check for empty response from backend
     if (!url || url.trim().length === 0) {
       console.error('[fetchTransactionQrCode] CRITICAL: Backend returned empty QR URL!', {
@@ -551,7 +557,7 @@ export async function fetchTransactionQrCode(eventId: number, transactionId: num
       // Still return the empty string but log the critical issue
       return { qrCodeImageUrl: '' };
     }
-    
+
     return { qrCodeImageUrl: url.trim() };
   } catch (error: any) {
     console.error('[fetchTransactionQrCode] EXCEPTION during QR fetch:', {

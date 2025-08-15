@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { formatInTimeZone } from "date-fns-tz";
 import LocationDisplay from '@/components/LocationDisplay';
+import { sendTicketEmailAsync } from '@/lib/emailUtils';
 
 function formatTime(time: string): string {
   if (!time) return '';
@@ -240,6 +241,7 @@ export default function TicketQrClient() {
           console.log('[TicketQrClient] Added pi to query params');
           addApiLog('Added payment_intent to query params');
         }
+        queryParams.set('skip_qr', 'true'); // Prevent duplicate emails
         queryParams.set('_t', Date.now().toString());
 
         // Allow server to also fetch QR code (may send duplicate email, accepted for now)
@@ -290,10 +292,12 @@ export default function TicketQrClient() {
         const postBody: any = {};
         if (session_id) {
           postBody.session_id = session_id;
+          postBody.skip_qr = true; // Prevent duplicate emails
           console.log('[TicketQrClient] POST body with session_id:', postBody);
           addApiLog(`POST body prepared with session_id: ${session_id}`);
         } else if (payment_intent) {
           postBody.pi = payment_intent;
+          postBody.skip_qr = true; // Prevent duplicate emails
           console.log('[TicketQrClient] POST body with pi:', postBody);
           addApiLog(`POST body prepared with payment_intent: ${payment_intent}`);
         }
@@ -404,6 +408,22 @@ export default function TicketQrClient() {
       } else if (result.qrCodeImageUrl) {
         console.log('[SINGLETON FETCH] QR code fetched successfully via singleton');
         setQrCodeData(result);
+
+        // Send ticket email after QR code is successfully fetched
+        if (transaction.email && eventDetails.id) {
+          console.log('[MOBILE QR] QR code loaded successfully, sending ticket email:', {
+            eventId: eventDetails.id,
+            transactionId: transaction.id,
+            email: transaction.email
+          });
+
+          // Send email asynchronously after QR code is displayed
+          sendTicketEmailAsync({
+            eventId: eventDetails.id,
+            transactionId: transaction.id,
+            email: transaction.email
+          });
+        }
       } else {
         console.log('[SINGLETON FETCH] Unexpected result from singleton');
         setQrError('QR code not available. Please check your email.');
@@ -563,6 +583,17 @@ export default function TicketQrClient() {
                 ) : (
                   <div className="text-gray-500">QR code not available.</div>
                 )}
+
+                {/* Email Status Section */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <FaEnvelope className="text-sm" />
+                    <span className="text-sm font-medium">Ticket email sent to {transaction.email}</span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Check your email for your tickets. If you don't see it, check your spam folder.
+                  </p>
+                </div>
               </div>
             </>
           )}

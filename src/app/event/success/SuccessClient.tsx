@@ -9,6 +9,7 @@ import {
 import { formatInTimeZone } from "date-fns-tz";
 import LocationDisplay from '@/components/LocationDisplay';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { sendTicketEmailAsync } from '@/lib/emailUtils';
 
 interface SuccessClientProps {
   session_id: string;
@@ -127,111 +128,37 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
       }, 2000);
 
       return;
-    } else {
-      console.log('[DESKTOP SUCCESS DEBUG] Desktop browser detected - staying on success page');
     }
+
+    // Desktop flow - continue with normal success page
+    console.log('[SuccessClient] Desktop browser detected - staying on success page');
   }, [session_id, payment_intent, router]);
 
-  // Hero image is handled by the HydrationSafeHeroImage component
-
-  // Check if we were redirected due to already processed payment
+  // Email sending effect for desktop flow - trigger when QR code is successfully loaded
   useEffect(() => {
-    const paymentStatus = searchParams?.get('payment');
-    if (paymentStatus === 'already-processed') {
-      console.log('User was redirected due to already processed payment');
-      // You could show a toast or notification here if needed
-    }
-  }, [searchParams]);
+    if (typeof window === 'undefined') return;
 
-  // Handle refresh detection - only redirect on actual refresh attempts
-  useEffect(() => {
-    const url = new URL(window.location.href);
-    const pi = url.searchParams.get('pi');
+    // Only send email in desktop flow when QR code is successfully loaded
+    if (result?.transaction && result?.eventDetails && result?.qrCodeData && !result?.isMobileBrief) {
+      const { transaction, eventDetails } = result;
 
-    // Use either session_id or pi for tracking
-    const identifier = session_id || pi;
-    if (!identifier) return;
+      // Check if we have the required data for email sending
+      if (transaction.id && eventDetails.id && transaction.email) {
+        console.log('[DESKTOP SUCCESS] QR code loaded successfully, sending ticket email:', {
+          eventId: eventDetails.id,
+          transactionId: transaction.id,
+          email: transaction.email
+        });
 
-    const completedKey = `success_completed_${identifier}`;
-
-    // Check if this transaction was already completed and we're seeing it again
-    const wasCompleted = sessionStorage.getItem(completedKey);
-
-    // Only redirect if we're sure this is a refresh AND the transaction was previously completed
-    if (wasCompleted) {
-      // Use a more conservative approach - only redirect if it's clearly a refresh
-      const isDefiniteRefresh = (
-        performance.navigation?.type === 1 || // Modern browsers: 1 = TYPE_RELOAD
-        (performance as any).navigation?.type === 'reload' // Some browsers use string
-      );
-
-      // Add a delay to ensure it's not just a quick navigation
-      if (isDefiniteRefresh) {
-        console.log('Success page refresh detected after completion - redirecting to home');
-        setTimeout(() => {
-          window.location.replace('/?payment=already-processed');
-        }, 100);
-        return;
-      } else {
-        console.log('Success page revisited but not a refresh - allowing access');
+        // Send email asynchronously after QR code is displayed
+        sendTicketEmailAsync({
+          eventId: eventDetails.id,
+          transactionId: transaction.id,
+          email: transaction.email
+        });
       }
     }
-
-    console.log('Success page accessed for:', identifier);
-  }, [session_id]);
-
-  // Enhanced back button prevention
-  useEffect(() => {
-    console.log('Setting up enhanced navigation prevention...');
-
-    // Check if we're on a Stripe URL and redirect
-    if (window.location.href.includes('checkout.stripe.com')) {
-      console.log('Detected Stripe URL - redirecting to home');
-      window.location.replace('/');
-      return;
-    }
-
-    // Enhanced back button prevention
-    const handlePopState = (e: PopStateEvent) => {
-      console.log('Back button detected - preventing navigation and redirecting to home');
-      e.preventDefault();
-      window.location.replace('/');
-    };
-
-    // Handle page reload attempts - redirect to home instead
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Let the refresh detection in the other useEffect handle this
-      console.log('Page unload detected - refresh detection will handle redirect');
-    };
-
-    // Enhanced keydown prevention for F5 and Ctrl+R
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
-        console.log('Refresh attempt detected - preventing');
-        e.preventDefault();
-        window.location.replace('/');
-        return false;
-      }
-    };
-
-    // Add event listeners
-    window.addEventListener('popstate', handlePopState);
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    // Push current state to prevent back navigation
-    window.history.pushState(null, '', window.location.href);
-    window.history.pushState(null, '', window.location.href);
-
-    console.log('Enhanced navigation prevention setup complete');
-
-    // Cleanup
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
+  }, [result]);
 
   // Helper to get ticket number from either camelCase or snake_case, or fallback to 'TKTN'+id
   function getTicketNumber(transaction: any) {
@@ -242,24 +169,7 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
     );
   }
 
-  // Call desktop debug endpoint to verify flow is working
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const debugDesktop = async () => {
-        try {
-          console.log('[DESKTOP SUCCESS DEBUG] Calling desktop debug endpoint...');
-          const response = await fetch(`/api/debug/mobile?page=success&session_id=${session_id || 'none'}&payment_intent=${payment_intent || 'none'}&type=desktop`);
-          const data = await response.json();
-          console.log('[DESKTOP SUCCESS DEBUG] Debug response:', data);
-        } catch (error) {
-          console.error('[DESKTOP SUCCESS DEBUG] Debug endpoint error:', error);
-        }
-      };
-      debugDesktop();
-    }
-  }, [session_id, payment_intent]);
-
-  // Desktop-only data fetching - mobile users use the brief success flow
+  // Data fetching effect for desktop flow
   useEffect(() => {
     // Skip data fetching for mobile users - they get the brief success page
     if (typeof window !== 'undefined') {
@@ -595,6 +505,17 @@ export default function SuccessClient({ session_id, payment_intent }: SuccessCli
                 ) : (
                   <div className="text-gray-500">QR code not available.</div>
                 )}
+
+                {/* Email Status Section */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <FaEnvelope className="text-sm" />
+                    <span className="text-sm font-medium">Ticket email sent to {transaction.email}</span>
+                  </div>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Check your email for your tickets. If you don't see it, check your spam folder.
+                  </p>
+                </div>
               </div>
             </>
           )}

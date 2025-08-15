@@ -32,6 +32,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
   const elements = useElements();
   const [confirming, setConfirming] = useState(false);
   const [expressCheckoutReady, setExpressCheckoutReady] = useState(false);
+  const [paymentMethodSelected, setPaymentMethodSelected] = useState(false);
 
   // Add timeout to prevent stuck loading state
   useEffect(() => {
@@ -55,8 +56,41 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
       const { error: submitError } = await elements.submit();
 
       if (submitError) {
-        console.error("[DESKTOP ECE] Elements validation failed:", submitError);
-        alert(submitError.message || "Please check your payment details and try again.");
+        // Handle empty error object case (common when no payment method selected)
+        if (!submitError.type && !submitError.message) {
+          console.warn("[DESKTOP ECE] Payment validation failed: No payment method selected");
+          alert("Please select a payment method before proceeding. You can choose from the Link, Cash App, or credit card options above.");
+          setConfirming(false);
+          return;
+        }
+
+        // Log the actual error details for debugging
+        console.error("[DESKTOP ECE] Elements validation failed:", {
+          type: submitError.type || 'unknown',
+          message: submitError.message || 'No message provided',
+          code: submitError.code || 'No code provided',
+          fullError: submitError
+        });
+
+        // Provide more specific error messages based on error type
+        let errorMessage = "Please check your payment details and try again.";
+
+        if (submitError.type === 'validation_error') {
+          if (submitError.message?.includes('payment_method') || submitError.message?.includes('method')) {
+            errorMessage = "Please select a payment method before proceeding.";
+          } else if (submitError.message?.includes('card')) {
+            errorMessage = "Please check your card details and try again.";
+          } else {
+            errorMessage = submitError.message || "Please complete all required fields.";
+          }
+        } else if (submitError.type === 'card_error') {
+          errorMessage = submitError.message || "Card validation failed. Please check your details.";
+        } else if (submitError.type === 'api_error') {
+          errorMessage = "Payment service error. Please try again.";
+        }
+
+        // Show user-friendly error message
+        alert(errorMessage);
         setConfirming(false);
         return;
       }
@@ -74,13 +108,40 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
 
       if ((result as any)?.error) {
         console.error("[DESKTOP ECE] confirmPayment error:", (result as any).error || result);
-        alert((result as any).error?.message || "Payment failed. Please try again.");
+
+        // Provide more specific error messages for payment confirmation failures
+        let errorMessage = "Payment failed. Please try again.";
+        const paymentError = (result as any).error;
+
+        if (paymentError?.type === 'card_error') {
+          errorMessage = paymentError.message || "Card payment failed. Please check your card details.";
+        } else if (paymentError?.type === 'validation_error') {
+          errorMessage = paymentError.message || "Payment validation failed. Please check your details.";
+        } else if (paymentError?.type === 'api_error') {
+          errorMessage = "Payment service error. Please try again later.";
+        } else if (paymentError?.code === 'payment_intent_unexpected_state') {
+          errorMessage = "Payment already processed. Please check your email for confirmation.";
+        }
+
+        alert(errorMessage);
       } else {
         console.log("[DESKTOP ECE] Payment confirmed successfully:", result);
       }
     } catch (e: any) {
       console.error("[DESKTOP ECE] confirmPayment threw:", e);
-      alert(e?.message || "Payment failed. Please try again.");
+
+      // Handle specific error types
+      let errorMessage = "Payment failed. Please try again.";
+
+      if (e?.type === 'StripeInvalidRequestError') {
+        errorMessage = "Invalid payment request. Please check your details.";
+      } else if (e?.message?.includes('network')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (e?.message) {
+        errorMessage = e.message;
+      }
+
+      alert(errorMessage);
     } finally {
       setConfirming(false);
     }
@@ -93,10 +154,10 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
     // Clear any pending payment state
     if (elements) {
       try {
-        elements.clear();
-        console.log('[DESKTOP ECE] Elements cleared after cancellation');
+        // Note: elements.clear() doesn't exist, we'll just reset the confirmation state
+        console.log('[DESKTOP ECE] Elements state reset after cancellation');
       } catch (e) {
-        console.log('[DESKTOP ECE] Error clearing elements:', e);
+        console.log('[DESKTOP ECE] Error resetting elements state:', e);
       }
     }
 
@@ -137,52 +198,71 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         <p>💳 Available: Credit Card, Link, Cash App</p>
         <p>📱 Apple Pay & Google Pay require domain verification</p>
         <p>✅ All payments validate form data before processing</p>
+        <p className="text-orange-600 font-medium mt-1">⚠️ Please select a payment method above before clicking Pay Now</p>
       </div>
 
       {/* @ts-ignore - element may lack TS in some versions */}
       <ExpressCheckoutElement
         onConfirm={async () => {
-          console.log('[DESKTOP ECE] Express Checkout onConfirm triggered');
-          // For Express Checkout (Cash App, Link, etc.), we still need to validate elements
-          if (elements) {
-            try {
-              console.log('[DESKTOP ECE] Validating elements before Express Checkout confirmation...');
-              const { error: submitError } = await elements.submit();
+          // CRITICAL: Call elements.submit() first for validation
+          if (!elements) {
+            console.error('[DESKTOP ECE] Elements not available for validation');
+            alert("Payment system not ready. Please refresh the page and try again.");
+            return;
+          }
 
-              if (submitError) {
-                console.error("[DESKTOP ECE] Elements validation failed for Express Checkout:", submitError);
-                alert(submitError.message || "Please check your payment details and try again.");
+          try {
+            console.log('[DESKTOP ECE] Express Checkout onConfirm - validating elements...');
+            const { error: submitError } = await elements.submit();
+
+            if (submitError) {
+              // Handle empty error object case (common when no payment method selected)
+              if (!submitError.type && !submitError.message) {
+                console.warn("[DESKTOP ECE] Express Checkout validation failed: No payment method selected");
+                alert("Please select a payment method before proceeding. You can choose from the Link, Cash App, or credit card options above.");
                 return;
               }
 
-              console.log('[DESKTOP ECE] Elements validation successful for Express Checkout');
-            } catch (e) {
-              console.error("[DESKTOP ECE] Elements validation error for Express Checkout:", e);
-              alert("Payment validation failed. Please try again.");
+              // Log the actual error details for debugging
+              console.error("[DESKTOP ECE] Express Checkout validation failed:", {
+                type: submitError.type || 'unknown',
+                message: submitError.message || 'No message provided',
+                code: submitError.code || 'No code provided',
+                fullError: submitError
+              });
+
+              // Provide specific error message for validation failures
+              let errorMessage = "Please check your payment details and try again.";
+
+              if (submitError.type === 'validation_error') {
+                if (submitError.message?.includes('payment_method') || submitError.message?.includes('method')) {
+                  errorMessage = "Please select a payment method before proceeding.";
+                } else if (submitError.message?.includes('card')) {
+                  errorMessage = "Please check your card details and try again.";
+                } else {
+                  errorMessage = submitError.message || "Please complete all required fields.";
+                }
+              } else if (submitError.type === 'card_error') {
+                errorMessage = submitError.message || "Card validation failed. Please check your details.";
+              } else if (submitError.type === 'api_error') {
+                errorMessage = "Payment service error. Please try again.";
+              }
+
+              alert(errorMessage);
               return;
             }
+
+            console.log('[DESKTOP ECE] Elements validation successful for Express Checkout');
+          } catch (e) {
+            console.error("[DESKTOP ECE] Elements validation error for Express Checkout:", e);
+            alert("Payment validation failed. Please try again.");
+            return;
           }
 
           // Now proceed with the Express Checkout confirmation
           await handleConfirm();
         }}
         onCancel={handleCancel}
-        onError={(error) => {
-          console.error('[DESKTOP ECE] Express Checkout error:', error);
-          // Show user-friendly error message for Cash App and other wallet issues
-          let message = 'This payment method is not available right now. Please try using a credit card instead.';
-
-          // Handle specific error types
-          if (error?.type === 'validation_error') {
-            message = 'Payment validation failed. Please check your details and try again.';
-          } else if (error?.type === 'card_error') {
-            message = 'Card payment failed. Please try a different card or payment method.';
-          } else if (error?.type === 'api_error') {
-            message = 'Payment service temporarily unavailable. Please try again in a moment.';
-          }
-
-          alert(message);
-        }}
         onReady={() => {
           console.log('[DESKTOP ECE] Express Checkout ready');
           setExpressCheckoutReady(true);
@@ -197,21 +277,45 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
       />
 
       <div className="mt-3 bg-white border rounded-lg p-3">
+        {/* Payment method selection status */}
+        <div className="mb-3 text-sm">
+          {paymentMethodSelected ? (
+            <div className="flex items-center text-green-600">
+              <span className="mr-2">✅</span>
+              Payment method selected - Ready to proceed
+            </div>
+          ) : (
+            <div className="flex items-center text-orange-600">
+              <span className="mr-2">⚠️</span>
+              Please select a payment method above
+            </div>
+          )}
+        </div>
+
         <PaymentElement
           onReady={() => {
             console.log('[DESKTOP ECE] PaymentElement ready');
           }}
           onChange={(event) => {
             console.log('[DESKTOP ECE] PaymentElement changed:', event);
+            // Track if a payment method is selected
+            if (event.complete) {
+              setPaymentMethodSelected(true);
+            } else {
+              setPaymentMethodSelected(false);
+            }
           }}
         />
         <button
           type="button"
-          onClick={handleConfirm}
-          className="mt-3 w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-3 px-4 rounded-md hover:from-teal-600 hover:to-green-600 disabled:opacity-60"
-          disabled={confirming}
+          onClick={paymentMethodSelected ? handleConfirm : () => {
+            alert("Please select a payment method first. You can choose from the Link, Cash App, or credit card options above.");
+          }}
+          className="mt-3 w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-3 px-4 rounded-md hover:from-teal-600 hover:to-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
+          disabled={confirming || !paymentMethodSelected}
         >
-          {confirming ? 'Processing…' : 'Pay now'}
+          {confirming ? 'Processing…' :
+            !paymentMethodSelected ? 'Select a payment method first' : 'Pay Now'}
         </button>
       </div>
     </div>

@@ -177,7 +177,12 @@ export default function TicketingPage() {
       setSelectedTickets(prev => ({ ...prev, [ticketId]: newQuantity }));
       // Clear email to force re-validation and PRB recalculation with new total
       setEmail('');
-      if (emailError) setEmailError(false);
+      // Trigger immediate email validation to show user they need to enter email
+      if (newQuantity > 0) {
+        setEmailError(true); // Show email error immediately when tickets are selected
+      } else {
+        setEmailError(false); // Hide email error when no tickets are selected
+      }
     }
   };
 
@@ -669,6 +674,16 @@ export default function TicketingPage() {
 
               {/* Email and Checkout */}
               <div>
+                {/* Show requirement indicator when tickets are selected */}
+                {hasTicketsSelected && (
+                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center text-blue-700 text-sm">
+                      <span className="mr-2">📧</span>
+                      <span>Email required to enable payment options</span>
+                    </div>
+                  </div>
+                )}
+
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email for ticket confirmation
                 </label>
@@ -684,7 +699,11 @@ export default function TicketingPage() {
                   required
                   placeholder="you@example.com"
                 />
-                {emailError && <p className="text-red-500 text-xs mt-1">Please enter a valid email address.</p>}
+                {emailError && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {email ? 'Please enter a valid email address.' : 'Please enter your email address to proceed with payment.'}
+                  </p>
+                )}
               </div>
 
               {/* Wallets: Desktop uses Express Checkout (Apple/Google/Link); Mobile uses PRB */}
