@@ -199,6 +199,35 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         <p>📱 Apple Pay & Google Pay require domain verification</p>
         <p>✅ All payments validate form data before processing</p>
         <p className="text-orange-600 font-medium mt-1">⚠️ Please select a payment method above before clicking Pay Now</p>
+
+        {/* Configuration Status */}
+        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+          <p className="font-medium text-blue-800 mb-1">🔧 Apple Pay & Google Pay Setup Status:</p>
+          <div className="text-left space-y-1">
+            <div className="flex items-center">
+              <span className="mr-2">🌐</span>
+              <span>Domain registered: <span className="font-medium">✅ adwiise.com</span></span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-2">🔑</span>
+              <span>Stripe account: <span className="font-medium">✅ US, Live Mode</span></span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-2">⚙️</span>
+              <span>Google Pay enabled: <span className="font-medium text-orange-600">⏳ Check Dashboard</span></span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-2">📱</span>
+              <span>Apple Pay enabled: <span className="font-medium text-orange-600">⏳ Check Dashboard</span></span>
+            </div>
+          </div>
+          <p className="text-blue-700 mt-2 text-center">
+            <a href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener noreferrer"
+              className="underline hover:text-blue-800">
+              🔗 Go to Stripe Dashboard → Settings → Payment methods
+            </a>
+          </p>
+        </div>
       </div>
 
       {/* @ts-ignore - element may lack TS in some versions */}
@@ -263,9 +292,45 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           await handleConfirm();
         }}
         onCancel={handleCancel}
-        onReady={() => {
+        onReady={({ availablePaymentMethods }) => {
           console.log('[DESKTOP ECE] Express Checkout ready');
+          console.log('[DESKTOP ECE] Available payment methods:', availablePaymentMethods);
           setExpressCheckoutReady(true);
+
+          // Enhanced debugging for payment methods
+          if (availablePaymentMethods) {
+            console.log('[DESKTOP ECE] === PAYMENT METHODS DEBUG ===');
+            console.log('[DESKTOP ECE] Available methods:', Object.keys(availablePaymentMethods));
+
+            // Check specific payment methods
+            if (availablePaymentMethods.applePay) {
+              console.log('[DESKTOP ECE] ✅ Apple Pay: Available');
+            } else {
+              console.log('[DESKTOP ECE] ❌ Apple Pay: Not available');
+              console.log('[DESKTOP ECE]    - Requires HTTPS in production');
+              console.log('[DESKTOP ECE]    - Requires supported browser (Safari, Chrome on MacOS)');
+            }
+
+            if (availablePaymentMethods.googlePay) {
+              console.log('[DESKTOP ECE] ✅ Google Pay: Available');
+            } else {
+              console.log('[DESKTOP ECE] ❌ Google Pay: Not available');
+              console.log('[DESKTOP ECE]    - Requires domain verification in Stripe Dashboard');
+              console.log('[DESKTOP ECE]    - Requires HTTPS in production');
+              console.log('[DESKTOP ECE]    - Requires supported browser (Chrome, Edge, Firefox)');
+            }
+
+            if (availablePaymentMethods.link) {
+              console.log('[DESKTOP ECE] ✅ Link: Available');
+            } else {
+              console.log('[DESKTOP ECE] ❌ Link: Not available');
+            }
+
+            console.log('[DESKTOP ECE] ================================');
+          } else {
+            console.log('[DESKTOP ECE] ⚠️ No payment methods available');
+            console.log('[DESKTOP ECE] Check Stripe Dashboard → Settings → Payment methods');
+          }
 
           // Log available payment methods for debugging
           console.log('[DESKTOP ECE] Note: Google Pay manifest errors in console are expected if domain not verified in Stripe');

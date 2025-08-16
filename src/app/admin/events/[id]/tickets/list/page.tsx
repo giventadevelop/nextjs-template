@@ -186,6 +186,10 @@ export default async function TicketListPage({ params, searchParams }: { params:
             <span className="text-2xl font-bold text-blue-700">{statistics ? `$${statistics.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}</span>
           </div>
           <div className="flex flex-col items-center min-w-[120px]">
+            <span className="text-xs text-gray-500">Net Amount</span>
+            <span className="text-2xl font-bold text-green-700">{statistics ? `$${statistics.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '--'}</span>
+          </div>
+          <div className="flex flex-col items-center min-w-[120px]">
             <span className="text-xs text-gray-500">By Status</span>
             {statistics ? (
               <div className="flex flex-col gap-1 text-sm mt-1">

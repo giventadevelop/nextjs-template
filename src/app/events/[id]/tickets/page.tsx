@@ -170,8 +170,19 @@ export default function TicketingPage() {
     const ticketType = ticketTypes.find(t => t.id === ticketId);
     if (!ticketType) return;
 
-    const available = ticketType.availableQuantity ?? Infinity;
-    const newQuantity = Math.max(0, Math.min(quantity, available));
+    // Check if completely sold out
+    const remaining = ticketType.remainingQuantity ?? 0;
+    const isSoldOut = remaining <= 0;
+
+    if (isSoldOut) {
+      console.log(`Cannot select tickets for ${ticketType.name} - sold out`);
+      return;
+    }
+
+    // Calculate the maximum quantity that can be selected
+    const maxOrderQuantity = ticketType.maxQuantityPerOrder ?? 10;
+    const maxSelectable = Math.min(remaining, maxOrderQuantity);
+    const newQuantity = Math.max(0, Math.min(quantity, maxSelectable));
 
     if (newQuantity >= 0) {
       setSelectedTickets(prev => ({ ...prev, [ticketId]: newQuantity }));
@@ -193,6 +204,13 @@ export default function TicketingPage() {
     }, 0);
   };
 
+  const isTicketTypeAvailable = (ticketType: any, quantity: number) => {
+    if (!ticketType) return false;
+    const remaining = ticketType.remainingQuantity ?? 0;
+    const maxOrderQuantity = ticketType.maxQuantityPerOrder ?? 10;
+    return remaining > 0 && remaining >= Math.min(quantity, maxOrderQuantity);
+  };
+
   const emailIsValid = useMemo(() => {
     if (!email) return false;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -201,7 +219,14 @@ export default function TicketingPage() {
 
   // Derived flags used for validations and enabling/disabling actions
   const hasTicketsSelected = Object.values(selectedTickets).some(q => q > 0);
-  const canCheckout = hasTicketsSelected && emailIsValid;
+  const hasUnavailableTickets = Object.entries(selectedTickets).some(([ticketId, quantity]) => {
+    if (quantity === 0) return false;
+    const ticket = ticketTypes.find(t => t.id === parseInt(ticketId));
+    if (!ticket) return false;
+    const remaining = ticket.remainingQuantity ?? 0;
+    return remaining <= 0; // Only consider completely sold out tickets
+  });
+  const canCheckout = hasTicketsSelected && emailIsValid && !hasUnavailableTickets;
 
   const validateAndApplyDiscount = (code: string) => {
     if (Object.values(selectedTickets).every(q => q === 0)) {
@@ -602,31 +627,69 @@ export default function TicketingPage() {
                 {ticketTypes.length === 0 && (
                   <div className="text-center text-gray-500 py-8">No ticket types available for this event.</div>
                 )}
-                {ticketTypes.map(ticket => (
-                  <div key={ticket.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 border border-gray-200 rounded-lg bg-white shadow-sm">
-                    <div className="mb-4 sm:mb-0">
-                      <h3 className="text-xl font-semibold text-gray-900">{ticket.name}</h3>
-                      <p className="text-lg font-bold text-blue-600 mt-1">${ticket.price.toFixed(2)}</p>
-                      <p className="text-sm text-gray-600 mt-2">{ticket.description}</p>
+                {ticketTypes.map(ticket => {
+                  // Check if tickets are sold out
+                  const isSoldOut = (ticket.remainingQuantity ?? 0) <= 0;
+                  const maxOrderQuantity = ticket.maxQuantityPerOrder ?? 10;
+
+                  return (
+                    <div key={ticket.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 border border-gray-200 rounded-lg bg-white shadow-sm relative">
+                      {/* Sold Out Image Only */}
+                      {isSoldOut && (
+                        <div className="absolute top-4 right-4 z-10">
+                          <Image
+                            src="/images/tickets_sold_out.jpg"
+                            alt="Tickets Sold Out"
+                            width={60}
+                            height={60}
+                            className="rounded shadow-sm"
+                          />
+                        </div>
+                      )}
+
+                      <div className="mb-4 sm:mb-0">
+                        <h3 className="text-xl font-semibold text-gray-900">{ticket.name}</h3>
+                        <p className="text-lg font-bold text-blue-600 mt-1">${ticket.price.toFixed(2)}</p>
+                        <p className="text-sm text-gray-600 mt-2">{ticket.description}</p>
+
+                        {/* Low stock warning only */}
+                        {!isSoldOut && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 5 && ticket.remainingQuantity > 0 && (
+                          <div className="mt-3">
+                            <p className="text-sm text-orange-600 font-medium">
+                              ⚠️ Low stock - only {ticket.remainingQuantity} left!
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
+                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-l-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          disabled={isSoldOut || (selectedTickets[ticket.id] || 0) <= 0}
+                        >
+                          -
+                        </button>
+                        <span className="px-4 py-1 bg-white border-t border-b">{selectedTickets[ticket.id] || 0}</span>
+                        <button
+                          onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
+                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-r-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                          disabled={isSoldOut || (selectedTickets[ticket.id] || 0) >= Math.min(ticket.remainingQuantity ?? 0, maxOrderQuantity)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Quantity validation warning */}
+                      {selectedTickets[ticket.id] > 0 && ticket.remainingQuantity !== undefined &&
+                        selectedTickets[ticket.id] > ticket.remainingQuantity && (
+                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                            ⚠️ Only {ticket.remainingQuantity} tickets available for this selection
+                          </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
-                        className="bg-gray-200 text-gray-700 px-3 py-1 rounded-l-md hover:bg-gray-300 transition-colors"
-                      >
-                        -
-                      </button>
-                      <span className="px-4 py-1 bg-white border-t border-b">{selectedTickets[ticket.id] || 0}</span>
-                      <button
-                        onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
-                        className="bg-gray-200 text-gray-700 px-3 py-1 rounded-r-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                        disabled={(selectedTickets[ticket.id] || 0) >= (ticket.availableQuantity ?? Infinity)}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -670,6 +733,16 @@ export default function TicketingPage() {
                   <span className="text-lg font-medium text-gray-600">Total:</span>
                   <span className="text-2xl font-bold text-gray-900">${totalAmount.toFixed(2)}</span>
                 </div>
+
+                {/* Warning for sold out tickets */}
+                {hasUnavailableTickets && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center text-red-700 text-sm">
+                      <span className="mr-2">⚠️</span>
+                      <span>Some selected tickets are sold out</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Email and Checkout */}
@@ -725,6 +798,7 @@ export default function TicketingPage() {
                     onInvalidClick={() => {
                       if (!emailIsValid) setEmailError(true);
                       if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
                     }}
                   />
                 ) : (
@@ -737,6 +811,7 @@ export default function TicketingPage() {
                         if (!validEmail) setEmailError(true);
                         if (!hasTickets) alert('Please select at least one ticket.');
                       }
+                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
                     }}
                     role="button"
                     aria-label="Apple Pay / Google Pay"
@@ -758,6 +833,7 @@ export default function TicketingPage() {
                         console.log('[PRB VALIDATION] onInvalidClick fired');
                         if (!emailIsValid) setEmailError(true);
                         if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                        if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
                       }}
                     />
                   </div>
@@ -776,6 +852,7 @@ export default function TicketingPage() {
                     if (!canCheckout) {
                       if (!emailIsValid) setEmailError(true);
                       if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
                       return;
                     }
                   }}
@@ -790,7 +867,7 @@ export default function TicketingPage() {
                     disabled={isProcessing || !canCheckout}
                   >
                     <FaCreditCard className="mr-3" size={22} />
-                    Pay with credit card
+                    {hasUnavailableTickets ? 'Tickets Sold Out' : 'Pay with credit card'}
                   </button>
                 </div>
               </div>
