@@ -26,14 +26,14 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
     console.log('[Profile Server] Step 2: Looking up profile by email');
     const user = await currentUser();
     const email = user?.emailAddresses?.[0]?.emailAddress || "";
-    
+
     if (email) {
       const emailUrl = `${baseUrl}/api/proxy/user-profiles?email.equals=${encodeURIComponent(email)}`;
       const emailRes = await fetch(emailUrl, {
         headers: { 'Content-Type': 'application/json' },
         cache: 'no-store'
       });
-      
+
       if (emailRes.ok) {
         const emailData = await emailRes.json();
         console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
@@ -43,13 +43,21 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 
     // Step 3: Create profile automatically with Clerk user data
     console.log('[Profile Server] Step 3: Creating profile automatically with Clerk user data');
+    console.log('[Profile Server] Clerk user data:', {
+      id: user.id,
+      emailAddresses: user.emailAddresses,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username
+    });
+    
     if (user) {
       try {
         const createPayload = {
           userId: userId,
-          email: user.emailAddresses?.[0]?.emailAddress || null,
-          firstName: user.firstName || null,
-          lastName: user.lastName || null,
+          email: user.emailAddresses?.[0]?.emailAddress || 'pending@example.com',
+          firstName: user.firstName || 'Pending',
+          lastName: user.lastName || 'User',
           userRole: 'ROLE_USER',
           userStatus: 'ACTIVE',
           status: 'PENDING',
@@ -59,7 +67,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
         };
 
         console.log('[Profile Server] Creating profile with payload:', createPayload);
-        
+
         const createResponse = await fetch(`${baseUrl}/api/proxy/user-profiles`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -71,7 +79,16 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
           console.log('[Profile Server] ✅ Step 3 successful: Profile created automatically');
           return createdProfile;
         } else {
-          console.error('[Profile Server] ❌ Step 3 failed: Profile creation failed:', createResponse.status);
+          const errorText = await createResponse.text();
+          console.error('[Profile Server] ❌ Step 3 failed: Profile creation failed:', createResponse.status, errorText);
+          
+          // Try to parse error details
+          try {
+            const errorData = JSON.parse(errorText);
+            console.error('[Profile Server] Error details:', errorData);
+          } catch (parseError) {
+            console.error('[Profile Server] Raw error response:', errorText);
+          }
         }
       } catch (createError) {
         console.error('[Profile Server] ❌ Step 3 failed: Error creating profile:', createError);
@@ -81,7 +98,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
     // Step 4: Final fallback - return null (will show profile form)
     console.log('[Profile Server] ❌ All steps failed: No profile found or created');
     return null;
-    
+
   } catch (error) {
     console.error('[Profile Server] ❌ Critical error in profile fetching:', error);
     return null;
@@ -93,7 +110,7 @@ export async function updateUserProfileServer(profileId: number, payload: Partia
 
   try {
     console.log('[Profile Server] Updating profile:', profileId, 'with payload:', payload);
-    
+
     const response = await fetch(`${baseUrl}/api/proxy/user-profiles/${profileId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
