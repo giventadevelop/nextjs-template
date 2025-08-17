@@ -227,15 +227,16 @@ export default async function TicketListPage({ params, searchParams }: { params:
                 const remainingQuantity = ticketType.remainingQuantity ?? 0;
                 const soldQuantity = ticketType.soldQuantity ?? 0;
                 const availableQuantity = ticketType.availableQuantity ?? 0;
+                // Calculate total quantity, but don't use availableQuantity as fallback to avoid confusion
                 const totalQuantity = remainingQuantity + soldQuantity;
                 const soldPercentage = totalQuantity > 0 ? (soldQuantity / totalQuantity) * 100 : 0;
-                
+
                 // Determine status color and text
                 let statusColor = 'text-green-600';
                 let statusText = 'Available';
                 let bgColor = 'bg-green-50';
                 let borderColor = 'border-green-200';
-                
+
                 if (remainingQuantity === 0) {
                   statusColor = 'text-red-600';
                   statusText = 'Sold Out';
@@ -267,44 +268,46 @@ export default async function TicketListPage({ params, searchParams }: { params:
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-2 text-xs">
                       <div className="flex justify-between">
                         <span className="text-gray-600">Code:</span>
                         <span className="font-mono font-medium text-gray-800">{ticketType.code}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Total Quantity:</span>
-                        <span className="font-semibold text-gray-800">{totalQuantity}</span>
+                        <span className="font-semibold text-gray-800">
+                          {totalQuantity > 0 ? totalQuantity : 'N/A'}
+                        </span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Sold:</span>
                         <span className="font-semibold text-green-700">{soldQuantity}</span>
                       </div>
-                      
+
                       <div className="flex justify-between">
                         <span className="text-gray-600">Remaining:</span>
                         <span className={`font-semibold ${remainingQuantity === 0 ? 'text-red-600' : remainingQuantity <= Math.ceil(totalQuantity * 0.1) ? 'text-orange-600' : 'text-blue-600'}`}>
                           {remainingQuantity}
                         </span>
                       </div>
-                      
+
                       {ticketType.minQuantityPerOrder && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Min per Order:</span>
                           <span className="font-medium text-gray-800">{ticketType.minQuantityPerOrder}</span>
                         </div>
                       )}
-                      
+
                       {ticketType.maxQuantityPerOrder && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Max per Order:</span>
                           <span className="font-medium text-gray-800">{ticketType.maxQuantityPerOrder}</span>
                         </div>
                       )}
-                      
+
                       {ticketType.serviceFee && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Service Fee:</span>
@@ -315,23 +318,29 @@ export default async function TicketListPage({ params, searchParams }: { params:
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Progress bar for sales */}
-                    {totalQuantity > 0 && (
+                    {totalQuantity > 0 ? (
                       <div className="mt-3">
                         <div className="flex justify-between text-xs text-gray-600 mb-1">
                           <span>Sales Progress</span>
                           <span>{soldPercentage.toFixed(1)}%</span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
+                          <div
                             className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
                             style={{ width: `${Math.min(soldPercentage, 100)}%` }}
                           ></div>
                         </div>
                       </div>
+                    ) : (
+                      <div className="mt-3">
+                        <div className="text-xs text-gray-500 text-center py-2 bg-gray-100 rounded">
+                          No inventory data available
+                        </div>
+                      </div>
                     )}
-                    
+
                     {/* Sale dates if available */}
                     {(ticketType.saleStartDate || ticketType.saleEndDate) && (
                       <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
