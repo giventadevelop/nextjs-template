@@ -193,42 +193,6 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         </div>
       )}
 
-      {/* Info message about payment methods */}
-      <div className="text-xs text-gray-500 mt-2 text-center">
-        <p>💳 Available: Credit Card, Link, Cash App</p>
-        <p>📱 Apple Pay & Google Pay require domain verification</p>
-        <p>✅ All payments validate form data before processing</p>
-
-        {/* Configuration Status */}
-        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
-          <p className="font-medium text-blue-800 mb-1">🔧 Apple Pay & Google Pay Setup Status:</p>
-          <div className="text-left space-y-1">
-            <div className="flex items-center">
-              <span className="mr-2">🌐</span>
-              <span>Domain registered: <span className="font-medium">✅ adwiise.com</span></span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">🔑</span>
-              <span>Stripe account: <span className="font-medium">✅ US, Live Mode</span></span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">⚙️</span>
-              <span>Google Pay enabled: <span className="font-medium text-orange-600">⏳ Check Dashboard</span></span>
-            </div>
-            <div className="flex items-center">
-              <span className="mr-2">📱</span>
-              <span>Apple Pay enabled: <span className="font-medium text-orange-600">⏳ Check Dashboard</span></span>
-            </div>
-          </div>
-          <p className="text-blue-700 mt-2 text-center">
-            <a href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener noreferrer"
-              className="underline hover:text-blue-800">
-              🔗 Go to Stripe Dashboard → Settings → Payment methods
-            </a>
-          </p>
-        </div>
-      </div>
-
       {/* @ts-ignore - element may lack TS in some versions */}
       <ExpressCheckoutElement
         onConfirm={async () => {
@@ -271,7 +235,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
                   errorMessage = submitError.message || "Please complete all required fields.";
                 }
               } else if (submitError.type === 'card_error') {
-                errorMessage = submitError.message || "Card validation failed. Please check your details.";
+                errorMessage = submitError.message || "Card payment failed. Please check your card details.";
               } else if (submitError.type === 'api_error') {
                 errorMessage = "Payment service error. Please try again.";
               }
@@ -340,6 +304,15 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         }}
       />
 
+      {/* Debug section for payment method visibility */}
+      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+        <p className="font-medium mb-2">🔍 Payment Method Debug Info:</p>
+        <p>• Express Checkout should show: Apple Pay, Google Pay, Link, Cash App</p>
+        <p>• PaymentElement below should show: Credit Card, Link, Cash App Pay</p>
+        <p>• If methods are missing, check browser console for detailed logs</p>
+        <p>• All payment methods are loaded asynchronously by Stripe</p>
+      </div>
+
       <div className="mt-3 bg-white border rounded-lg p-3">
         {/* Payment method selection status */}
         <div className="mb-3 text-sm">
@@ -356,20 +329,33 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           )}
         </div>
 
-        <PaymentElement
-          onReady={() => {
-            console.log('[DESKTOP ECE] PaymentElement ready');
-          }}
-          onChange={(event) => {
-            console.log('[DESKTOP ECE] PaymentElement changed:', event);
-            // Track if a payment method is selected
-            if (event.complete) {
-              setPaymentMethodSelected(true);
-            } else {
-              setPaymentMethodSelected(false);
-            }
-          }}
-        />
+        {/* PaymentElement with improved styling for better visibility */}
+        <div className="payment-element-container" style={{
+          minHeight: '200px',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <PaymentElement
+            onReady={() => {
+              console.log('[DESKTOP ECE] PaymentElement ready');
+              console.log('[DESKTOP ECE] PaymentElement should show: Credit Card, Link, Cash App Pay');
+            }}
+            onChange={(event) => {
+              console.log('[DESKTOP ECE] PaymentElement changed:', event);
+              console.log('[DESKTOP ECE] PaymentElement complete status:', event.complete);
+              console.log('[DESKTOP ECE] PaymentElement value:', event.value);
+
+              // Track if a payment method is selected
+              if (event.complete) {
+                setPaymentMethodSelected(true);
+                console.log('[DESKTOP ECE] ✅ Payment method selected and complete');
+              } else {
+                setPaymentMethodSelected(false);
+                console.log('[DESKTOP ECE] ⚠️ Payment method not complete or not selected');
+              }
+            }}
+          />
+        </div>
         <button
           type="button"
           onClick={paymentMethodSelected ? handleConfirm : () => {
