@@ -163,7 +163,7 @@ export async function updateUserProfileServer(profileId: number, payload: Partia
 
     const response = await fetch(`${apiBaseUrl}/api/user-profiles/${profileId}`, {
       method: 'PATCH',
-      headers: { 
+      headers: {
         'Content-Type': 'application/merge-patch+json',
         'Authorization': `Bearer ${token}`
       },
