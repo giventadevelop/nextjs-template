@@ -198,7 +198,6 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         <p>💳 Available: Credit Card, Link, Cash App</p>
         <p>📱 Apple Pay & Google Pay require domain verification</p>
         <p>✅ All payments validate form data before processing</p>
-        <p className="text-orange-600 font-medium mt-1">⚠️ Please select a payment method above before clicking Pay Now</p>
 
         {/* Configuration Status */}
         <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">

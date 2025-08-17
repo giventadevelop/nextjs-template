@@ -23,8 +23,8 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
       return Array.isArray(data) ? data[0] : data;
     }
 
-    // Step 2: Fallback to email lookup
-    console.log('[Profile Server] Step 2: Looking up profile by email');
+    // Step 2: Fallback to email lookup with reconciliation
+    console.log('[Profile Server] Step 2: Looking up profile by email with reconciliation');
     const user = await currentUser();
     const email = user?.emailAddresses?.[0]?.emailAddress || "";
 
@@ -41,6 +41,33 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 
         if (profile && profile.id) {
           console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
+
+          // NEW: Profile Reconciliation Logic
+          if (user && needsReconciliation(profile, userId, user)) {
+            console.log('[Profile Server] 🔄 Profile needs reconciliation, updating with Clerk data');
+            console.log('[Profile Server] 📊 Reconciliation details:', {
+              profileId: profile.id,
+              profileUserId: profile.userId,
+              currentClerkUserId: userId,
+              profileFirstName: profile.firstName,
+              profileLastName: profile.lastName,
+              clerkFirstName: user.firstName,
+              clerkLastName: user.lastName,
+              needsReconciliation: true
+            });
+
+            try {
+              const reconciledProfile = await reconcileProfileWithClerkData(profile, userId, user);
+              console.log('[Profile Server] ✅ Profile reconciled successfully');
+              return reconciledProfile;
+            } catch (reconciliationError) {
+              console.error('[Profile Server] ⚠️ Profile reconciliation failed, returning original profile:', reconciliationError);
+              return profile; // Return original profile if reconciliation fails
+            }
+          } else {
+            console.log('[Profile Server] ✅ Profile is already up-to-date, no reconciliation needed');
+          }
+
           return profile;
         } else {
           console.log('[Profile Server] Step 2: No profile found by email, proceeding to Step 3');
@@ -50,13 +77,15 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 
     // Step 3: Create profile automatically with Clerk user data
     console.log('[Profile Server] Step 3: Creating profile automatically with Clerk user data');
-    console.log('[Profile Server] Clerk user data:', {
-      id: user.id,
-      emailAddresses: user.emailAddresses,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      username: user.username
-    });
+    if (user) {
+      console.log('[Profile Server] Clerk user data:', {
+        id: user.id,
+        emailAddresses: user.emailAddresses,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username
+      });
+    }
 
     if (user) {
       try {
@@ -67,7 +96,6 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
           lastName: user.lastName || 'User',
           userRole: 'ROLE_USER',
           userStatus: 'ACTIVE',
-          status: 'PENDING',
           tenantId: getTenantId(),
           // Add additional fields that might be required
           phone: '',
@@ -76,7 +104,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
           state: '',
           zipCode: '',
           country: '',
-          familyName: user.lastName || 'User',
+          familyName: (user.lastName || 'User'),
           cityTown: '',
           district: '',
           educationalInstitution: '',
@@ -241,5 +269,96 @@ export async function checkEmailSubscriptionServer(email: string): Promise<{ isS
   } catch (error) {
     console.error('Error checking email subscription:', error);
     return { isSubscribed: false };
+  }
+}
+
+// Profile Reconciliation Logic
+// Handles cases where existing profiles need to be updated with current Clerk user data
+
+/**
+ * Determines if a profile needs reconciliation with Clerk user data
+ */
+function needsReconciliation(profile: UserProfileDTO, currentClerkUserId: string, currentUser: any): boolean {
+  const needsUserIdUpdate = profile.userId !== currentClerkUserId;
+  const needsNameUpdate = !profile.firstName ||
+                         profile.firstName.trim() === '' ||
+                         !profile.lastName ||
+                         profile.lastName.trim() === '' ||
+                         profile.firstName === 'Pending' ||
+                         profile.lastName === 'User';
+
+  const needsReconciliation = needsUserIdUpdate || needsNameUpdate;
+
+  console.log('[Profile Reconciliation] Checking if profile needs reconciliation:', {
+    profileId: profile.id,
+    profileUserId: profile.userId,
+    currentClerkUserId,
+    profileFirstName: profile.firstName,
+    profileLastName: profile.lastName,
+    currentUserFirstName: currentUser?.firstName,
+    currentUserLastName: currentUser?.lastName,
+    needsUserIdUpdate,
+    needsNameUpdate,
+    needsReconciliation
+  });
+
+  return needsReconciliation;
+}
+
+/**
+ * Reconciles a profile with current Clerk user data
+ * Updates userId, firstName, lastName if they differ or are empty
+ */
+async function reconcileProfileWithClerkData(
+  profile: UserProfileDTO,
+  currentClerkUserId: string,
+  currentUser: any
+): Promise<UserProfileDTO> {
+  try {
+    console.log('[Profile Reconciliation] Starting profile reconciliation:', {
+      profileId: profile.id,
+      oldUserId: profile.userId,
+      newUserId: currentClerkUserId,
+      oldFirstName: profile.firstName,
+      newFirstName: currentUser?.firstName,
+      oldLastName: profile.lastName,
+      newLastName: currentUser?.lastName
+    });
+
+    // Prepare update payload with Clerk user data
+    const updatePayload: Partial<UserProfileDTO> = {
+      id: profile.id,
+      userId: currentClerkUserId, // Always update to current Clerk user ID
+      updatedAt: new Date().toISOString()
+    };
+
+    // Update names if they're empty or different from Clerk data
+    if (currentUser?.firstName && (!profile.firstName || profile.firstName.trim() === '' || profile.firstName === 'Pending')) {
+      updatePayload.firstName = currentUser.firstName || '';
+    }
+
+    if (currentUser?.lastName && (!profile.lastName || profile.lastName.trim() === '' || profile.lastName === 'User')) {
+      updatePayload.lastName = currentUser.lastName || '';
+    }
+
+    console.log('[Profile Reconciliation] Update payload for reconciliation:', updatePayload);
+
+    // Use the existing updateUserProfileServer function
+    const updatedProfile = await updateUserProfileServer(profile.id, updatePayload);
+
+    if (updatedProfile) {
+      console.log('[Profile Reconciliation] ✅ Profile reconciled successfully:', {
+        profileId: updatedProfile.id,
+        newUserId: updatedProfile.userId,
+        newFirstName: updatedProfile.firstName,
+        newLastName: updatedProfile.lastName
+      });
+      return updatedProfile;
+    } else {
+      throw new Error('Profile update failed during reconciliation');
+    }
+  } catch (error) {
+    console.error('[Profile Reconciliation] ❌ Error during profile reconciliation:', error);
+    throw error;
   }
 }
