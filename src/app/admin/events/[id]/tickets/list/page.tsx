@@ -1,5 +1,5 @@
-import { EventTicketTransactionDTO, EventTicketTransactionStatisticsDTO, EventDetailsDTO } from '@/types';
-import { FaSearch, FaTicketAlt, FaEnvelope, FaUser, FaHashtag, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaUsers, FaPhotoVideo, FaTags, FaPercent, FaHome } from 'react-icons/fa';
+import { EventTicketTransactionDTO, EventTicketTransactionStatisticsDTO, EventDetailsDTO, EventTicketTypeDTO } from '@/types';
+import { FaSearch, FaTicketAlt, FaEnvelope, FaUser, FaHashtag, FaCalendarAlt, FaChevronLeft, FaChevronRight, FaUsers, FaPhotoVideo, FaTags, FaPercent, FaHome, FaInfoCircle } from 'react-icons/fa';
 import Link from 'next/link';
 import React, { useState, useRef } from 'react';
 import { Pagination } from '@/components/Pagination';
@@ -77,6 +77,13 @@ async function fetchStatistics(eventId: string): Promise<EventTicketTransactionS
   return res.json();
 }
 
+async function fetchTicketTypes(eventId: string): Promise<EventTicketTypeDTO[]> {
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const res = await fetch(`${baseUrl}/api/proxy/event-ticket-types?eventId.equals=${eventId}`, { cache: 'no-store' });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export default async function TicketListPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<SearchParams> }) {
   const { id: eventId } = await params;
   const sp = await searchParams;
@@ -92,12 +99,14 @@ export default async function TicketListPage({ params, searchParams }: { params:
   let error: string | null = null;
   let statistics: EventTicketTransactionStatisticsDTO | null = null;
   let eventDetails: EventDetailsDTO | null = null;
+  let ticketTypes: EventTicketTypeDTO[] = [];
   try {
     const result = await fetchTickets(eventId, { page: page.toString(), pageSize: pageSize.toString(), email, transactionId, name });
     rows = Array.isArray(result.rows) ? result.rows : [];
     totalCount = result.totalCount;
     statistics = await fetchStatistics(eventId);
     eventDetails = await fetchEventDetailsServer(Number(eventId));
+    ticketTypes = await fetchTicketTypes(eventId);
   } catch (err: any) {
     error = err.message || 'Failed to load tickets';
   }
@@ -203,6 +212,149 @@ export default async function TicketListPage({ params, searchParams }: { params:
           </div>
         </div>
       </div>
+
+      {/* Ticket Type Breakdown */}
+      {ticketTypes.length > 0 && (
+        <div className="mb-6">
+          <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg shadow p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <FaTags className="text-purple-600 text-lg" />
+              <h3 className="text-lg font-semibold text-purple-800">Ticket Type Breakdown</h3>
+              <FaInfoCircle className="text-purple-500 text-sm" title="Detailed breakdown of each ticket type with remaining quantities and sales status" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {ticketTypes.map((ticketType) => {
+                const remainingQuantity = ticketType.remainingQuantity ?? 0;
+                const soldQuantity = ticketType.soldQuantity ?? 0;
+                const availableQuantity = ticketType.availableQuantity ?? 0;
+                const totalQuantity = remainingQuantity + soldQuantity;
+                const soldPercentage = totalQuantity > 0 ? (soldQuantity / totalQuantity) * 100 : 0;
+                
+                // Determine status color and text
+                let statusColor = 'text-green-600';
+                let statusText = 'Available';
+                let bgColor = 'bg-green-50';
+                let borderColor = 'border-green-200';
+                
+                if (remainingQuantity === 0) {
+                  statusColor = 'text-red-600';
+                  statusText = 'Sold Out';
+                  bgColor = 'bg-red-50';
+                  borderColor = 'border-red-200';
+                } else if (remainingQuantity <= Math.ceil(totalQuantity * 0.1)) {
+                  statusColor = 'text-orange-600';
+                  statusText = 'Low Stock';
+                  bgColor = 'bg-orange-50';
+                  borderColor = 'border-orange-200';
+                } else if (remainingQuantity <= Math.ceil(totalQuantity * 0.25)) {
+                  statusColor = 'text-yellow-600';
+                  statusText = 'Limited';
+                  bgColor = 'bg-yellow-50';
+                  borderColor = 'border-yellow-200';
+                }
+
+                return (
+                  <div key={ticketType.id} className={`${bgColor} ${borderColor} border rounded-lg p-4 hover:shadow-md transition-shadow`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-800 text-sm mb-1">{ticketType.name}</h4>
+                        <p className="text-xs text-gray-600 mb-2">{ticketType.description || 'No description'}</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg font-bold text-purple-700">${ticketType.price.toFixed(2)}</span>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${bgColor} ${statusColor} border ${borderColor}`}>
+                            {statusText}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Code:</span>
+                        <span className="font-mono font-medium text-gray-800">{ticketType.code}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Quantity:</span>
+                        <span className="font-semibold text-gray-800">{totalQuantity}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Sold:</span>
+                        <span className="font-semibold text-green-700">{soldQuantity}</span>
+                      </div>
+                      
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Remaining:</span>
+                        <span className={`font-semibold ${remainingQuantity === 0 ? 'text-red-600' : remainingQuantity <= Math.ceil(totalQuantity * 0.1) ? 'text-orange-600' : 'text-blue-600'}`}>
+                          {remainingQuantity}
+                        </span>
+                      </div>
+                      
+                      {ticketType.minQuantityPerOrder && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Min per Order:</span>
+                          <span className="font-medium text-gray-800">{ticketType.minQuantityPerOrder}</span>
+                        </div>
+                      )}
+                      
+                      {ticketType.maxQuantityPerOrder && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Max per Order:</span>
+                          <span className="font-medium text-gray-800">{ticketType.maxQuantityPerOrder}</span>
+                        </div>
+                      )}
+                      
+                      {ticketType.serviceFee && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Service Fee:</span>
+                          <span className="font-medium text-gray-800">
+                            ${ticketType.serviceFee.toFixed(2)}
+                            {ticketType.isServiceFeeIncluded && <span className="text-green-600 ml-1">(Included)</span>}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Progress bar for sales */}
+                    {totalQuantity > 0 && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs text-gray-600 mb-1">
+                          <span>Sales Progress</span>
+                          <span>{soldPercentage.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(soldPercentage, 100)}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Sale dates if available */}
+                    {(ticketType.saleStartDate || ticketType.saleEndDate) && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-600">
+                        {ticketType.saleStartDate && (
+                          <div className="mb-1">
+                            <span className="font-medium">Sale Start:</span> {new Date(ticketType.saleStartDate).toLocaleDateString()}
+                          </div>
+                        )}
+                        {ticketType.saleEndDate && (
+                          <div>
+                            <span className="font-medium">Sale End:</span> {new Date(ticketType.saleEndDate).toLocaleDateString()}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
           <FaTicketAlt className="text-teal-500" /> Tickets Sold
