@@ -36,8 +36,14 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 
       if (emailRes.ok) {
         const emailData = await emailRes.json();
-        console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
-        return Array.isArray(emailData) ? emailData[0] : emailData;
+        const profile = Array.isArray(emailData) ? emailData[0] : emailData;
+        
+        if (profile && profile.id) {
+          console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
+          return profile;
+        } else {
+          console.log('[Profile Server] Step 2: No profile found by email, proceeding to Step 3');
+        }
       }
     }
 
@@ -50,7 +56,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
       lastName: user.lastName,
       username: user.username
     });
-    
+
     if (user) {
       try {
         const createPayload = {
@@ -105,7 +111,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
         } else {
           const errorText = await createResponse.text();
           console.error('[Profile Server] ❌ Step 3 failed: Profile creation failed:', createResponse.status, errorText);
-          
+
           // Try to parse error details
           try {
             const errorData = JSON.parse(errorText);
