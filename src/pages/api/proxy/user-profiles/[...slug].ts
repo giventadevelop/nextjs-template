@@ -61,23 +61,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Step 2: If creation fails, fallback to email lookup
     if (method === 'GET' && apiRes.status === 404 && path.includes('/by-user/')) {
       const userId = slug && Array.isArray(slug) ? slug[1] : slug;
-      
+
       if (userId && typeof userId === 'string' && userId.startsWith('user_')) {
         console.log('[UserProfile Proxy] 404 on by-user endpoint, attempting Step 1: create profile for userId:', userId);
 
         try {
-          // Create a minimal user profile
-          const createPayload = withTenantId({
-            userId: userId,
-            email: '', // Will be populated later when user provides email
-            firstName: '',
-            lastName: '',
-            userRole: 'ROLE_USER',
-            userStatus: 'ACTIVE',
-            status: 'PENDING',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          });
+                     // Create a minimal user profile
+           const createPayload = withTenantId({
+             userId: userId,
+             email: null, // Set to null to satisfy database constraint, will be populated later
+             firstName: null, // Set to null instead of empty string
+             lastName: null, // Set to null instead of empty string
+             userRole: 'ROLE_USER',
+             userStatus: 'ACTIVE',
+             status: 'PENDING',
+             createdAt: new Date().toISOString(),
+             updatedAt: new Date().toISOString(),
+           });
 
           console.log('[UserProfile Proxy] Creating user profile with payload:', createPayload);
 
@@ -96,16 +96,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return;
                      } else {
              console.error('[UserProfile Proxy] Failed to create user profile:', createRes.status, await createRes.text());
-             
+
              // Step 2: Fallback to email lookup if profile creation fails
              console.log('[UserProfile Proxy] Step 1 failed, attempting Step 2: email lookup fallback...');
-             
+
              try {
                // Try to get user email from multiple sources
-               let email = req.headers['x-user-email'] || 
-                          req.headers['x-clerk-user-email'] || 
+               let email = req.headers['x-user-email'] ||
+                          req.headers['x-clerk-user-email'] ||
                           req.headers['x-forwarded-user-email'];
-               
+
                // If no email in headers, try to extract from JWT token
                if (!email && req.headers.authorization) {
                  try {
@@ -117,17 +117,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                    console.log('[UserProfile Proxy] Could not extract email from JWT:', jwtError);
                  }
                }
-               
+
                if (email) {
                  console.log('[UserProfile Proxy] Attempting email lookup for:', email);
-                 
+
                  const emailLookupUrl = `${API_BASE_URL}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}`;
                  const emailRes = await fetchWithJwtRetry(emailLookupUrl, { method: 'GET' });
-                 
+
                  if (emailRes.ok) {
                    const emailProfile = await emailRes.json();
                    console.log('[UserProfile Proxy] Email lookup successful, found profile:', emailProfile);
-                   
+
                    // Return the profile found by email
                    res.status(200).json(emailProfile);
                    return;
@@ -140,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
              } catch (emailLookupError) {
                console.error('[UserProfile Proxy] Email lookup fallback error:', emailLookupError);
              }
-             
+
              // If all fallbacks fail, return the original 404
              res.status(404).json({ error: 'User profile not found and could not be created or found by email' });
              return;
