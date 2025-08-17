@@ -6,7 +6,10 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
   const baseUrl = getAppUrl();
 
   try {
-    // Try to fetch the profile by userId
+    console.log('[Profile Server] Starting 4-step fallback for userId:', userId);
+
+    // Step 1: Try to fetch the profile by userId
+    console.log('[Profile Server] Step 1: Looking up profile by userId');
     const url = `${baseUrl}/api/proxy/user-profiles/by-user/${userId}`;
     let response = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
@@ -15,26 +18,72 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 
     if (response.ok) {
       const data = await response.json();
+      console.log('[Profile Server] ✅ Step 1 successful: Profile found by userId');
       return Array.isArray(data) ? data[0] : data;
-    } else if (response.status === 404) {
-      // Fallback: lookup by email
-      const user = await currentUser();
-      const email = user?.emailAddresses?.[0]?.emailAddress || "";
-      if (email) {
-        const emailUrl = `${baseUrl}/api/proxy/user-profiles?email.equals=${encodeURIComponent(email)}`;
-        const emailRes = await fetch(emailUrl, {
-          headers: { 'Content-Type': 'application/json' },
-          cache: 'no-store'
-        });
-        if (emailRes.ok) {
-          const emailData = await emailRes.json();
-          return Array.isArray(emailData) ? emailData[0] : emailData;
-        }
+    }
+
+    // Step 2: Fallback to email lookup
+    console.log('[Profile Server] Step 2: Looking up profile by email');
+    const user = await currentUser();
+    const email = user?.emailAddresses?.[0]?.emailAddress || "";
+    
+    if (email) {
+      const emailUrl = `${baseUrl}/api/proxy/user-profiles?email.equals=${encodeURIComponent(email)}`;
+      const emailRes = await fetch(emailUrl, {
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store'
+      });
+      
+      if (emailRes.ok) {
+        const emailData = await emailRes.json();
+        console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
+        return Array.isArray(emailData) ? emailData[0] : emailData;
       }
     }
+
+    // Step 3: Create profile automatically with Clerk user data
+    console.log('[Profile Server] Step 3: Creating profile automatically with Clerk user data');
+    if (user) {
+      try {
+        const createPayload = {
+          userId: userId,
+          email: user.emailAddresses?.[0]?.emailAddress || null,
+          firstName: user.firstName || null,
+          lastName: user.lastName || null,
+          userRole: 'ROLE_USER',
+          userStatus: 'ACTIVE',
+          status: 'PENDING',
+          tenantId: getTenantId(),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        console.log('[Profile Server] Creating profile with payload:', createPayload);
+        
+        const createResponse = await fetch(`${baseUrl}/api/proxy/user-profiles`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(createPayload),
+        });
+
+        if (createResponse.ok) {
+          const createdProfile = await createResponse.json();
+          console.log('[Profile Server] ✅ Step 3 successful: Profile created automatically');
+          return createdProfile;
+        } else {
+          console.error('[Profile Server] ❌ Step 3 failed: Profile creation failed:', createResponse.status);
+        }
+      } catch (createError) {
+        console.error('[Profile Server] ❌ Step 3 failed: Error creating profile:', createError);
+      }
+    }
+
+    // Step 4: Final fallback - return null (will show profile form)
+    console.log('[Profile Server] ❌ All steps failed: No profile found or created');
     return null;
+    
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    console.error('[Profile Server] ❌ Critical error in profile fetching:', error);
     return null;
   }
 }
@@ -43,6 +92,8 @@ export async function updateUserProfileServer(profileId: number, payload: Partia
   const baseUrl = getAppUrl();
 
   try {
+    console.log('[Profile Server] Updating profile:', profileId, 'with payload:', payload);
+    
     const response = await fetch(`${baseUrl}/api/proxy/user-profiles/${profileId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -50,11 +101,15 @@ export async function updateUserProfileServer(profileId: number, payload: Partia
     });
 
     if (response.ok) {
-      return await response.json();
+      const updatedProfile = await response.json();
+      console.log('[Profile Server] ✅ Profile updated successfully');
+      return updatedProfile;
+    } else {
+      console.error('[Profile Server] ❌ Profile update failed:', response.status);
+      return null;
     }
-    return null;
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    console.error('[Profile Server] ❌ Error updating profile:', error);
     return null;
   }
 }
