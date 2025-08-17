@@ -353,6 +353,42 @@ async function createOrUpdateUserProfileFromStripe(
         timestamp: now
       });
 
+      // DETAILED NAME FIELD ANALYSIS FOR UPDATE - Show exactly what we're updating
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🔍 Name Field Analysis for Profile Update:`, {
+        operationId,
+        profileId: existingProfile.id,
+
+        // Input data from Stripe
+        stripeFirstName: firstName,
+        stripeLastName: lastName,
+        stripePhone: phone,
+        stripeFirstNameType: typeof firstName,
+        stripeLastNameType: typeof lastName,
+        stripePhoneType: typeof phone,
+
+        // Existing profile data
+        existingFirstName: existingProfile.firstName,
+        existingLastName: existingProfile.lastName,
+        existingPhone: existingProfile.phone,
+
+        // What we're updating to
+        updateFirstName: updatedProfile.firstName,
+        updateLastName: updatedProfile.lastName,
+        updatePhone: updatedProfile.phone,
+
+        // Change analysis
+        firstNameChanged: existingProfile.firstName !== updatedProfile.firstName,
+        lastNameChanged: existingProfile.lastName !== updatedProfile.lastName,
+        phoneChanged: existingProfile.phone !== updatedProfile.phone,
+
+        // Final values being sent
+        finalFirstName: updatedProfile.firstName,
+        finalLastName: updatedProfile.lastName,
+        finalPhone: updatedProfile.phone,
+
+        timestamp: now
+      });
+
       const updateRes = await fetchWithJwtRetry(
         `${baseUrl}/api/proxy/user-profiles/${existingProfile.id}`,
         {
@@ -364,10 +400,39 @@ async function createOrUpdateUserProfileFromStripe(
       );
 
       if (updateRes.ok) {
+        const updatedProfileResponse = await updateRes.json();
         console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ✅ Successfully updated existing user profile:`, {
           profileId: existingProfile.id,
           updatedFields: { firstName, lastName, phone },
           responseStatus: updateRes.status,
+          timestamp: now
+        });
+
+        // VERIFY WHAT WAS ACTUALLY UPDATED IN THE DATABASE
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🔍 Database Verification - Update Results:`, {
+          operationId,
+          profileId: existingProfile.id,
+
+          // What we sent for update
+          sentFirstName: updatedProfile.firstName,
+          sentLastName: updatedProfile.lastName,
+          sentPhone: updatedProfile.phone,
+
+          // What database returned after update
+          returnedFirstName: updatedProfileResponse.firstName,
+          returnedLastName: updatedProfileResponse.lastName,
+          returnedPhone: updatedProfileResponse.phone,
+
+          // Comparison
+          firstNameMatch: updatedProfile.firstName === updatedProfileResponse.firstName,
+          lastNameMatch: updatedProfile.lastName === updatedProfileResponse.lastName,
+          phoneMatch: updatedProfile.phone === updatedProfileResponse.phone,
+
+          // Data types
+          returnedFirstNameType: typeof updatedProfileResponse.firstName,
+          returnedLastNameType: typeof updatedProfileResponse.lastName,
+          returnedPhoneType: typeof updatedProfileResponse.phone,
+
           timestamp: now
         });
       } else {
@@ -383,6 +448,7 @@ async function createOrUpdateUserProfileFromStripe(
     } else {
       // Create new profile with Stripe data
       console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🆕 Step 3b: Creating new user profile with Stripe data`);
+      // Create or update user profile with correct name data
       const userProfileData = {
         userId,
         email,
@@ -406,6 +472,45 @@ async function createOrUpdateUserProfileFromStripe(
         timestamp: now
       });
 
+      // DETAILED NAME FIELD ANALYSIS - Show exactly what we're sending
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🔍 Name Field Analysis for Profile Creation:`, {
+        operationId,
+        // Input data from Stripe
+        stripeFirstName: firstName,
+        stripeLastName: lastName,
+        stripeFirstNameType: typeof firstName,
+        stripeLastNameType: typeof lastName,
+        stripeFirstNameLength: firstName?.length || 0,
+        stripeLastNameLength: lastName?.length || 0,
+
+        // Processed data for database
+        dbFirstName: userProfileData.firstName,
+        dbLastName: userProfileData.lastName,
+        dbFirstNameType: typeof userProfileData.firstName,
+        dbLastNameType: typeof userProfileData.lastName,
+        dbFirstNameLength: userProfileData.firstName?.length || 0,
+        dbLastNameLength: userProfileData.lastName?.length || 0,
+
+        // Validation checks
+        firstNameIsEmpty: !firstName || firstName.trim().length === 0,
+        lastNameIsEmpty: !lastName || lastName.trim().length === 0,
+        firstNameIsString: typeof firstName === 'string',
+        lastNameIsString: typeof lastName === 'string',
+
+        // Final payload analysis
+        finalPayload: {
+          firstName: userProfileData.firstName,
+          lastName: userProfileData.lastName,
+          firstNameEmpty: userProfileData.firstName === '',
+          lastNameEmpty: userProfileData.lastName === '',
+          firstNameNull: userProfileData.firstName === null,
+          lastNameNull: userProfileData.lastName === null,
+          firstNameUndefined: userProfileData.firstName === undefined
+        },
+
+        timestamp: now
+      });
+
       const createRes = await fetchWithJwtRetry(
         `${baseUrl}/api/proxy/user-profiles`,
         {
@@ -426,6 +531,39 @@ async function createOrUpdateUserProfileFromStripe(
           lastName,
           phone,
           responseStatus: createRes.status,
+          timestamp: now
+        });
+
+        // VERIFY WHAT WAS ACTUALLY SAVED IN THE DATABASE
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🔍 Database Verification - What Was Actually Saved:`, {
+          operationId,
+          profileId: newProfile.id,
+
+          // What we sent to database
+          sentFirstName: userProfileData.firstName,
+          sentLastName: userProfileData.lastName,
+          sentPhone: userProfileData.phone,
+
+          // What database returned
+          returnedFirstName: newProfile.firstName,
+          returnedLastName: newProfile.lastName,
+          returnedPhone: newProfile.phone,
+
+          // Comparison
+          firstNameMatch: userProfileData.firstName === newProfile.firstName,
+          lastNameMatch: userProfileData.lastName === newProfile.lastName,
+          phoneMatch: userProfileData.phone === newProfile.phone,
+
+          // Data types
+          returnedFirstNameType: typeof newProfile.firstName,
+          returnedLastNameType: typeof newProfile.lastName,
+          returnedPhoneType: typeof newProfile.phone,
+
+          // Lengths
+          returnedFirstNameLength: newProfile.firstName?.length || 0,
+          returnedLastNameLength: newProfile.lastName?.length || 0,
+          returnedPhoneLength: newProfile.phone?.length || 0,
+
           timestamp: now
         });
       } else {
@@ -1004,6 +1142,38 @@ export async function POST(req: NextRequest) {
               timestamp: now
             });
 
+            // COMPREHENSIVE STRIPE DATA INSPECTION - This will show us exactly what Stripe provides
+            console.log('[STRIPE-WEBHOOK] [STRIPE-DATA-INSPECTION] 🔍 Complete Payment Intent Data Analysis:', {
+              piId: pi.id,
+              piStatus: pi.status,
+              piAmount: pi.amount,
+              piCurrency: pi.currency,
+              piCreated: pi.created,
+
+              // Customer Information
+              customerId: pi.customer,
+              customerType: typeof pi.customer,
+              customerExists: !!pi.customer,
+
+              // Email Information
+              receiptEmail: pi.receipt_email,
+              receiptEmailType: typeof pi.receipt_email,
+              receiptEmailExists: !!pi.receipt_email,
+
+              // Metadata Information
+              hasMetadata: !!pi.metadata,
+              metadataKeys: pi.metadata ? Object.keys(pi.metadata) : [],
+              metadataValues: pi.metadata ? Object.entries(pi.metadata).map(([k, v]) => ({ key: k, value: v, type: typeof v })) : [],
+
+              // Payment Method Information
+              paymentMethod: pi.payment_method,
+              paymentMethodTypes: pi.payment_method_types,
+
+              // Timestamps
+              extractionTimestamp: now,
+              piCreatedTimestamp: pi.created ? new Date(pi.created * 1000).toISOString() : 'N/A'
+            });
+
             // Try to get customer details from Stripe if customer ID exists
             let customerName = '';
             let customerPhone = '';
@@ -1048,6 +1218,12 @@ export async function POST(req: NextRequest) {
                   timestamp: now
                 });
               }
+            } else {
+              console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] No customer ID in Payment Intent, skipping customer lookup:', {
+                customerId: pi.customer,
+                customerType: typeof pi.customer,
+                timestamp: now
+              });
             }
 
             // Extract and split name from Stripe customer data
@@ -1059,6 +1235,21 @@ export async function POST(req: NextRequest) {
               extractedPhone: customerPhone,
               extractedEmail: customerEmail,
               timestamp: now
+            });
+
+            // IMMEDIATE LOGGING - This will show up right away in webhook logs
+            console.log('[STRIPE-WEBHOOK] [IMMEDIATE-USER-DATA] 🎯 User Data Extraction Completed:', {
+              paymentIntentId: pi.id,
+              customerId: pi.customer,
+              customerName: customerName,
+              extractedFirstName: firstName,
+              extractedLastName: lastName,
+              extractedPhone: customerPhone,
+              extractedEmail: customerEmail,
+              hasCustomerId: !!pi.customer,
+              hasCustomerName: !!customerName,
+              hasCustomerPhone: !!customerPhone,
+              extractionTimestamp: now
             });
 
             // Build payload similar to processStripeSessionServer
@@ -1247,6 +1438,34 @@ export async function POST(req: NextRequest) {
             // ASYNCHRONOUS USER PROFILE CREATION - After all critical payment operations
             // This ensures payment processing is never blocked by profile operations
             console.log('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] Starting asynchronous user profile creation/update');
+
+            // IMMEDIATE LOGGING - This will show up right away in webhook logs
+            console.log('[STRIPE-WEBHOOK] [IMMEDIATE-SUMMARY] 🎯 User Profile Operation Scheduled:', {
+              paymentIntentId: pi.id,
+              customerEmail,
+              extractedFirstName: firstName,
+              extractedLastName: lastName,
+              extractedPhone: customerPhone,
+              scheduledAt: new Date().toISOString(),
+              willExecuteAt: new Date(Date.now() + 1000).toISOString(),
+              operationType: 'SCHEDULED_FOR_ASYNC_EXECUTION',
+              profileOperationId: `scheduled_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`
+            });
+
+            // DATA VALIDATION LOGGING - Show what data we have for profile creation
+            console.log('[STRIPE-WEBHOOK] [PROFILE-DATA-VALIDATION] 📊 Data Available for Profile Creation:', {
+              paymentIntentId: pi.id,
+              hasEmail: !!customerEmail && customerEmail.trim().length > 0,
+              hasFirstName: !!firstName && firstName.trim().length > 0,
+              hasLastName: !!lastName && lastName.trim().length > 0,
+              hasPhone: !!customerPhone && customerPhone.trim().length > 0,
+              emailValue: customerEmail,
+              firstNameValue: firstName,
+              lastNameValue: lastName,
+              phoneValue: customerPhone,
+              shouldCreateProfile: !!(customerEmail && customerEmail.trim().length > 0),
+              timestamp: new Date().toISOString()
+            });
 
             // Use setTimeout to ensure this runs after the current webhook response
             setTimeout(async () => {
