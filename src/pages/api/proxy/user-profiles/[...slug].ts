@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { method, query, body } = req;
     const allowedMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
-    
+
     if (!allowedMethods.includes(method!)) {
       res.setHeader('Allow', allowedMethods);
       res.status(405).end(`Method ${method} Not Allowed`);
@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const tenantId = getTenantId();
     const slug = query.slug;
-    
+
     // Build the backend path
     let path = '/api/user-profiles';
     if (slug) {
@@ -37,7 +37,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Remove slug from query before building query string
     const { slug: _omit, ...restQuery } = query;
     const qs = new URLSearchParams(restQuery as Record<string, string>);
-    
+
     // Only append tenantId.equals for GET/POST list endpoints, not for PATCH/PUT/DELETE by ID
     const isListEndpoint = (method === 'GET' || method === 'POST') && !/\/\d+(\/|$)/.test(path);
     if (isListEndpoint && !Array.from(qs.keys()).includes('tenantId.equals')) {
@@ -56,13 +56,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
 
-    // Special handling for GET /by-user/{userId} 404 errors
+        // Special handling for GET /by-user/{userId} 404 errors
+    // Step 1: Try to create profile automatically
+    // Step 2: If creation fails, fallback to email lookup
     if (method === 'GET' && apiRes.status === 404 && path.includes('/by-user/')) {
       const userId = slug && Array.isArray(slug) ? slug[1] : slug;
       
       if (userId && typeof userId === 'string' && userId.startsWith('user_')) {
-        console.log('[UserProfile Proxy] 404 on by-user endpoint, attempting to create profile for userId:', userId);
-        
+        console.log('[UserProfile Proxy] 404 on by-user endpoint, attempting Step 1: create profile for userId:', userId);
+
         try {
           // Create a minimal user profile
           const createPayload = withTenantId({
@@ -88,16 +90,61 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           if (createRes.ok) {
             const createdProfile = await createRes.json();
             console.log('[UserProfile Proxy] Successfully created user profile:', createdProfile);
-            
+
             // Return the created profile
             res.status(200).json(createdProfile);
             return;
-          } else {
-            console.error('[UserProfile Proxy] Failed to create user profile:', createRes.status, await createRes.text());
-            // Fall back to original 404 response
-            res.status(404).json({ error: 'User profile not found and could not be created' });
-            return;
-          }
+                     } else {
+             console.error('[UserProfile Proxy] Failed to create user profile:', createRes.status, await createRes.text());
+             
+             // Step 2: Fallback to email lookup if profile creation fails
+             console.log('[UserProfile Proxy] Step 1 failed, attempting Step 2: email lookup fallback...');
+             
+             try {
+               // Try to get user email from multiple sources
+               let email = req.headers['x-user-email'] || 
+                          req.headers['x-clerk-user-email'] || 
+                          req.headers['x-forwarded-user-email'];
+               
+               // If no email in headers, try to extract from JWT token
+               if (!email && req.headers.authorization) {
+                 try {
+                   const token = req.headers.authorization.split(' ')[1];
+                   const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+                   email = payload.email || payload.sub; // Clerk JWT might have email or sub
+                   console.log('[UserProfile Proxy] Extracted email from JWT:', email);
+                 } catch (jwtError) {
+                   console.log('[UserProfile Proxy] Could not extract email from JWT:', jwtError);
+                 }
+               }
+               
+               if (email) {
+                 console.log('[UserProfile Proxy] Attempting email lookup for:', email);
+                 
+                 const emailLookupUrl = `${API_BASE_URL}/api/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}`;
+                 const emailRes = await fetchWithJwtRetry(emailLookupUrl, { method: 'GET' });
+                 
+                 if (emailRes.ok) {
+                   const emailProfile = await emailRes.json();
+                   console.log('[UserProfile Proxy] Email lookup successful, found profile:', emailProfile);
+                   
+                   // Return the profile found by email
+                   res.status(200).json(emailProfile);
+                   return;
+                 } else {
+                   console.log('[UserProfile Proxy] Email lookup also failed:', emailRes.status);
+                 }
+               } else {
+                 console.log('[UserProfile Proxy] No email available for fallback lookup');
+               }
+             } catch (emailLookupError) {
+               console.error('[UserProfile Proxy] Email lookup fallback error:', emailLookupError);
+             }
+             
+             // If all fallbacks fail, return the original 404
+             res.status(404).json({ error: 'User profile not found and could not be created or found by email' });
+             return;
+           }
         } catch (createError) {
           console.error('[UserProfile Proxy] Error creating user profile:', createError);
           // Fall back to original 404 response
