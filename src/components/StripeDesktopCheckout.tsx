@@ -304,15 +304,6 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         }}
       />
 
-      {/* Debug section for payment method visibility */}
-      <div className="mt-3 p-3 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
-        <p className="font-medium mb-2">🔍 Payment Method Debug Info:</p>
-        <p>• Express Checkout should show: Apple Pay, Google Pay, Link, Cash App</p>
-        <p>• PaymentElement below should show: Credit Card, Link, Cash App Pay</p>
-        <p>• If methods are missing, check browser console for detailed logs</p>
-        <p>• All payment methods are loaded asynchronously by Stripe</p>
-      </div>
-
       <div className="mt-3 bg-white border rounded-lg p-3">
         {/* Payment method selection status */}
         <div className="mb-3 text-sm">
@@ -324,7 +315,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           ) : (
             <div className="flex items-center text-orange-600">
               <span className="mr-2">⚠️</span>
-              Please select a payment method above
+              Please select a payment method below
             </div>
           )}
         </div>
@@ -335,6 +326,38 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           position: 'relative',
           zIndex: 1
         }}>
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              .payment-element-container {
+                width: 100%;
+                max-width: 100%;
+              }
+
+              /* Ensure payment methods are visible and properly spaced */
+              .payment-element-container .ElementsApp {
+                width: 100% !important;
+                max-width: 100% !important;
+              }
+
+              /* Make payment method tabs more horizontal on desktop */
+              @media (min-width: 768px) {
+                .payment-element-container .ElementsApp .Tab {
+                  display: inline-block !important;
+                  margin-right: 10px !important;
+                  margin-bottom: 10px !important;
+                }
+              }
+
+              /* Mobile-friendly payment method display */
+              @media (max-width: 767px) {
+                .payment-element-container .ElementsApp .Tab {
+                  display: block !important;
+                  width: 100% !important;
+                  margin-bottom: 8px !important;
+                }
+              }
+            `
+          }} />
           <PaymentElement
             onReady={() => {
               console.log('[DESKTOP ECE] PaymentElement ready');
@@ -354,12 +377,20 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
                 console.log('[DESKTOP ECE] ⚠️ Payment method not complete or not selected');
               }
             }}
+            options={{
+              layout: {
+                type: 'tabs',
+                defaultCollapsed: false,
+                spacedAccordionItems: false
+              },
+              paymentMethodOrder: ['card', 'link', 'cashapp']
+            }}
           />
         </div>
         <button
           type="button"
           onClick={paymentMethodSelected ? handleConfirm : () => {
-            alert("Please select a payment method first. You can choose from the Link, Cash App, or credit card options above.");
+            alert("Please select a payment method first. You can choose from the Link, Cash App, or credit card options below.");
           }}
           className="mt-3 w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-3 px-4 rounded-md hover:from-teal-600 hover:to-green-600 disabled:opacity-60 disabled:cursor-not-allowed"
           disabled={confirming || !paymentMethodSelected}
