@@ -214,7 +214,7 @@ export default async function TicketListPage({ params, searchParams }: { params:
       </div>
 
       {/* Ticket Type Breakdown */}
-      {ticketTypes.length > 0 && (
+      {ticketTypes.length > 0 ? (
         <div className="mb-6">
           <div className="bg-gradient-to-r from-purple-100 to-indigo-100 rounded-lg shadow p-4">
             <div className="flex items-center gap-2 mb-4">
@@ -362,7 +362,7 @@ export default async function TicketListPage({ params, searchParams }: { params:
             </div>
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
@@ -429,7 +429,11 @@ export default async function TicketListPage({ params, searchParams }: { params:
             </Link>
           </div>
           <div className="text-center text-sm text-gray-600 mt-2">
-            Showing <span className="font-medium">{rows.length > 0 ? startItemControl : 0}</span> to <span className="font-medium">{rows.length > 0 ? endItemControl : 0}</span> of <span className="font-medium">{totalCount}</span> tickets
+            {rows.length > 0 ? (
+              <>Showing <span className="font-medium">{startItemControl}</span> to <span className="font-medium">{endItemControl}</span> of <span className="font-medium">{totalCount}</span> tickets</>
+            ) : (
+              <>No tickets found</>
+            )}
           </div>
         </div>
       </div>

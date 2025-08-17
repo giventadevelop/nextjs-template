@@ -1,0 +1,134 @@
+---
+description: Comprehensive rules for user profile operations including fetch, creation, and update patterns
+globs: src/app/profile/**/*.ts, src/pages/api/proxy/user-profiles/**/*.ts
+alwaysApply: true
+---
+
+### **User Profile Fetch Operations (4-Step Fallback)**
+
+- **Step 1: Primary Lookup by User ID**
+  - Always attempt to fetch profile using `/api/proxy/user-profiles/by-user/{userId}`
+  - Use Clerk `currentUser()` to get authenticated user context
+  - Return profile immediately if found
+
+- **Step 2: Email-Based Fallback Lookup**
+  - If Step 1 fails (404), extract email from Clerk user object
+  - Query using `/api/proxy/user-profiles?email.equals={email}`
+  - Validate profile exists and has valid ID before returning
+  - Log fallback attempt for debugging
+
+- **Step 3: Automatic Profile Creation**
+  - If no profile exists, create automatically using Clerk user data
+  - Use placeholder values for required fields (no null values)
+  - Include all required fields: `userId`, `email`, `firstName`, `lastName`, `tenantId`, `createdAt`, `updatedAt`
+  - Use proxy endpoint `/api/proxy/user-profiles` for creation
+  - Handle race conditions gracefully (profile might be created by another request)
+
+- **Step 4: Final Fallback**
+  - Return `null` if all steps fail
+  - This triggers profile form display for manual creation
+  - Log comprehensive failure information for debugging
+
+### **User Profile Update Operations (Direct Backend Pattern)**
+
+- **Use Direct Backend Calls for PATCH Operations**
+  - Never use proxy endpoints for PATCH operations
+  - Follow cursor rules: `PATCH/PUT Server Actions: Direct Backend Update Pattern`
+  - Use service JWT authentication, not Clerk session
+
+- **Required Implementation Pattern**
+  ```typescript
+  export async function updateUserProfileServer(profileId: number, payload: Partial<UserProfileDTO>): Promise<UserProfileDTO | null> {
+    try {
+      // Direct backend call with service JWT
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+      const url = `${API_BASE_URL}/api/user-profiles/${profileId}`;
+      
+      // Get service JWT
+      let token = await getCachedApiJwt();
+      if (!token) token = await generateApiJwt();
+      
+      // Include ID field in payload (required by backend)
+      const finalPayload = { ...payload, id: profileId };
+      
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/merge-patch+json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(finalPayload),
+      });
+      
+      // Handle response...
+    } catch (error) {
+      // Handle errors...
+    }
+  }
+  ```
+
+- **Required Fields for PATCH Operations**
+  - Always include `id: profileId` in the payload
+  - Use `Content-Type: application/merge-patch+json` for PATCH
+  - Include `Authorization: Bearer <token>` header
+  - Never send null values for required fields
+
+### **Profile Creation Data Requirements**
+
+- **Required Fields with Placeholders**
+  - `userId`: Clerk user ID (required)
+  - `email`: Clerk email or placeholder (no null)
+  - `firstName`: Clerk firstName or 'Pending' (no null)
+  - `lastName`: Clerk lastName or 'User' (no null)
+  - `tenantId`: From environment (required)
+  - `userRole`: 'ROLE_USER' (default)
+  - `userStatus`: 'ACTIVE' (default)
+  - `status`: 'PENDING' (default)
+  - `createdAt`: Current timestamp (required)
+  - `updatedAt`: Current timestamp (required)
+
+- **Optional Fields**
+  - Set empty strings `''` for text fields (not null)
+  - Set `false` for boolean fields (not null)
+  - Set `null` only for explicitly nullable fields
+
+### **Error Handling and Logging**
+
+- **Comprehensive Logging**
+  - Log each step of the 4-step fallback process
+  - Include payload details for debugging
+  - Log race condition detection and resolution
+  - Track profile creation success/failure
+
+- **Graceful Error Handling**
+  - Never let profile operations crash the application
+  - Provide meaningful error messages
+  - Fall back to profile form when automatic creation fails
+  - Handle network errors and backend validation failures
+
+### **Race Condition Prevention**
+
+- **Duplicate Profile Creation**
+  - Handle backend constraint violations gracefully
+  - Implement retry logic for race conditions
+  - Use singleton patterns to prevent duplicate API calls
+  - Log race condition detection for monitoring
+
+### **Proxy vs Direct Backend Usage**
+
+- **Use Proxy For**
+  - Profile creation (POST operations)
+  - Profile lookup (GET operations)
+  - List operations with filtering
+
+- **Use Direct Backend For**
+  - Profile updates (PATCH operations)
+  - Profile deletions (DELETE operations)
+  - Any operation requiring service JWT
+
+### **References and Examples**
+
+- **Working Implementation**: See `fetchUserProfileServer` for 4-step fallback pattern
+- **PATCH Pattern**: Follow cursor rules for `PATCH/PUT Server Actions: Direct Backend Update Pattern`
+- **Error Handling**: See current implementation for comprehensive error logging
+- **Race Condition Handling**: See profile creation error handling for constraint violations

@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { UserProfileDTO } from '@/types';
 import { getTenantId, getAppUrl } from '@/lib/env';
+import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 
 export async function fetchUserProfileServer(userId: string): Promise<UserProfileDTO | null> {
   const baseUrl = getAppUrl();
@@ -37,7 +38,7 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
       if (emailRes.ok) {
         const emailData = await emailRes.json();
         const profile = Array.isArray(emailData) ? emailData[0] : emailData;
-        
+
         if (profile && profile.id) {
           console.log('[Profile Server] ✅ Step 2 successful: Profile found by email');
           return profile;
@@ -136,15 +137,37 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
 }
 
 export async function updateUserProfileServer(profileId: number, payload: Partial<UserProfileDTO>): Promise<UserProfileDTO | null> {
-  const baseUrl = getAppUrl();
-
   try {
     console.log('[Profile Server] Updating profile:', profileId, 'with payload:', payload);
 
-    const response = await fetch(`${baseUrl}/api/proxy/user-profiles/${profileId}`, {
+    // Get JWT token for direct backend authentication
+    let token: string;
+    try {
+      token = await getCachedApiJwt();
+    } catch (jwtError) {
+      console.log('[Profile Server] Cached JWT failed, trying generateApiJwt:', jwtError);
+      token = await generateApiJwt();
+    }
+
+    // Add id field to payload as required by backend conventions
+    const patchPayload = {
+      id: profileId,
+      ...payload
+    };
+
+    // Direct backend call using NEXT_PUBLIC_API_BASE_URL
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+    if (!apiBaseUrl) {
+      throw new Error('NEXT_PUBLIC_API_BASE_URL is not configured');
+    }
+
+    const response = await fetch(`${apiBaseUrl}/api/user-profiles/${profileId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: { 
+        'Content-Type': 'application/merge-patch+json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(patchPayload),
     });
 
     if (response.ok) {
@@ -152,7 +175,8 @@ export async function updateUserProfileServer(profileId: number, payload: Partia
       console.log('[Profile Server] ✅ Profile updated successfully');
       return updatedProfile;
     } else {
-      console.error('[Profile Server] ❌ Profile update failed:', response.status);
+      const errorText = await response.text();
+      console.error('[Profile Server] ❌ Profile update failed:', response.status, errorText);
       return null;
     }
   } catch (error) {

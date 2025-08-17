@@ -22,7 +22,7 @@ export default async function ProfilePage() {
             <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
           </div>
         </div>
-        
+
         {/* Show info message if profile was just created */}
         {userProfile && !userProfile.email && (
           <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
