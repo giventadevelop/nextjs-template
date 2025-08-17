@@ -88,6 +88,8 @@ export async function fetchUserProfileServer(userId: string): Promise<UserProfil
           updatedAt: new Date().toISOString(),
         };
 
+        console.log('[Profile Server] Final create payload:', JSON.stringify(createPayload, null, 2));
+
         console.log('[Profile Server] Creating profile with payload:', createPayload);
 
         const createResponse = await fetch(`${baseUrl}/api/proxy/user-profiles`, {
