@@ -84,18 +84,18 @@ export async function POST(req: NextRequest) {
     const cartKey = cart
       .map((c) => ({ id: c?.ticketType?.id, q: c?.quantity }))
       .sort((a, b) => (a.id || 0) - (b.id || 0));
-    
+
     // Include timestamp rounded to 30-second intervals to prevent excessive PI creation
-    // but ensure fresh PIs for wallet payments 
+    // but ensure fresh PIs for wallet payments
     const timestampWindow = Math.floor(Date.now() / 30000);
-    
+
     const idemSource = `${eventIdRaw}|${email || ''}|${discountCodeId ?? ''}|${totalCents}|${JSON.stringify(cartKey)}|${timestampWindow}`;
     const idempotencyKey = crypto.createHash('sha256').update(idemSource).digest('hex');
-    
-    console.log('[PI] Creating PaymentIntent:', { 
-      totalCents, 
-      eventId: eventIdRaw, 
-      email, 
+
+    console.log('[PI] Creating PaymentIntent:', {
+      totalCents,
+      eventId: eventIdRaw,
+      email,
       discountCodeId,
       timestampWindow,
       idempotencyKey: idempotencyKey.substring(0, 8) + '...',
@@ -118,24 +118,30 @@ export async function POST(req: NextRequest) {
           }))
         ),
         ...(discountCodeId ? { discountCodeId: String(discountCodeId) } : {}),
+        // Enhanced metadata for user profile creation
+        customerEmail: email,
+        // Note: We can't get name/phone from the form here, but we can store what we have
+        // The webhook will extract additional data from Stripe's customer details if available
+        metadataSource: 'mobile_payment_intent',
+        timestamp: new Date().toISOString(),
       },
     }, { idempotencyKey });
 
-    console.log('[PI] PaymentIntent created successfully:', { 
-      id: pi.id, 
-      amount: pi.amount, 
+    console.log('[PI] PaymentIntent created successfully:', {
+      id: pi.id,
+      amount: pi.amount,
       status: pi.status,
       currency: pi.currency,
       created: pi.created,
-      automatic_payment_methods: pi.automatic_payment_methods?.enabled 
+      automatic_payment_methods: pi.automatic_payment_methods?.enabled
     });
 
-    return NextResponse.json({ 
-      clientSecret: pi.client_secret, 
-      paymentIntentId: pi.id, 
+    return NextResponse.json({
+      clientSecret: pi.client_secret,
+      paymentIntentId: pi.id,
       amount: totalCents,
       currency: 'usd',
-      status: pi.status 
+      status: pi.status
     });
   } catch (err) {
     console.error('[PI] Error creating PaymentIntent:', err);

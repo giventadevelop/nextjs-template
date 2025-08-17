@@ -235,6 +235,316 @@ async function handleChargeFeeUpdate(charge: Stripe.Charge) {
   }
 }
 
+// Helper function to create or update user profile from Stripe data
+async function createOrUpdateUserProfileFromStripe(
+  email: string,
+  firstName: string,
+  lastName: string,
+  phone: string,
+  baseUrl: string
+): Promise<void> {
+  const operationId = `profile_op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  try {
+    console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🚀 Starting user profile creation/update from Stripe data:`, {
+      operationId,
+      email,
+      firstName,
+      lastName,
+      phone,
+      firstNameLength: firstName?.length || 0,
+      lastNameLength: lastName?.length || 0,
+      phoneLength: phone?.length || 0,
+      timestamp: new Date().toISOString(),
+      baseUrl: baseUrl.substring(0, 50) + '...'
+    });
+
+    const tenantId = getTenantId();
+    const now = new Date().toISOString();
+
+    // Step 1: Look up existing profile by email
+    console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 📍 Step 1: Looking up profile by email:`, {
+      email,
+      tenantId,
+      lookupUrl: `${baseUrl}/api/proxy/user-profiles?email.equals=${encodeURIComponent(email)}&tenantId.equals=${tenantId}`,
+      timestamp: now
+    });
+
+    const emailParams = new URLSearchParams({
+      'email.equals': email,
+      'tenantId.equals': tenantId,
+    });
+
+    const emailRes = await fetchWithJwtRetry(
+      `${baseUrl}/api/proxy/user-profiles?${emailParams.toString()}`,
+      { method: 'GET', headers: { 'Content-Type': 'application/json' } },
+      `webhook-user-profile-lookup-${operationId}`
+    );
+
+    let existingProfile = null;
+    if (emailRes.ok) {
+      const userProfiles = await emailRes.json();
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 📊 Email lookup response:`, {
+        status: emailRes.status,
+        profileCount: Array.isArray(userProfiles) ? userProfiles.length : 'not-array',
+        profiles: Array.isArray(userProfiles) ? userProfiles.map(p => ({ id: p.id, userId: p.userId, email: p.email })) : 'invalid-response'
+      });
+
+      if (Array.isArray(userProfiles) && userProfiles.length > 0) {
+        existingProfile = userProfiles[0];
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ✅ Found existing profile by email:`, {
+          profileId: existingProfile.id,
+          existingUserId: existingProfile.userId,
+          existingFirstName: existingProfile.firstName,
+          existingLastName: existingProfile.lastName,
+          existingPhone: existingProfile.phone,
+          existingEmail: existingProfile.email,
+          timestamp: now
+        });
+      } else {
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ℹ️ No existing profile found by email`);
+      }
+    } else {
+      console.warn(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ⚠️ Email lookup failed:`, {
+        status: emailRes.status,
+        statusText: emailRes.statusText,
+        timestamp: now
+      });
+    }
+
+    // Step 2: If not found by email, try to create guest userId
+    let userId = existingProfile?.userId;
+    if (!userId) {
+      // Create guest userId for mobile payments
+      userId = `guest_${email.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}`;
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🆔 Step 2: Created guest userId for mobile payment:`, {
+        userId,
+        email,
+        timestamp: now
+      });
+    } else {
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🆔 Step 2: Using existing userId:`, userId);
+    }
+
+    // Step 3: Create or update user profile
+    if (existingProfile) {
+      // Update existing profile with Stripe data
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🔄 Step 3a: Updating existing profile with Stripe data`);
+      const updatedProfile = {
+        ...existingProfile,
+        firstName: firstName || existingProfile.firstName || '',
+        lastName: lastName || existingProfile.lastName || '',
+        phone: phone || existingProfile.phone || '',
+        updatedAt: now,
+      };
+
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 📝 Update payload:`, {
+        profileId: existingProfile.id,
+        oldData: {
+          firstName: existingProfile.firstName,
+          lastName: existingProfile.lastName,
+          phone: existingProfile.phone
+        },
+        newData: {
+          firstName: updatedProfile.firstName,
+          lastName: updatedProfile.lastName,
+          phone: updatedProfile.phone
+        },
+        timestamp: now
+      });
+
+      const updateRes = await fetchWithJwtRetry(
+        `${baseUrl}/api/proxy/user-profiles/${existingProfile.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedProfile),
+        },
+        `webhook-user-profile-update-${operationId}`
+      );
+
+      if (updateRes.ok) {
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ✅ Successfully updated existing user profile:`, {
+          profileId: existingProfile.id,
+          updatedFields: { firstName, lastName, phone },
+          responseStatus: updateRes.status,
+          timestamp: now
+        });
+      } else {
+        const errorText = await updateRes.text();
+        console.error(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ❌ Failed to update user profile:`, {
+          profileId: existingProfile.id,
+          status: updateRes.status,
+          statusText: updateRes.statusText,
+          error: errorText,
+          timestamp: now
+        });
+      }
+    } else {
+      // Create new profile with Stripe data
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🆕 Step 3b: Creating new user profile with Stripe data`);
+      const userProfileData = {
+        userId,
+        email,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        phone: phone || '',
+        createdAt: now,
+        updatedAt: now,
+        tenantId,
+        userStatus: 'ACTIVE',
+        userRole: 'MEMBER',
+      };
+
+      console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 📝 Create payload:`, {
+        userId,
+        email,
+        firstName: userProfileData.firstName,
+        lastName: userProfileData.lastName,
+        phone: userProfileData.phone,
+        tenantId,
+        timestamp: now
+      });
+
+      const createRes = await fetchWithJwtRetry(
+        `${baseUrl}/api/proxy/user-profiles`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(userProfileData),
+        },
+        `webhook-user-profile-create-${operationId}`
+      );
+
+      if (createRes.ok) {
+        const newProfile = await createRes.json();
+        console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ✅ Successfully created new user profile:`, {
+          profileId: newProfile.id,
+          userId,
+          email,
+          firstName,
+          lastName,
+          phone,
+          responseStatus: createRes.status,
+          timestamp: now
+        });
+      } else {
+        const errorText = await createRes.text();
+        console.error(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ❌ Failed to create user profile:`, {
+          status: createRes.status,
+          statusText: createRes.statusText,
+          error: errorText,
+          payload: userProfileData,
+          timestamp: now
+        });
+      }
+    }
+
+    console.log(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] 🎉 User profile operation completed successfully at:`, new Date().toISOString());
+  } catch (error) {
+    console.error(`[STRIPE-WEBHOOK] [USER-PROFILE] [${operationId}] ❌ Error in user profile creation/update:`, {
+      operationId,
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      email,
+      firstName,
+      lastName,
+      phone,
+      timestamp: new Date().toISOString()
+    });
+    // Don't throw - this is non-critical for payment processing
+  }
+}
+
+// Helper function to extract and split name from Stripe data
+function extractNameFromStripe(stripeName: string | null | undefined): { firstName: string; lastName: string } {
+  const extractionId = `name_ext_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+  console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] 🔍 Starting name extraction process:`, {
+    extractionId,
+    originalName: stripeName,
+    originalType: typeof stripeName,
+    originalLength: stripeName?.length || 0,
+    timestamp: new Date().toISOString()
+  });
+
+  if (!stripeName || typeof stripeName !== 'string') {
+    console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] ℹ️ No name data from Stripe, using defaults:`, {
+      reason: !stripeName ? 'null/undefined' : 'not-string',
+      timestamp: new Date().toISOString()
+    });
+    return { firstName: '', lastName: '' };
+  }
+
+  const trimmedName = stripeName.trim();
+  console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] ✂️ Processing Stripe name:`, {
+    original: stripeName,
+    trimmed: trimmedName,
+    originalLength: stripeName.length,
+    trimmedLength: trimmedName.length,
+    hasLeadingSpaces: stripeName.length !== stripeName.trimStart().length,
+    hasTrailingSpaces: stripeName.length !== stripeName.trimEnd().length,
+    timestamp: new Date().toISOString()
+  });
+
+  if (trimmedName.length === 0) {
+    console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] ℹ️ Empty name after trimming, using defaults:`, {
+      originalLength: stripeName.length,
+      trimmedLength: trimmedName.length,
+      timestamp: new Date().toISOString()
+    });
+    return { firstName: '', lastName: '' };
+  }
+
+  // Split by space and handle edge cases
+  const nameParts = trimmedName.split(/\s+/).filter(part => part.length > 0);
+  console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] 🔪 Name parts after splitting:`, {
+    parts: nameParts,
+    count: nameParts.length,
+    partsWithLengths: nameParts.map((part, index) => ({ index, part, length: part.length })),
+    splitPattern: '/\\s+/',
+    timestamp: new Date().toISOString()
+  });
+
+  if (nameParts.length === 0) {
+    console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] ℹ️ No valid name parts found, using defaults:`, {
+      trimmedName,
+      timestamp: new Date().toISOString()
+    });
+    return { firstName: '', lastName: '' };
+  }
+
+  if (nameParts.length === 1) {
+    // Single name - treat as first name
+    const firstName = nameParts[0];
+    console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] 👤 Single name part, using as first name:`, {
+      firstName,
+      firstNameLength: firstName.length,
+      reason: 'single-name-part',
+      timestamp: new Date().toISOString()
+    });
+    return { firstName, lastName: '' };
+  }
+
+  // Multiple parts - first part is first name, rest is last name
+  const firstName = nameParts[0];
+  const lastName = nameParts.slice(1).join(' ');
+
+  console.log(`[STRIPE-WEBHOOK] [NAME-EXTRACTION] [${extractionId}] ✅ Successfully split name:`, {
+    firstName,
+    lastName,
+    firstNameLength: firstName.length,
+    lastNameLength: lastName.length,
+    totalParts: nameParts.length,
+    firstPartIndex: 0,
+    lastPartsIndices: Array.from({ length: nameParts.length - 1 }, (_, i) => i + 1),
+    joinSeparator: ' ',
+    timestamp: new Date().toISOString()
+  });
+
+  return { firstName, lastName };
+}
+
 export const config = {
   api: {
     bodyParser: false,
@@ -657,6 +967,10 @@ export async function POST(req: NextRequest) {
             intentId: pi.id,
             amount: pi.amount,
             status: pi.status,
+            metadata: pi.metadata,
+            customer: pi.customer,
+            receipt_email: pi.receipt_email,
+            timestamp: new Date().toISOString()
           });
 
           // Create EventTicketTransaction for wallet (Payment Request Button) flow
@@ -666,7 +980,7 @@ export async function POST(req: NextRequest) {
             const cartJson = md.cart;
             const discountCodeId = md.discountCodeId ? Number(md.discountCodeId) : undefined;
             const eventIdRaw = md.eventId;
-            const email = (pi.receipt_email as string) || '';
+            const email = (pi.receipt_email as string) || md.customerEmail || '';
 
             if (!cartJson || !eventIdRaw) {
               console.warn('[STRIPE-WEBHOOK] PI missing cart/eventId metadata; skipping transaction create');
@@ -681,12 +995,78 @@ export async function POST(req: NextRequest) {
             const eventId = Number(eventIdRaw);
             const amountTotal = typeof pi.amount_received === 'number' ? pi.amount_received / 100 : (typeof pi.amount === 'number' ? pi.amount / 100 : 0);
 
+            // Enhanced user data extraction from Stripe
+            console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Starting user data extraction from Payment Intent:', {
+              piId: pi.id,
+              customerId: pi.customer,
+              receiptEmail: pi.receipt_email,
+              metadata: pi.metadata,
+              timestamp: now
+            });
+
+            // Try to get customer details from Stripe if customer ID exists
+            let customerName = '';
+            let customerPhone = '';
+            let customerEmail = email;
+
+            if (pi.customer && typeof pi.customer === 'string') {
+              try {
+                console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Fetching customer details from Stripe API:', pi.customer);
+                const customerResponse = await stripe.customers.retrieve(pi.customer);
+                console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Retrieved customer from Stripe:', {
+                  customerId: customerResponse.id,
+                  customerType: customerResponse.object,
+                  isDeleted: customerResponse.deleted,
+                  timestamp: now
+                });
+
+                // Check if customer exists and is not deleted
+                if (customerResponse &&
+                    customerResponse.object === 'customer' &&
+                    !customerResponse.deleted &&
+                    'name' in customerResponse) {
+
+                  const customer = customerResponse as Stripe.Customer;
+                  customerName = customer.name || '';
+                  customerPhone = customer.phone || '';
+                  customerEmail = customer.email || email;
+
+                  console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Successfully extracted customer data:', {
+                    customerId: customer.id,
+                    customerName,
+                    customerEmail,
+                    customerPhone,
+                    customerMetadata: customer.metadata
+                  });
+                } else {
+                  console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Customer not found or deleted, using defaults');
+                }
+              } catch (customerError) {
+                console.warn('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Failed to fetch customer details from Stripe:', {
+                  customerId: pi.customer,
+                  error: customerError instanceof Error ? customerError.message : String(customerError),
+                  timestamp: now
+                });
+              }
+            }
+
+            // Extract and split name from Stripe customer data
+            const { firstName, lastName } = extractNameFromStripe(customerName);
+            console.log('[STRIPE-WEBHOOK] [USER-DATA-EXTRACTION] Final extracted user data:', {
+              originalName: customerName,
+              extractedFirstName: firstName,
+              extractedLastName: lastName,
+              extractedPhone: customerPhone,
+              extractedEmail: customerEmail,
+              timestamp: now
+            });
+
             // Build payload similar to processStripeSessionServer
             const txPayload: Omit<EventTicketTransactionDTO, 'id'> = {
-              email,
-              firstName: '',
-              lastName: '',
-              phone: '',
+              email: customerEmail,
+              firstName: firstName,
+              lastName: lastName,
+              phone: customerPhone,
               quantity: totalQuantity,
               pricePerUnit: 0,
               totalAmount: amountTotal, // original before discount not available here; treat as total
@@ -707,7 +1087,7 @@ export async function POST(req: NextRequest) {
               stripePaymentIntentId: pi.id,
               stripeCustomerId: (pi.customer as string) || undefined,
               stripePaymentStatus: pi.status,
-              stripeCustomerEmail: email,
+              stripeCustomerEmail: customerEmail,
               stripePaymentCurrency: (pi.currency || 'usd') as any,
               stripeAmountDiscount: undefined as any,
               stripeAmountTax: undefined as any,
@@ -720,20 +1100,20 @@ export async function POST(req: NextRequest) {
 
             const created = await createEventTicketTransactionServer(withTenantId(txPayload as any) as any);
             console.log('[STRIPE-WEBHOOK] Created PI-based ticket transaction:', created?.id);
-            
+
             // If transaction creation failed (id = -1), log but continue
             if (created?.id === -1) {
               console.warn('[STRIPE-WEBHOOK] Transaction creation failed, but webhook will succeed to prevent infinite retries');
             } else if (created?.id && Array.isArray(cart)) {
               // CRITICAL FIX: Create transaction items for mobile flow (just like desktop)
               console.log('[STRIPE-WEBHOOK] Creating transaction items for mobile payment intent flow...');
-              
+
               try {
                 // Import the bulk creation function
                 const { createTransactionItemsBulkServer } = await import('./ApiServerActions');
-                
+
                 console.log('[STRIPE-WEBHOOK] Raw cart data from payment intent metadata:', JSON.stringify(cart, null, 2));
-                
+
                 // CRITICAL FIX: Mobile cart is missing price data, need to fetch from ticket types
                 // First, fetch price data for each cart item
                 const cartWithPrices = [];
@@ -744,21 +1124,21 @@ export async function POST(req: NextRequest) {
                     if (!ticketTypeId && item.ticketType && item.ticketType.id) {
                       ticketTypeId = item.ticketType.id;
                     }
-                    
+
                     if (!ticketTypeId || typeof item.quantity !== 'number' || item.quantity <= 0) {
                       console.warn('[STRIPE-WEBHOOK] Skipping invalid cart item - missing basic data:', item);
                       continue;
                     }
-                    
+
                     // Fetch ticket type to get price data
                     console.log('[STRIPE-WEBHOOK] Fetching price for ticket type:', ticketTypeId);
                     console.log('[STRIPE-WEBHOOK] Making API call to:', `${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`);
-                    
+
                     const ticketTypeRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}`, {
                       method: 'GET',
                       headers: { 'Content-Type': 'application/json' }
                     });
-                    
+
                     if (!ticketTypeRes.ok) {
                       const errorText = await ticketTypeRes.text();
                       console.error('[STRIPE-WEBHOOK] Failed to fetch ticket type:', {
@@ -770,27 +1150,27 @@ export async function POST(req: NextRequest) {
                       });
                       continue;
                     }
-                    
+
                     const ticketType = await ticketTypeRes.json();
                     console.log('[STRIPE-WEBHOOK] Received ticket type data:', {
                       ticketTypeId,
                       ticketType: JSON.stringify(ticketType, null, 2)
                     });
-                    
+
                     const price = ticketType.price;
-                    
+
                     if (typeof price !== 'number' || price < 0) {
                       console.error('[STRIPE-WEBHOOK] Invalid price from ticket type:', { ticketTypeId, price, ticketType });
                       continue;
                     }
-                    
+
                     console.log('[STRIPE-WEBHOOK] Successfully fetched price for ticket type:', {
                       ticketTypeId,
                       price,
                       quantity: item.quantity,
                       total: price * item.quantity
                     });
-                    
+
                     // Add price to cart item
                     cartWithPrices.push({
                       ...item,
@@ -798,25 +1178,25 @@ export async function POST(req: NextRequest) {
                       price,
                       ticketType
                     });
-                    
+
                   } catch (error) {
                     console.error('[STRIPE-WEBHOOK] Error fetching price for cart item:', item, error);
                   }
                 }
-                
+
                 console.log('[STRIPE-WEBHOOK] Cart items with prices fetched:', {
                   originalCount: cart.length,
                   withPricesCount: cartWithPrices.length,
                   cartWithPrices: JSON.stringify(cartWithPrices, null, 2)
                 });
-                
+
                 // Now build transaction items payload with complete data
                 const itemsPayload = cartWithPrices.map((item: any) => {
                   const parsedTicketTypeId = parseInt(item.ticketTypeId, 10);
                   const quantity = item.quantity;
                   const pricePerUnit = parseFloat(item.price.toString());
                   const totalAmount = pricePerUnit * quantity;
-                  
+
                   console.log('[STRIPE-WEBHOOK] Creating transaction item with complete data:', {
                     ticketTypeId: parsedTicketTypeId,
                     quantity,
@@ -824,7 +1204,7 @@ export async function POST(req: NextRequest) {
                     totalAmount,
                     transactionId: created.id
                   });
-                  
+
                   return withTenantId({
                     transactionId: created.id as number,
                     ticketTypeId: parsedTicketTypeId,
@@ -863,6 +1243,99 @@ export async function POST(req: NextRequest) {
                 }
               }
             }
+
+            // ASYNCHRONOUS USER PROFILE CREATION - After all critical payment operations
+            // This ensures payment processing is never blocked by profile operations
+            console.log('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] Starting asynchronous user profile creation/update');
+
+            // Use setTimeout to ensure this runs after the current webhook response
+            setTimeout(async () => {
+              try {
+                console.log('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] Executing delayed user profile operation');
+
+                // Validate required data before proceeding
+                if (!customerEmail || customerEmail.trim().length === 0) {
+                  console.warn('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] ⚠️ Skipping user profile operation - no valid email');
+                  return;
+                }
+
+                // Create or update user profile from extracted Stripe data
+                await createOrUpdateUserProfileFromStripe(
+                  customerEmail,
+                  firstName,
+                  lastName,
+                  customerPhone,
+                  baseUrl
+                );
+
+                console.log('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] ✅ User profile operation completed successfully');
+              } catch (profileError) {
+                console.error('[STRIPE-WEBHOOK] [USER-PROFILE-ASYNC] ❌ Error in delayed user profile operation:', {
+                  error: profileError instanceof Error ? profileError.message : String(profileError),
+                  stack: profileError instanceof Error ? profileError.stack : undefined,
+                  customerEmail,
+                  firstName,
+                  lastName,
+                  customerPhone,
+                  timestamp: new Date().toISOString()
+                });
+                // Don't re-throw - this is non-critical for payment processing
+              }
+            }, 1000); // 1 second delay to ensure webhook response is sent first
+
+            // COMPREHENSIVE SUMMARY LOG FOR PRODUCTION DEBUGGING
+            console.log('[STRIPE-WEBHOOK] [MOBILE-PAYMENT-SUMMARY] 🎯 MOBILE PAYMENT INTENT PROCESSING COMPLETED:', {
+              // Payment Intent Details
+              paymentIntentId: pi.id,
+              amount: pi.amount,
+              currency: pi.currency,
+              status: pi.status,
+              customerId: pi.customer,
+
+              // Extracted User Data
+              extractedEmail: customerEmail,
+              extractedFirstName: firstName,
+              extractedLastName: lastName,
+              extractedPhone: customerPhone,
+              originalStripeName: customerName,
+
+              // Transaction Details
+              transactionId: created?.id,
+              eventId: eventId,
+              totalQuantity: totalQuantity,
+              finalAmount: amountTotal,
+
+              // Cart Information
+              cartItemCount: Array.isArray(cart) ? cart.length : 0,
+              cartItems: Array.isArray(cart) ? cart.map(item => ({
+                ticketTypeId: item.ticketTypeId || item.ticketType?.id,
+                quantity: item.quantity
+              })) : [],
+
+              // Profile Operation Status
+              profileOperationScheduled: true,
+              profileOperationDelay: '1000ms',
+              profileOperationAsync: true,
+
+              // Timestamps
+              webhookReceivedAt: now,
+              profileOperationScheduledAt: new Date().toISOString(),
+
+              // Environment Info
+              environment: process.env.NODE_ENV,
+              tenantId: getTenantId(),
+
+              // Debug Information
+              debugInfo: {
+                hasCustomerId: !!pi.customer,
+                hasReceiptEmail: !!pi.receipt_email,
+                hasMetadata: !!pi.metadata,
+                metadataKeys: pi.metadata ? Object.keys(pi.metadata) : [],
+                customerDataRetrieved: !!customerName || !!customerPhone,
+                nameExtractionSuccessful: !!(firstName || lastName)
+              }
+            });
+
           } catch (piErr) {
             console.error('[STRIPE-WEBHOOK] Error creating PI-based transaction:', piErr);
           }
