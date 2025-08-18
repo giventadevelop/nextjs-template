@@ -449,6 +449,16 @@ export default function TicketingPage() {
           )}
         </div>
 
+        {/* Desktop payment method guidance */}
+        {typeof window !== 'undefined' && window.innerWidth > 768 && canCheckout && (
+          <div className="mt-3 mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center text-blue-700 text-sm">
+              <span className="mr-2">💳</span>
+              <span>Please select a pay method or click any of the payment buttons below</span>
+            </div>
+          </div>
+        )}
+
         {/* Wallets: Desktop uses Express Checkout (Apple/Google/Link); Mobile uses PRB */}
         <div className="mt-4">
           {/* Simple viewport check; SSR-safe since this is a client component */}
