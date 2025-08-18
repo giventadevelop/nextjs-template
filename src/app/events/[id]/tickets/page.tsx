@@ -822,101 +822,83 @@ export default function TicketingPage() {
           <p className="text-gray-700 text-base">{event.description}</p>
         </div>
 
-        {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
-          {/* Left Side: Ticket Types */}
-          <div className="lg:col-span-1">
-            <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
-              <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Select Your Tickets</h2>
-              <div className="space-y-6">
-                {ticketTypes.length === 0 && (
-                  <div className="text-center text-gray-500 py-8">No ticket types available for this event.</div>
-                )}
-                {ticketTypes.map(ticket => {
-                  // Check if tickets are sold out
-                  const isSoldOut = (ticket.remainingQuantity ?? 0) <= 0;
-                  const maxOrderQuantity = ticket.maxQuantityPerOrder ?? 10;
+        {/* Ticket Selection Section */}
+        <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8 mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Select Your Tickets</h2>
+          <div className="space-y-6">
+            {ticketTypes.length === 0 && (
+              <div className="text-center text-gray-500 py-8">No ticket types available for this event.</div>
+            )}
+            {ticketTypes.map(ticket => {
+              // Check if tickets are sold out
+              const isSoldOut = (ticket.remainingQuantity ?? 0) <= 0;
+              const maxOrderQuantity = ticket.maxQuantityPerOrder ?? 10;
 
-                  return (
-                    <div key={ticket.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 border border-gray-200 rounded-lg bg-white shadow-sm relative">
-                      {/* Sold Out Image Only */}
-                      {isSoldOut && (
-                        <div className="absolute top-4 right-4 z-10">
-                          <Image
-                            src="/images/tickets_sold_out.jpg"
-                            alt="Tickets Sold Out"
-                            width={60}
-                            height={60}
-                            className="rounded shadow-sm"
-                          />
-                        </div>
-                      )}
-
-                      <div className="mb-4 sm:mb-0">
-                        <h3 className="text-xl font-semibold text-gray-900">{ticket.name}</h3>
-                        <p className="text-lg font-bold text-blue-600 mt-1">${ticket.price.toFixed(2)}</p>
-                        <p className="text-sm text-gray-600 mt-2">{ticket.description}</p>
-
-                        {/* Low stock warning only */}
-                        {!isSoldOut && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 5 && ticket.remainingQuantity > 0 && (
-                          <div className="mt-3">
-                            <p className="text-sm text-orange-600 font-medium">
-                              ⚠️ Low stock - only {ticket.remainingQuantity} left!
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
-                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-l-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          disabled={isSoldOut || (selectedTickets[ticket.id] || 0) <= 0}
-                        >
-                          -
-                        </button>
-                        <span className="px-4 py-1 bg-white border-t border-b">{selectedTickets[ticket.id] || 0}</span>
-                        <button
-                          onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
-                          className="bg-gray-200 text-gray-700 px-3 py-1 rounded-r-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                          disabled={isSoldOut || (selectedTickets[ticket.id] || 0) >= Math.min(ticket.remainingQuantity ?? 0, maxOrderQuantity)}
-                        >
-                          +
-                        </button>
-                      </div>
-
-                      {/* Quantity validation warning */}
-                      {selectedTickets[ticket.id] > 0 && ticket.remainingQuantity !== undefined &&
-                        selectedTickets[ticket.id] > ticket.remainingQuantity && (
-                          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                            ⚠️ Only {ticket.remainingQuantity} tickets available for this selection
-                          </div>
-                        )}
+              return (
+                <div key={ticket.id} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-5 border border-gray-200 rounded-lg bg-white shadow-sm relative">
+                  {/* Sold Out Image Only */}
+                  {isSoldOut && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <Image
+                        src="/images/tickets_sold_out.jpg"
+                        alt="Tickets Sold Out"
+                        width={60}
+                        height={60}
+                        className="rounded shadow-sm"
+                      />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+                  )}
 
-          {/* Order Summary Section - Now below tickets for desktop, sidebar for mobile */}
-          <div className="lg:col-span-1">
-            {/* Mobile: Sidebar layout (original) */}
-            <div className="lg:hidden">
-              <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8 sticky top-8">
-                <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
-                {renderOrderSummary()}
-              </div>
-            </div>
+                  <div className="mb-4 sm:mb-0">
+                    <h3 className="text-xl font-semibold text-gray-900">{ticket.name}</h3>
+                    <p className="text-lg font-bold text-blue-600 mt-1">${ticket.price.toFixed(2)}</p>
+                    <p className="text-sm text-gray-600 mt-2">{ticket.description}</p>
 
-            {/* Desktop: Full-width layout below tickets */}
-            <div className="hidden lg:block">
-              <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
-                <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
-                {renderOrderSummary()}
-              </div>
-            </div>
+                    {/* Low stock warning only */}
+                    {!isSoldOut && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 5 && ticket.remainingQuantity > 0 && (
+                      <div className="mt-3">
+                        <p className="text-sm text-orange-600 font-medium">
+                          ⚠️ Low stock - only {ticket.remainingQuantity} left!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) - 1)}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded-l-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      disabled={isSoldOut || (selectedTickets[ticket.id] || 0) <= 0}
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-1 bg-white border-t border-b">{selectedTickets[ticket.id] || 0}</span>
+                    <button
+                      onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
+                      className="bg-gray-200 text-gray-700 px-3 py-1 rounded-r-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      disabled={isSoldOut || (selectedTickets[ticket.id] || 0) >= Math.min(ticket.remainingQuantity ?? 0, maxOrderQuantity)}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Quantity validation warning */}
+                  {selectedTickets[ticket.id] > 0 && ticket.remainingQuantity !== undefined &&
+                    selectedTickets[ticket.id] > ticket.remainingQuantity && (
+                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                        ⚠️ Only {ticket.remainingQuantity} tickets available for this selection
+                      </div>
+                    )}
+                </div>
+              );
+            })}
           </div>
+        </div>
+
+        {/* Order Summary Section - Full width below tickets */}
+        <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
+          {renderOrderSummary()}
         </div>
       </div>
       <Modal open={showDiscountModal} onClose={() => setShowDiscountModal(false)} title="Discount Code Error">
