@@ -340,6 +340,185 @@ export default function TicketingPage() {
     }
   };
 
+  const renderOrderSummary = () => {
+    return (
+      <>
+        {/* Discount Code Section */}
+        {availableDiscounts.length > 0 && (
+          <div className="mb-6">
+            <label htmlFor="discountCode" className="block text-sm font-medium text-gray-700 mb-2">
+              Discount Code
+            </label>
+            <div className="space-y-3">
+              <input
+                type="text"
+                id="discountCode"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value)}
+                placeholder="Enter discount code"
+                className="w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
+              />
+              <button
+                onClick={handleApplyDiscount}
+                className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 font-semibold flex items-center justify-center gap-2"
+              >
+                <FaTags />
+                Apply
+              </button>
+            </div>
+            {discountError && <p className="text-red-500 text-sm mt-2">{discountError}</p>}
+            {discountSuccessMessage && <p className="text-green-600 text-sm mt-2">{discountSuccessMessage}</p>}
+          </div>
+        )}
+
+        {/* Total */}
+        <div className="border-t border-gray-200 pt-6 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-lg font-medium text-gray-600">Total:</span>
+            <span className="text-2xl font-bold text-gray-900">${totalAmount.toFixed(2)}</span>
+          </div>
+
+          {/* Warning for sold out tickets */}
+          {hasUnavailableTickets && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center text-red-700 text-sm">
+                <span className="mr-2">⚠️</span>
+                <span>Some selected tickets are sold out</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Email and Checkout */}
+        <div>
+          {/* Show requirement indicator when tickets are selected */}
+          {hasTicketsSelected && (
+            <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center text-blue-700 text-sm">
+                <span className="mr-2">📧</span>
+                <span>Email required to enable payment options</span>
+              </div>
+            </div>
+          )}
+
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            Email for ticket confirmation
+          </label>
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailError) setEmailError(false);
+            }}
+            className={`mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base ${emailError ? 'border-red-500' : 'border-gray-400'}`}
+            required
+            placeholder="you@example.com"
+          />
+          {emailError && (
+            <p className="text-red-500 text-xs mt-1">
+              {email ? 'Please enter a valid email address.' : 'Please enter your email address to proceed with payment.'}
+            </p>
+          )}
+        </div>
+
+        {/* Wallets: Desktop uses Express Checkout (Apple/Google/Link); Mobile uses PRB */}
+        <div className="mt-4">
+          {/* Simple viewport check; SSR-safe since this is a client component */}
+          {typeof window !== 'undefined' && window.innerWidth > 768 ? (
+            <StripeDesktopCheckout
+              cart={Object.entries(selectedTickets)
+                .filter(([, quantity]) => quantity > 0)
+                .map(([ticketId, quantity]) => ({
+                  ticketType: { id: parseInt(ticketId) },
+                  quantity,
+                }))}
+              eventId={String(eventId)}
+              email={email}
+              discountCodeId={appliedDiscount?.id ?? null}
+              enabled={canCheckout}
+              amountCents={Math.round(totalAmount * 100)}
+              onInvalidClick={() => {
+                if (!emailIsValid) setEmailError(true);
+                if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
+              }}
+            />
+          ) : (
+            <div
+              onClick={() => {
+                const hasTickets = Object.values(selectedTickets).some(q => q > 0);
+                const validEmail = emailIsValid;
+                console.log('[PRB VALIDATION] Placeholder clicked', { hasTickets, validEmail });
+                if (!(hasTickets && validEmail)) {
+                  if (!validEmail) setEmailError(true);
+                  if (!hasTickets) alert('Please select at least one ticket.');
+                }
+                if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
+              }}
+              role="button"
+              aria-label="Apple Pay / Google Pay"
+            >
+              <StripePaymentRequestButton
+                cart={Object.entries(selectedTickets)
+                  .filter(([, quantity]) => quantity > 0)
+                  .map(([ticketId, quantity]) => ({
+                    ticketType: { id: parseInt(ticketId) },
+                    quantity,
+                  }))}
+                eventId={String(eventId)}
+                email={email}
+                discountCodeId={appliedDiscount?.id ?? null}
+                enabled={canCheckout}
+                showPlaceholder
+                amountCents={Math.round(totalAmount * 100)}
+                onInvalidClick={() => {
+                  console.log('[PRB VALIDATION] onInvalidClick fired');
+                  if (!emailIsValid) setEmailError(true);
+                  if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                  if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
+                }}
+              />
+            </div>
+          )}
+          <div className="text-xs text-gray-700 mt-2">Apple/Google/Link</div>
+        </div>
+
+        <div className="mt-6">
+          <div className="text-base font-extrabold text-gray-800 mb-3">OR</div>
+          <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
+          {/* Wrapper captures clicks even when the button is disabled to surface validation errors */}
+          <div
+            role="button"
+            aria-label="Pay with credit card"
+            onClick={() => {
+              if (!canCheckout) {
+                if (!emailIsValid) setEmailError(true);
+                if (!hasTicketsSelected) alert('Please select at least one ticket.');
+                if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
+                return;
+              }
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (!canCheckout) return; // Guard (should be handled by wrapper)
+                handleCheckout();
+              }}
+              className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isProcessing || !canCheckout}
+            >
+              <FaCreditCard className="mr-3" size={22} />
+              {hasUnavailableTickets ? 'Tickets Sold Out' : 'Pay with credit card'}
+            </button>
+          </div>
+        </div>
+      </>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col" style={{ overflowX: 'hidden' }}>
@@ -618,9 +797,9 @@ export default function TicketingPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8">
           {/* Left Side: Ticket Types */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-1">
             <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Select Your Tickets</h2>
               <div className="space-y-6">
@@ -694,182 +873,21 @@ export default function TicketingPage() {
             </div>
           </div>
 
-          {/* Right Side: Order Summary & Checkout */}
-          <div className="lg:col-span-2">
-            <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8 sticky top-8">
-              <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
-
-              {/* Discount Code Section */}
-              {availableDiscounts.length > 0 && (
-                <div className="mb-6">
-                  <label htmlFor="discountCode" className="block text-sm font-medium text-gray-700 mb-2">
-                    Discount Code
-                  </label>
-                  <div className="space-y-3">
-                    <input
-                      type="text"
-                      id="discountCode"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value)}
-                      placeholder="Enter discount code"
-                      className="w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base"
-                    />
-                    <button
-                      onClick={handleApplyDiscount}
-                      className="w-full bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 disabled:bg-blue-300 font-semibold flex items-center justify-center gap-2"
-                    >
-                      <FaTags />
-                      Apply
-                    </button>
-                  </div>
-                  {discountError && <p className="text-red-500 text-sm mt-2">{discountError}</p>}
-                  {discountSuccessMessage && <p className="text-green-600 text-sm mt-2">{discountSuccessMessage}</p>}
-                </div>
-              )}
-
-              {/* Total */}
-              <div className="border-t border-gray-200 pt-6 mb-6">
-                <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-medium text-gray-600">Total:</span>
-                  <span className="text-2xl font-bold text-gray-900">${totalAmount.toFixed(2)}</span>
-                </div>
-
-                {/* Warning for sold out tickets */}
-                {hasUnavailableTickets && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center text-red-700 text-sm">
-                      <span className="mr-2">⚠️</span>
-                      <span>Some selected tickets are sold out</span>
-                    </div>
-                  </div>
-                )}
+          {/* Order Summary Section - Now below tickets for desktop, sidebar for mobile */}
+          <div className="lg:col-span-1">
+            {/* Mobile: Sidebar layout (original) */}
+            <div className="lg:hidden">
+              <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8 sticky top-8">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
+                {renderOrderSummary()}
               </div>
+            </div>
 
-              {/* Email and Checkout */}
-              <div>
-                {/* Show requirement indicator when tickets are selected */}
-                {hasTicketsSelected && (
-                  <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center text-blue-700 text-sm">
-                      <span className="mr-2">📧</span>
-                      <span>Email required to enable payment options</span>
-                    </div>
-                  </div>
-                )}
-
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email for ticket confirmation
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailError) setEmailError(false);
-                  }}
-                  className={`mt-1 block w-full border border-gray-400 rounded-xl focus:border-blue-500 focus:ring-blue-500 px-4 py-3 text-base ${emailError ? 'border-red-500' : 'border-gray-400'}`}
-                  required
-                  placeholder="you@example.com"
-                />
-                {emailError && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {email ? 'Please enter a valid email address.' : 'Please enter your email address to proceed with payment.'}
-                  </p>
-                )}
-              </div>
-
-              {/* Wallets: Desktop uses Express Checkout (Apple/Google/Link); Mobile uses PRB */}
-              <div className="mt-4">
-                {/* Simple viewport check; SSR-safe since this is a client component */}
-                {typeof window !== 'undefined' && window.innerWidth > 768 ? (
-                  <StripeDesktopCheckout
-                    cart={Object.entries(selectedTickets)
-                      .filter(([, quantity]) => quantity > 0)
-                      .map(([ticketId, quantity]) => ({
-                        ticketType: { id: parseInt(ticketId) },
-                        quantity,
-                      }))}
-                    eventId={String(eventId)}
-                    email={email}
-                    discountCodeId={appliedDiscount?.id ?? null}
-                    enabled={canCheckout}
-                    amountCents={Math.round(totalAmount * 100)}
-                    onInvalidClick={() => {
-                      if (!emailIsValid) setEmailError(true);
-                      if (!hasTicketsSelected) alert('Please select at least one ticket.');
-                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
-                    }}
-                  />
-                ) : (
-                  <div
-                    onClick={() => {
-                      const hasTickets = Object.values(selectedTickets).some(q => q > 0);
-                      const validEmail = emailIsValid;
-                      console.log('[PRB VALIDATION] Placeholder clicked', { hasTickets, validEmail });
-                      if (!(hasTickets && validEmail)) {
-                        if (!validEmail) setEmailError(true);
-                        if (!hasTickets) alert('Please select at least one ticket.');
-                      }
-                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
-                    }}
-                    role="button"
-                    aria-label="Apple Pay / Google Pay"
-                  >
-                    <StripePaymentRequestButton
-                      cart={Object.entries(selectedTickets)
-                        .filter(([, quantity]) => quantity > 0)
-                        .map(([ticketId, quantity]) => ({
-                          ticketType: { id: parseInt(ticketId) },
-                          quantity,
-                        }))}
-                      eventId={String(eventId)}
-                      email={email}
-                      discountCodeId={appliedDiscount?.id ?? null}
-                      enabled={canCheckout}
-                      showPlaceholder
-                      amountCents={Math.round(totalAmount * 100)}
-                      onInvalidClick={() => {
-                        console.log('[PRB VALIDATION] onInvalidClick fired');
-                        if (!emailIsValid) setEmailError(true);
-                        if (!hasTicketsSelected) alert('Please select at least one ticket.');
-                        if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
-                      }}
-                    />
-                  </div>
-                )}
-                <div className="text-xs text-gray-700 mt-2">Apple/Google/Link</div>
-              </div>
-
-              <div className="mt-6">
-                <div className="text-base font-extrabold text-gray-800 mb-3">OR</div>
-                <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
-                {/* Wrapper captures clicks even when the button is disabled to surface validation errors */}
-                <div
-                  role="button"
-                  aria-label="Pay with credit card"
-                  onClick={() => {
-                    if (!canCheckout) {
-                      if (!emailIsValid) setEmailError(true);
-                      if (!hasTicketsSelected) alert('Please select at least one ticket.');
-                      if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
-                      return;
-                    }
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!canCheckout) return; // Guard (should be handled by wrapper)
-                      handleCheckout();
-                    }}
-                    className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isProcessing || !canCheckout}
-                  >
-                    <FaCreditCard className="mr-3" size={22} />
-                    {hasUnavailableTickets ? 'Tickets Sold Out' : 'Pay with credit card'}
-                  </button>
-                </div>
+            {/* Desktop: Full-width layout below tickets */}
+            <div className="hidden lg:block">
+              <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
+                {renderOrderSummary()}
               </div>
             </div>
           </div>

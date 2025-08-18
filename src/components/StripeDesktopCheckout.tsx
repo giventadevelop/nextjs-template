@@ -325,17 +325,31 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
             flex: 0 0 auto !important;
           }
 
-          /* Desktop: Horizontal layout with proper spacing */
+          /* Desktop: Full-width horizontal layout with proper spacing */
           @media (min-width: 768px) {
             .ElementsApp .ExpressCheckoutElement {
               display: flex !important;
               flex-wrap: wrap !important;
-              gap: 8px !important;
+              gap: 12px !important;
+              justify-content: flex-start !important;
+              align-items: center !important;
             }
 
             .ElementsApp .ExpressCheckoutElement button {
               flex: 0 0 auto !important;
               margin: 0 !important;
+              min-width: 140px !important;
+              height: 48px !important;
+            }
+
+            /* Ensure all payment method buttons are visible */
+            .ElementsApp .ExpressCheckoutElement button[data-testid*="link"],
+            .ElementsApp .ExpressCheckoutElement button[data-testid*="google"],
+            .ElementsApp .ExpressCheckoutElement button[data-testid*="apple"],
+            .ElementsApp .ExpressCheckoutElement button[data-testid*="amazon"] {
+              display: inline-block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
             }
           }
 
@@ -350,6 +364,15 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
               width: 100% !important;
               margin-bottom: 8px !important;
             }
+          }
+
+          /* Override any Stripe default hiding */
+          .ElementsApp .ExpressCheckoutElement {
+            overflow: visible !important;
+          }
+
+          .ElementsApp .ExpressCheckoutElement * {
+            overflow: visible !important;
           }
         `
       }} />
