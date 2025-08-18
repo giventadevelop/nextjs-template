@@ -340,7 +340,33 @@ export default function TicketingPage() {
     }
   };
 
+  // Define renderOrderSummary function here, after all the required functions and variables
   const renderOrderSummary = () => {
+    // Debug logging to help identify any undefined variables
+    console.log('[renderOrderSummary] Debug variables:', {
+      availableDiscounts: availableDiscounts?.length,
+      discountCode,
+      appliedDiscount: appliedDiscount?.id,
+      totalAmount,
+      hasUnavailableTickets,
+      hasTicketsSelected,
+      emailIsValid,
+      canCheckout,
+      email,
+      eventId
+    });
+
+    // Safety check - only render if component is ready
+    if (!mounted || loading || !eventId) {
+      console.log('[renderOrderSummary] Component not ready, returning loading state');
+      return (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-2"></div>
+          <p className="text-sm text-gray-600">Loading payment options...</p>
+        </div>
+      );
+    }
+
     return (
       <>
         {/* Discount Code Section */}
