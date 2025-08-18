@@ -211,7 +211,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
               // Handle empty error object case (common when no payment method selected)
               if (!submitError.type && !submitError.message) {
                 console.warn("[DESKTOP ECE] Express Checkout validation failed: No payment method selected");
-                alert("Please select a payment method before proceeding. You can choose from the Link, Cash App, or credit card options above.");
+                alert("Please select a payment method before proceeding. You can choose from the Link, Cash App, or credit card options below.");
                 return;
               }
 
@@ -302,7 +302,57 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           console.log('[DESKTOP ECE] Available payment methods should include: Apple Pay, Google Pay, Link, Cash App');
           console.log('[DESKTOP ECE] If only Link/Cash App show, check Stripe domain verification for Google Pay');
         }}
+        options={{
+          layout: 'horizontal' as any
+        }}
       />
+
+      {/* Custom CSS for Express Checkout button layout */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Ensure Express Checkout buttons display horizontally */
+          .ElementsApp .ExpressCheckoutElement {
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* Force horizontal layout for Express Checkout buttons */
+          .ElementsApp .ExpressCheckoutElement button {
+            display: inline-block !important;
+            margin-right: 8px !important;
+            margin-bottom: 8px !important;
+            min-width: auto !important;
+            flex: 0 0 auto !important;
+          }
+
+          /* Desktop: Horizontal layout with proper spacing */
+          @media (min-width: 768px) {
+            .ElementsApp .ExpressCheckoutElement {
+              display: flex !important;
+              flex-wrap: wrap !important;
+              gap: 8px !important;
+            }
+
+            .ElementsApp .ExpressCheckoutElement button {
+              flex: 0 0 auto !important;
+              margin: 0 !important;
+            }
+          }
+
+          /* Mobile: Stack vertically but maintain button visibility */
+          @media (max-width: 767px) {
+            .ElementsApp .ExpressCheckoutElement {
+              display: block !important;
+            }
+
+            .ElementsApp .ExpressCheckoutElement button {
+              display: block !important;
+              width: 100% !important;
+              margin-bottom: 8px !important;
+            }
+          }
+        `
+      }} />
 
       <div className="mt-3 bg-white border rounded-lg p-3">
         {/* Payment method selection status */}

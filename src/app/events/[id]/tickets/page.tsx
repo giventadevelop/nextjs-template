@@ -618,9 +618,9 @@ export default function TicketingPage() {
         </div>
 
         {/* Main Content Area */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Left Side: Ticket Types */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8">
               <h2 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Select Your Tickets</h2>
               <div className="space-y-6">
@@ -695,7 +695,7 @@ export default function TicketingPage() {
           </div>
 
           {/* Right Side: Order Summary & Checkout */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <div className="bg-slate-50 rounded-xl shadow-lg p-6 md:p-8 sticky top-8">
               <h2 className="text-2xl font-bold mb-6 text-gray-800">Order Summary</h2>
 
