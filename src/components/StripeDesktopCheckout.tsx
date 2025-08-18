@@ -23,11 +23,12 @@ type Props = {
   enabled: boolean;
   amountCents: number;
   onInvalidClick?: () => void;
+  onLoadingChange?: (loading: boolean) => void;
 };
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY as string);
 
-function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecret }: Props & { clientSecret: string }) {
+function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecret, onLoadingChange }: Props & { clientSecret: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const [confirming, setConfirming] = useState(false);
@@ -45,6 +46,11 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
 
     return () => clearTimeout(timer);
   }, [expressCheckoutReady]);
+
+  // Notify parent component of loading state changes
+  useEffect(() => {
+    onLoadingChange?.(!expressCheckoutReady);
+  }, [expressCheckoutReady, onLoadingChange]);
 
   const handleConfirm = async () => {
     if (!stripe || !elements || !clientSecret) return;

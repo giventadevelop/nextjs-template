@@ -32,6 +32,7 @@ export default function TicketingPage() {
   const [mounted, setMounted] = useState(false);
   const [showCancelledMessage, setShowCancelledMessage] = useState(false);
   const [cancelledPaymentInfo, setCancelledPaymentInfo] = useState<any>(null);
+  const [expressCheckoutLoading, setExpressCheckoutLoading] = useState(true);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -480,6 +481,7 @@ export default function TicketingPage() {
                 if (!hasTicketsSelected) alert('Please select at least one ticket.');
                 if (hasUnavailableTickets) alert('Some selected tickets are sold out. Please adjust your selection.');
               }}
+              onLoadingChange={setExpressCheckoutLoading}
             />
           ) : (
             <div
@@ -521,7 +523,17 @@ export default function TicketingPage() {
           <div className="text-xs text-gray-700 mt-2">Apple/Google/Link</div>
         </div>
 
-        <div className="mt-6">
+        <div className="mt-6 relative">
+          {/* Loading overlay for credit card section - only on desktop when Express Checkout is loading */}
+          {typeof window !== 'undefined' && window.innerWidth > 768 && expressCheckoutLoading && canCheckout && (
+            <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-500 mx-auto mb-2"></div>
+                <p className="text-xs text-gray-600">Loading payment options...</p>
+              </div>
+            </div>
+          )}
+          
           <div className="text-base font-extrabold text-gray-800 mb-3">OR</div>
           <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
           {/* Wrapper captures clicks even when the button is disabled to surface validation errors */}
@@ -544,7 +556,7 @@ export default function TicketingPage() {
                 handleCheckout();
               }}
               className="w-full inline-flex items-center justify-center bg-gradient-to-r from-teal-500 to-green-500 text-white font-bold py-4 px-5 rounded-xl shadow hover:from-teal-600 hover:to-green-600 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isProcessing || !canCheckout}
+              disabled={isProcessing || !canCheckout || (typeof window !== 'undefined' && window.innerWidth > 768 && expressCheckoutLoading)}
             >
               <FaCreditCard className="mr-3" size={22} />
               {hasUnavailableTickets ? 'Tickets Sold Out' : 'Pay with credit card'}
