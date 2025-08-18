@@ -388,7 +388,7 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           ) : (
             <div className="flex items-center text-orange-600">
               <span className="mr-2">⚠️</span>
-              Please select a payment method below
+              Please select a pay method or click any of the payment buttons
             </div>
           )}
         </div>
