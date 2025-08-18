@@ -182,9 +182,9 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
   // Render Express Checkout Element if available; provide a fallback Pay button using PaymentElement
   return (
     <div className="w-full relative">
-      {/* Loading overlay while Express Checkout initializes */}
+      {/* Loading overlay while Express Checkout initializes - covers entire payment section */}
       {!expressCheckoutReady && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+        <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-20 rounded-lg" style={{ minHeight: '400px' }}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-2"></div>
             <p className="text-sm text-gray-600">Loading payment options...</p>
@@ -193,8 +193,10 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
         </div>
       )}
 
-      {/* @ts-ignore - element may lack TS in some versions */}
-      <ExpressCheckoutElement
+      {/* Express Checkout Section */}
+      <div className="relative">
+        {/* @ts-ignore - element may lack TS in some versions */}
+        <ExpressCheckoutElement
         onConfirm={async () => {
           // CRITICAL: Call elements.submit() first for validation
           if (!elements) {
@@ -376,8 +378,10 @@ function InnerDesktopCheckout({ cart, eventId, email, discountCodeId, clientSecr
           }
         `
       }} />
+      </div>
 
-      <div className="mt-3 bg-white border rounded-lg p-3">
+      {/* PaymentElement Section */}
+      <div className="mt-3 bg-white border rounded-lg p-3 relative">
         {/* Payment method selection status */}
         <div className="mb-3 text-sm">
           {paymentMethodSelected ? (
