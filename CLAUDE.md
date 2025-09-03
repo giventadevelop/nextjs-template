@@ -129,4 +129,8 @@ npm run generate:api           # Generate API endpoints
 - Image optimization configured for AWS S3 media bucket
 - Comprehensive form handling with validation
 - Event-driven architecture with webhook support
-- Built-in error handling and graceful degradation patterns
+- Built-in error handling and graceful degradation patterns[byterover-mcp]
+
+# important 
+always use byterover-retrieve-knowledge tool to get the related context before any tasks 
+always use byterover-store-knowledge to store all the critical informations after sucessful tasks

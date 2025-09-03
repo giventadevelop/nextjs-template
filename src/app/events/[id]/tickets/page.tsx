@@ -533,7 +533,7 @@ export default function TicketingPage() {
               </div>
             </div>
           )}
-          
+
           <div className="text-base font-extrabold text-gray-800 mb-3">OR</div>
           <div className="text-sm font-semibold text-gray-700 mb-2">Pay with credit card</div>
           {/* Wrapper captures clicks even when the button is disabled to surface validation errors */}
@@ -852,8 +852,24 @@ export default function TicketingPage() {
               <div className="text-center text-gray-500 py-8">No ticket types available for this event.</div>
             )}
             {ticketTypes.map(ticket => {
+              // Debug: Log ticket data to understand what backend is returning
+              console.log('Ticket data:', {
+                id: ticket.id,
+                name: ticket.name,
+                availableQuantity: ticket.availableQuantity,
+                soldQuantity: ticket.soldQuantity,
+                remainingQuantity: ticket.remainingQuantity
+              });
+
+              // Calculate remaining quantity from source data (availableQuantity - soldQuantity)
+              // Use backend remainingQuantity only if source data is not available
+              const calculatedRemaining = (ticket.availableQuantity ?? 0) - (ticket.soldQuantity ?? 0);
+              const remainingQuantity = (ticket.availableQuantity !== undefined && ticket.soldQuantity !== undefined)
+                ? calculatedRemaining
+                : (ticket.remainingQuantity ?? calculatedRemaining);
+
               // Check if tickets are sold out
-              const isSoldOut = (ticket.remainingQuantity ?? 0) <= 0;
+              const isSoldOut = remainingQuantity <= 0;
               const maxOrderQuantity = ticket.maxQuantityPerOrder ?? 10;
 
               return (
@@ -877,10 +893,10 @@ export default function TicketingPage() {
                     <p className="text-sm text-gray-600 mt-2">{ticket.description}</p>
 
                     {/* Low stock warning only */}
-                    {!isSoldOut && ticket.remainingQuantity !== undefined && ticket.remainingQuantity <= 5 && ticket.remainingQuantity > 0 && (
+                    {!isSoldOut && remainingQuantity <= 5 && remainingQuantity > 0 && (
                       <div className="mt-3">
                         <p className="text-sm text-orange-600 font-medium">
-                          ⚠️ Low stock - only {ticket.remainingQuantity} left!
+                          ⚠️ Low stock - only {remainingQuantity} left!
                         </p>
                       </div>
                     )}
@@ -898,19 +914,18 @@ export default function TicketingPage() {
                     <button
                       onClick={() => handleTicketChange(ticket.id, (selectedTickets[ticket.id] || 0) + 1)}
                       className="bg-gray-200 text-gray-700 px-3 py-1 rounded-r-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      disabled={isSoldOut || (selectedTickets[ticket.id] || 0) >= Math.min(ticket.remainingQuantity ?? 0, maxOrderQuantity)}
+                      disabled={isSoldOut || (selectedTickets[ticket.id] || 0) >= Math.min(remainingQuantity, maxOrderQuantity)}
                     >
                       +
                     </button>
                   </div>
 
                   {/* Quantity validation warning */}
-                  {selectedTickets[ticket.id] > 0 && ticket.remainingQuantity !== undefined &&
-                    selectedTickets[ticket.id] > ticket.remainingQuantity && (
-                      <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-                        ⚠️ Only {ticket.remainingQuantity} tickets available for this selection
-                      </div>
-                    )}
+                  {selectedTickets[ticket.id] > 0 && selectedTickets[ticket.id] > remainingQuantity && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+                      ⚠️ Only {remainingQuantity} tickets available for this selection
+                    </div>
+                  )}
                 </div>
               );
             })}
