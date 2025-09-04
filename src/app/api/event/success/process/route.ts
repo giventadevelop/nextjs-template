@@ -3,21 +3,48 @@ import { processStripeSessionServer, fetchTransactionQrCode } from '@/app/event/
 import { fetchEventDetailsByIdServer } from '@/app/admin/events/[id]/media/ApiServerActions';
 import Stripe from 'stripe';
 import { getTenantId, getAppUrl } from '@/lib/env';
+import { getCachedApiJwt, generateApiJwt } from '@/lib/api/jwt';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-03-31.basil',
 });
 
 const APP_URL = getAppUrl();
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+// Helper function to make authenticated backend API calls
+async function fetchWithJwtRetry(apiUrl: string, options: any = {}) {
+  let token = await getCachedApiJwt();
+  let response = await fetch(apiUrl, {
+    ...options,
+    headers: {
+      ...options.headers,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (response.status === 401) {
+    token = await generateApiJwt();
+    response = await fetch(apiUrl, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
+
+  return response;
+}
 
 async function fetchTransactionItemsByTransactionId(transactionId: number) {
-  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-transaction-items?transactionId.equals=${transactionId}`, { cache: 'no-store' });
+  const res = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-transaction-items?transactionId.equals=${transactionId}&tenantId.equals=${getTenantId()}`, { cache: 'no-store' });
   if (!res.ok) return [];
   return res.json();
 }
 
 async function fetchTicketTypeById(ticketTypeId: number) {
-  const res = await fetch(`${APP_URL}/api/proxy/event-ticket-types/${ticketTypeId}`, { cache: 'no-store' });
+  const res = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-ticket-types/${ticketTypeId}?tenantId.equals=${getTenantId()}`, { cache: 'no-store' });
   if (!res.ok) return null;
   return res.json();
 }
@@ -26,7 +53,7 @@ async function getHeroImageUrl(eventId: number) {
   const defaultHeroImageUrl = `/images/default_placeholder_hero_image.jpeg?v=${Date.now()}`;
   let imageUrl: string | null = null;
   try {
-    const flyerRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true`, { cache: 'no-store' });
+    const flyerRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-medias?eventId.equals=${eventId}&eventFlyer.equals=true&tenantId.equals=${getTenantId()}`, { cache: 'no-store' });
     if (flyerRes.ok) {
       const flyerData = await flyerRes.json();
       if (Array.isArray(flyerData) && flyerData.length > 0 && flyerData[0].fileUrl) {
@@ -34,7 +61,7 @@ async function getHeroImageUrl(eventId: number) {
       }
     }
     if (!imageUrl) {
-      const featuredRes = await fetch(`${APP_URL}/api/proxy/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true`, { cache: 'no-store' });
+      const featuredRes = await fetchWithJwtRetry(`${API_BASE_URL}/api/event-medias?eventId.equals=${eventId}&isFeaturedImage.equals=true&tenantId.equals=${getTenantId()}`, { cache: 'no-store' });
       if (featuredRes.ok) {
         const featuredData = await featuredRes.json();
         if (Array.isArray(featuredData) && featuredData.length > 0 && featuredData[0].fileUrl) {
