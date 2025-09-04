@@ -387,7 +387,14 @@ export default async function TicketListPage({ params, searchParams }: { params:
         </form>
       </div>
       <div className="bg-white rounded-lg shadow p-4 overflow-x-auto">
-        {error && <div className="text-red-500 font-semibold mb-4">{error}</div>}
+        {error && (
+          <div className="text-red-500 font-semibold mb-4">
+            {error}
+            {!hasTickets && (
+              <span className="inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-medium ml-2">[No tickets sold yet]</span>
+            )}
+          </div>
+        )}
         <div className="text-xs text-gray-500 mb-2">Hover over the <b>ID</b> or <b>Name</b> columns to see full ticket details.</div>
         <table className="min-w-full divide-y divide-gray-300 border border-gray-300">
           <thead className="bg-gray-50">
@@ -432,7 +439,10 @@ export default async function TicketListPage({ params, searchParams }: { params:
             {rows.length > 0 ? (
               <>Showing <span className="font-medium">{startItemControl}</span> to <span className="font-medium">{endItemControl}</span> of <span className="font-medium">{totalCount}</span> tickets</>
             ) : (
-              <>No tickets found</>
+              <div className="flex items-center justify-center gap-2">
+                <span>No tickets found</span>
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md text-sm font-medium">[No tickets sold yet]</span>
+              </div>
             )}
           </div>
         </div>
