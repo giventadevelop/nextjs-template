@@ -63,6 +63,11 @@ export default function RootLayout({
   // For server components, we can't use usePathname, so we'll handle auth routes differently
   const isAuthRoute = false; // We'll handle this in the Header component
 
+  // Primary domain configuration - allow redirects from satellite domains
+  const clerkProps = {
+    allowedRedirectOrigins: ['https://www.mosc-temp.com'],
+  };
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -71,6 +76,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className + " flex flex-col min-h-screen"} suppressHydrationWarning>
         <ClerkProvider
+          {...clerkProps}
           localization={{
             signUp: {
               start: {
