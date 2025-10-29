@@ -57,9 +57,16 @@ export default function SignOutRedirect() {
         const separator = redirectUrl.includes('?') ? '&' : '?';
         const redirectWithFlag = `${redirectUrl}${separator}clerk_signout=true`;
 
-        console.log('[SignOut Redirect] Redirecting with flag:', redirectWithFlag);
+        console.log('[SignOut Redirect] ===== REDIRECTING =====');
+        console.log('[SignOut Redirect] Original URL:', redirectUrl);
+        console.log('[SignOut Redirect] URL with flag:', redirectWithFlag);
+        console.log('[SignOut Redirect] ========================');
+
+        // Add a small delay to ensure sign-out completed
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         // Manually redirect after sign out completes
+        console.log('[SignOut Redirect] Executing redirect now...');
         window.location.href = redirectWithFlag;
       } catch (err) {
         console.error('[SignOut Redirect] Error during sign-out:', err);
