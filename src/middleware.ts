@@ -5,6 +5,7 @@ export default authMiddleware({
   // Public routes that don't require authentication
   publicRoutes: [
     "/",
+    "/auth/signout-redirect(.*)",  // Sign-out redirect page for satellite domains
     "/event",
     "/event/success",
     "/event/success/(.*)",
