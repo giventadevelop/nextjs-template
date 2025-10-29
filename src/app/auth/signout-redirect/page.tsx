@@ -47,12 +47,13 @@ export default function SignOutRedirect() {
 
         console.log('[SignOut Redirect] Calling Clerk signOut...');
 
-        // Sign out and redirect
-        await signOut({
-          redirectUrl: redirectUrl,
-        });
+        // Sign out (without redirect parameter - Clerk handles it differently)
+        await signOut();
 
-        console.log('[SignOut Redirect] Sign out complete, redirecting to:', redirectUrl);
+        console.log('[SignOut Redirect] Sign out complete, manually redirecting to:', redirectUrl);
+
+        // Manually redirect after sign out completes
+        window.location.href = redirectUrl;
       } catch (err) {
         console.error('[SignOut Redirect] Error during sign-out:', err);
         setError(String(err));
