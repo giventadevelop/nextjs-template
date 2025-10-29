@@ -52,8 +52,15 @@ export default function SignOutRedirect() {
 
         console.log('[SignOut Redirect] Sign out complete, manually redirecting to:', redirectUrl);
 
+        // Add a flag to indicate sign-out was successful
+        // This helps the satellite domain know to clear its local Clerk state
+        const separator = redirectUrl.includes('?') ? '&' : '?';
+        const redirectWithFlag = `${redirectUrl}${separator}clerk_signout=true`;
+
+        console.log('[SignOut Redirect] Redirecting with flag:', redirectWithFlag);
+
         // Manually redirect after sign out completes
-        window.location.href = redirectUrl;
+        window.location.href = redirectWithFlag;
       } catch (err) {
         console.error('[SignOut Redirect] Error during sign-out:', err);
         setError(String(err));
